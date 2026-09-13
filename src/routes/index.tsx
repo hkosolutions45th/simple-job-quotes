@@ -174,6 +174,91 @@ function InstaQuote() {
     toast.success("Blank quote ready");
   };
 
+  // Load the signed-in contractor's saved business details.
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    supabase
+      .from("user_profiles")
+      .select("business_name, logo_url")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active || !data) return;
+        if (data.business_name) setBusiness(data.business_name);
+        if (data.logo_url) setLogo(data.logo_url);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  const saveQuote = async () => {
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
+    if (items.length === 0) {
+      toast.error("Nothing to save yet", { description: "Generate or add a line item first." });
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("quotes").insert({
+      user_id: user.id,
+      client_name: customer.name || null,
+      client_email: customer.email || null,
+      total_amount: Number(total.toFixed(2)),
+      status: "draft",
+      line_items: { quoteNo, notes, items, customer, taxRate, taxEnabled } as any,
+    });
+    await supabase
+      .from("user_profiles")
+      .upsert({ user_id: user.id, business_name: business, logo_url: logo }, { onConflict: "user_id" });
+    setSaving(false);
+    if (error) {
+      toast.error("Couldn't save this quote", { description: error.message });
+      return;
+    }
+    toast.success("Quote saved to your account");
+  };
+
+  const openSaved = async () => {
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
+    setSavedOpen(true);
+    const { data, error } = await supabase
+      .from("quotes")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) {
+      toast.error("Couldn't load your quotes", { description: error.message });
+      return;
+    }
+    setSaved(data ?? []);
+  };
+
+  const loadQuote = (row: any) => {
+    const payload = (row.line_items ?? {}) as any;
+    setItems(Array.isArray(payload.items) ? payload.items : []);
+    setNotes(payload.notes ?? "");
+    if (payload.customer) setCustomer(payload.customer);
+    if (payload.quoteNo) setQuoteNo(payload.quoteNo);
+    if (typeof payload.taxRate === "number") setTaxRate(payload.taxRate);
+    if (typeof payload.taxEnabled === "boolean") setTaxEnabled(payload.taxEnabled);
+    setSavedOpen(false);
+    toast.success("Quote loaded");
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setSaved([]);
+    toast.success("Signed out");
+  };
+
+
   return (
     <div className="min-h-screen bg-cream text-ink">
       <div className="mx-auto max-w-[430px] px-4 pt-5 pb-36">
