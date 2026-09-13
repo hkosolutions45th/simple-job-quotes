@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
+import { CloudUpload, FolderOpen, LogOut, Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   generateLineItems,
   lineTotal,
@@ -22,6 +24,7 @@ import {
   type Customer,
   type LineItem,
 } from "@/lib/quote";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
