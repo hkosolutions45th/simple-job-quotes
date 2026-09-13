@@ -550,11 +550,20 @@ function InstaQuote() {
         <div className="mx-auto max-w-[430px] px-4 pt-2 pb-4">
           <div className="clay-shadow flex gap-3 rounded-2xl bg-card p-3 ring-1 ring-black/5">
             <button
+              onClick={saveQuote}
+              disabled={saving}
+              aria-label="Save quote to my account"
+              className="grid min-h-14 w-14 shrink-0 place-items-center rounded-xl bg-cream ring-1 ring-line active:translate-y-0.5 disabled:opacity-60"
+            >
+              <CloudUpload className="size-5" aria-hidden="true" />
+            </button>
+            <button
               onClick={() => setPreviewOpen(true)}
               className="flex min-h-14 flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream px-3 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
             >
-              <Printer className="size-4" aria-hidden="true" /> Preview PDF
+              <Printer className="size-4" aria-hidden="true" /> Preview
             </button>
+
             <button
               onClick={() => setSendOpen(true)}
               className="clay-shadow flex min-h-14 flex-1 items-center justify-center gap-1.5 rounded-xl bg-clay px-3 text-sm font-semibold text-cream active:translate-y-0.5"
