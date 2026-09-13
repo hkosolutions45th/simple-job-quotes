@@ -69,6 +69,13 @@ function InstaQuote() {
   });
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
+  const [savedOpen, setSavedOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState<any[]>([]);
+
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
 
   const recognitionRef = useRef<any>(null);
   const baseNotesRef = useRef("");
