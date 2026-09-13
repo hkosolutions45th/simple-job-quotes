@@ -295,6 +295,44 @@ function InstaQuote() {
           </button>
         </header>
 
+        {/* Account */}
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-card p-2 ring-1 ring-black/5">
+          {user ? (
+            <>
+              <span className="min-w-0 flex-1 truncate px-2 text-xs text-inksoft">
+                Signed in as {user.email}
+              </span>
+              <button
+                onClick={openSaved}
+                className="flex min-h-10 items-center gap-1.5 rounded-lg bg-cream px-3 text-xs font-semibold ring-1 ring-line active:translate-y-0.5"
+              >
+                <FolderOpen className="size-4" aria-hidden="true" /> Saved
+              </button>
+              <button
+                onClick={signOut}
+                aria-label="Sign out"
+                className="grid size-10 place-items-center rounded-lg bg-cream text-inksoft ring-1 ring-line active:translate-y-0.5"
+              >
+                <LogOut className="size-4" aria-hidden="true" />
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="min-w-0 flex-1 px-2 text-xs text-inksoft">
+                Sign in to save quotes to your account.
+              </span>
+              <Link
+                to="/auth"
+                className="flex min-h-10 items-center rounded-lg bg-ink px-4 text-xs font-semibold text-cream active:translate-y-0.5"
+              >
+                Sign in
+              </Link>
+            </>
+          )}
+        </div>
+
+
+
         {/* Dictate */}
         <section className="mt-5 rounded-2xl bg-card p-4 ring-1 ring-black/5">
           <h1 className="sr-only">Build a quote</h1>
