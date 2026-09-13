@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
+import { CloudUpload, FolderOpen, LogOut, Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   generateLineItems,
   lineTotal,
@@ -22,6 +24,7 @@ import {
   type Customer,
   type LineItem,
 } from "@/lib/quote";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -66,6 +69,13 @@ function InstaQuote() {
   });
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
+  const [savedOpen, setSavedOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState<any[]>([]);
+
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
 
   const recognitionRef = useRef<any>(null);
   const baseNotesRef = useRef("");
@@ -164,6 +174,91 @@ function InstaQuote() {
     toast.success("Blank quote ready");
   };
 
+  // Load the signed-in contractor's saved business details.
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    supabase
+      .from("user_profiles")
+      .select("business_name, logo_url")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active || !data) return;
+        if (data.business_name) setBusiness(data.business_name);
+        if (data.logo_url) setLogo(data.logo_url);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  const saveQuote = async () => {
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
+    if (items.length === 0) {
+      toast.error("Nothing to save yet", { description: "Generate or add a line item first." });
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("quotes").insert({
+      user_id: user.id,
+      client_name: customer.name || null,
+      client_email: customer.email || null,
+      total_amount: Number(total.toFixed(2)),
+      status: "draft",
+      line_items: { quoteNo, notes, items, customer, taxRate, taxEnabled } as any,
+    });
+    await supabase
+      .from("user_profiles")
+      .upsert({ user_id: user.id, business_name: business, logo_url: logo }, { onConflict: "user_id" });
+    setSaving(false);
+    if (error) {
+      toast.error("Couldn't save this quote", { description: error.message });
+      return;
+    }
+    toast.success("Quote saved to your account");
+  };
+
+  const openSaved = async () => {
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
+    setSavedOpen(true);
+    const { data, error } = await supabase
+      .from("quotes")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) {
+      toast.error("Couldn't load your quotes", { description: error.message });
+      return;
+    }
+    setSaved(data ?? []);
+  };
+
+  const loadQuote = (row: any) => {
+    const payload = (row.line_items ?? {}) as any;
+    setItems(Array.isArray(payload.items) ? payload.items : []);
+    setNotes(payload.notes ?? "");
+    if (payload.customer) setCustomer(payload.customer);
+    if (payload.quoteNo) setQuoteNo(payload.quoteNo);
+    if (typeof payload.taxRate === "number") setTaxRate(payload.taxRate);
+    if (typeof payload.taxEnabled === "boolean") setTaxEnabled(payload.taxEnabled);
+    setSavedOpen(false);
+    toast.success("Quote loaded");
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setSaved([]);
+    toast.success("Signed out");
+  };
+
+
   return (
     <div className="min-h-screen bg-cream text-ink">
       <div className="mx-auto max-w-[430px] px-4 pt-5 pb-36">
@@ -199,6 +294,44 @@ function InstaQuote() {
             <Plus className="size-4" aria-hidden="true" /> New Quote
           </button>
         </header>
+
+        {/* Account */}
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-card p-2 ring-1 ring-black/5">
+          {user ? (
+            <>
+              <span className="min-w-0 flex-1 truncate px-2 text-xs text-inksoft">
+                Signed in as {user.email}
+              </span>
+              <button
+                onClick={openSaved}
+                className="flex min-h-10 items-center gap-1.5 rounded-lg bg-cream px-3 text-xs font-semibold ring-1 ring-line active:translate-y-0.5"
+              >
+                <FolderOpen className="size-4" aria-hidden="true" /> Saved
+              </button>
+              <button
+                onClick={signOut}
+                aria-label="Sign out"
+                className="grid size-10 place-items-center rounded-lg bg-cream text-inksoft ring-1 ring-line active:translate-y-0.5"
+              >
+                <LogOut className="size-4" aria-hidden="true" />
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="min-w-0 flex-1 px-2 text-xs text-inksoft">
+                Sign in to save quotes to your account.
+              </span>
+              <Link
+                to="/auth"
+                className="flex min-h-10 items-center rounded-lg bg-ink px-4 text-xs font-semibold text-cream active:translate-y-0.5"
+              >
+                Sign in
+              </Link>
+            </>
+          )}
+        </div>
+
+
 
         {/* Dictate */}
         <section className="mt-5 rounded-2xl bg-card p-4 ring-1 ring-black/5">
@@ -417,11 +550,20 @@ function InstaQuote() {
         <div className="mx-auto max-w-[430px] px-4 pt-2 pb-4">
           <div className="clay-shadow flex gap-3 rounded-2xl bg-card p-3 ring-1 ring-black/5">
             <button
+              onClick={saveQuote}
+              disabled={saving}
+              aria-label="Save quote to my account"
+              className="grid min-h-14 w-14 shrink-0 place-items-center rounded-xl bg-cream ring-1 ring-line active:translate-y-0.5 disabled:opacity-60"
+            >
+              <CloudUpload className="size-5" aria-hidden="true" />
+            </button>
+            <button
               onClick={() => setPreviewOpen(true)}
               className="flex min-h-14 flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream px-3 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
             >
-              <Printer className="size-4" aria-hidden="true" /> Preview PDF
+              <Printer className="size-4" aria-hidden="true" /> Preview
             </button>
+
             <button
               onClick={() => setSendOpen(true)}
               className="clay-shadow flex min-h-14 flex-1 items-center justify-center gap-1.5 rounded-xl bg-clay px-3 text-sm font-semibold text-cream active:translate-y-0.5"
