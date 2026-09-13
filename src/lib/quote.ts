@@ -48,7 +48,7 @@ const CATALOG: { match: RegExp; description: string; rate: number; unit: string 
 const numberIn = (text: string): number | null => {
   const m = text.match(/(\d[\d,]*(?:\.\d+)?)\s*(sq\.?\s?ft|square feet|ft|feet|linear|hours?|hrs?|yards?|yds?|bundles?|units?|coats?|x)?/i);
   if (!m) return null;
-  const n = parseFloat(m[1].replace(/,/g, ""));
+  const n = parseFloat((m[1] ?? "").replace(/,/g, ""));
   return Number.isFinite(n) && n > 0 ? n : null;
 };
 
@@ -83,7 +83,7 @@ export function generateLineItems(notes: string): LineItem[] {
   items.push({
     id: newId(),
     description: "Labour — crew on site (hr)",
-    quantity: hours ? parseFloat(hours[1]) : Math.max(4, items.length * 3),
+    quantity: hours?.[1] ? parseFloat(hours[1]) : Math.max(4, items.length * 3),
     rate: 75,
   });
 
