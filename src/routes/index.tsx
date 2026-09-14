@@ -646,6 +646,48 @@ function InstaQuote() {
           </button>
         </DialogContent>
       </Dialog>
+
+      {/* Saved quotes */}
+      <Dialog open={savedOpen} onOpenChange={setSavedOpen}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Your saved quotes</DialogTitle>
+            <DialogDescription>
+              Tap a quote to load it back into the editor.
+            </DialogDescription>
+          </DialogHeader>
+          {saved.length === 0 ? (
+            <p className="py-6 text-center text-sm text-inksoft">
+              No saved quotes yet. Save one with the cloud button.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {saved.map((row) => (
+                <li key={row.id}>
+                  <button
+                    type="button"
+                    onClick={() => loadQuote(row)}
+                    className="field flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-4 text-left"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold">
+                        {row.client_name || "Unnamed client"}
+                      </span>
+                      <span className="label-mono block text-xs text-inksoft">
+                        {(row.line_items?.quoteNo ?? "").toString()}{" "}
+                        {new Date(row.created_at).toLocaleDateString()}
+                      </span>
+                    </span>
+                    <span className="label-mono shrink-0 text-sm font-bold">
+                      {money(Number(row.total_amount) || 0)}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
