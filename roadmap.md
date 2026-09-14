@@ -2,4 +2,6 @@
 
 - [x] Enable Lovable Cloud
 - [x] Create `quotes` and `user_profiles` tables with RLS + grants
-- [ ] Wire InstaQuote app to save/load quotes (follow-up)
+- [x] Email + Google sign-in, sign-in page, account strip
+- [x] Save quotes to the cloud, saved-quotes list, load back into editor
+- [x] Verified end-to-end in preview (sign up, save, list, reload)
