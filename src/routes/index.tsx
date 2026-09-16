@@ -616,6 +616,7 @@ function InstaQuote() {
             total={total}
             taxRate={taxRate}
             taxEnabled={taxEnabled}
+            notes={notes}
           />
           <div className="no-print sticky bottom-0 flex gap-3 border-t border-line bg-white p-3">
             <button
