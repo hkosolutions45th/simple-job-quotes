@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CloudUpload, FolderOpen, LogOut, Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
+import { CloudUpload, FolderOpen, Loader2, LogOut, Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { generateQuoteItems } from "@/lib/ai-quote.functions";
 import {
   generateLineItems,
   lineTotal,
@@ -58,6 +59,7 @@ function InstaQuote() {
   const [notes, setNotes] = useState(SAMPLE);
   const [listening, setListening] = useState(false);
   const [items, setItems] = useState<LineItem[]>([]);
+  const [generating, setGenerating] = useState(false);
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [taxRate, setTaxRate] = useState(13);
   const [customer, setCustomer] = useState<Customer>({
@@ -139,16 +141,33 @@ function InstaQuote() {
     setListening(false);
   }, []);
 
-  const generate = () => {
+  const generate = async () => {
     if (!notes.trim()) {
       toast.error("Add some job notes first");
       return;
     }
-    const generated = generateLineItems(notes);
-    setItems(generated);
-    toast.success(`${generated.length} line items drafted`, {
-      description: "Tweak quantities and rates before you send.",
-    });
+    setGenerating(true);
+    try {
+      const { items: aiItems } = await generateQuoteItems({ data: { notes } });
+      const rows: LineItem[] = aiItems.map((i) => ({
+        id: newId(),
+        description: i.description,
+        quantity: i.quantity,
+        rate: i.unitRate,
+      }));
+      setItems((prev) => [...prev, ...rows]);
+      toast.success(`${rows.length} line items added`, {
+        description: "Tweak quantities and rates before you send.",
+      });
+    } catch (error) {
+      const generated = generateLineItems(notes);
+      setItems((prev) => [...prev, ...generated]);
+      toast.error(error instanceof Error ? error.message : "Couldn't reach the estimator", {
+        description: "Added a draft from your notes instead — check the rates.",
+      });
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const updateItem = (id: string, patch: Partial<LineItem>) =>
@@ -377,9 +396,12 @@ function InstaQuote() {
 
           <button
             onClick={generate}
-            className="clay-shadow-leaf mt-4 min-h-12 w-full rounded-xl bg-leaf px-4 text-sm font-semibold text-cream active:translate-y-0.5"
+            disabled={generating}
+            aria-busy={generating}
+            className="clay-shadow-leaf mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-leaf px-4 text-sm font-semibold text-cream active:translate-y-0.5 disabled:opacity-70"
           >
-            Generate Line-Item Quote
+            {generating && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+            {generating ? "Analyzing notes…" : "Generate Line-Item Quote"}
           </button>
         </section>
 
