@@ -396,9 +396,12 @@ function InstaQuote() {
 
           <button
             onClick={generate}
-            className="clay-shadow-leaf mt-4 min-h-12 w-full rounded-xl bg-leaf px-4 text-sm font-semibold text-cream active:translate-y-0.5"
+            disabled={generating}
+            aria-busy={generating}
+            className="clay-shadow-leaf mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-leaf px-4 text-sm font-semibold text-cream active:translate-y-0.5 disabled:opacity-70"
           >
-            Generate Line-Item Quote
+            {generating && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+            {generating ? "Analyzing notes…" : "Generate Line-Item Quote"}
           </button>
         </section>
 
