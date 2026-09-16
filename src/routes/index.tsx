@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CloudUpload, FolderOpen, LogOut, Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
+import { CloudUpload, FolderOpen, Loader2, LogOut, Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { generateQuoteItems } from "@/lib/ai-quote.functions";
 import {
   generateLineItems,
   lineTotal,
@@ -58,6 +59,7 @@ function InstaQuote() {
   const [notes, setNotes] = useState(SAMPLE);
   const [listening, setListening] = useState(false);
   const [items, setItems] = useState<LineItem[]>([]);
+  const [generating, setGenerating] = useState(false);
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [taxRate, setTaxRate] = useState(13);
   const [customer, setCustomer] = useState<Customer>({
