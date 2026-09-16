@@ -11,67 +11,105 @@ type Props = {
   total: number;
   taxRate: number;
   taxEnabled: boolean;
+  notes?: string;
 };
 
 export function QuoteSheet(props: Props) {
-  const { business, logo, quoteNo, customer, items, subtotal, tax, total, taxRate, taxEnabled } =
-    props;
-  const today = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const {
+    business,
+    logo,
+    quoteNo,
+    customer,
+    items,
+    subtotal,
+    tax,
+    total,
+    taxRate,
+    taxEnabled,
+    notes,
+  } = props;
+
+  const today = new Date();
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const validUntil = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  const depositMatch = customer.terms.match(/(\d{1,3})\s*%/);
+  const depositPct = depositMatch?.[1] ? Number(depositMatch[1]) : null;
+  const deposit = depositPct && depositPct > 0 && depositPct < 100 ? (total * depositPct) / 100 : null;
 
   return (
-    <div className="bg-white p-6 text-ink">
-      <div className="flex items-start justify-between gap-4 border-b border-line pb-4">
+    <div className="quote-sheet mx-auto w-full bg-white p-6 text-ink sm:p-8">
+      {/* Header */}
+      <header className="flex items-start justify-between gap-6 border-b-2 border-ink pb-4">
         <div className="flex items-center gap-3">
           {logo ? (
-            <img src={logo} alt={`${business} logo`} className="size-12 rounded-md object-cover" />
+            <img src={logo} alt={`${business} logo`} className="size-14 rounded-md object-cover" />
           ) : (
-            <div className="grid size-12 place-items-center rounded-md bg-clay font-mono text-lg font-bold text-cream">
+            <div className="grid size-14 place-items-center rounded-md bg-clay font-mono text-xl font-bold text-cream">
               {business.slice(0, 1).toUpperCase()}
             </div>
           )}
           <div>
-            <p className="text-lg font-bold leading-tight">{business}</p>
-            <p className="label-mono">Quotation</p>
+            <p className="text-xl leading-tight font-bold">{business}</p>
+            <p className="label-mono">Quotation / Estimate</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="font-mono text-sm font-bold">{quoteNo}</p>
-          <p className="font-mono text-[11px] text-inksoft">{today}</p>
+          <p className="label-mono">Quote no.</p>
+          <p className="font-mono text-base font-bold">{quoteNo}</p>
+          <p className="mt-1 font-mono text-[11px] text-inksoft">Issued {fmt(today)}</p>
+          <p className="font-mono text-[11px] text-inksoft">Valid to {fmt(validUntil)}</p>
         </div>
-      </div>
+      </header>
 
-      <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+      {/* Client details */}
+      <section className="mt-5 grid grid-cols-2 gap-6 text-sm">
         <div>
           <p className="label-mono">Prepared for</p>
           <p className="font-semibold">{customer.name || "—"}</p>
-          <p className="text-inksoft">{customer.email}</p>
-          <p className="font-mono text-inksoft">{customer.phone}</p>
+          {customer.email && <p className="text-inksoft">{customer.email}</p>}
+          {customer.phone && <p className="font-mono text-inksoft">{customer.phone}</p>}
         </div>
         <div>
           <p className="label-mono">Job address</p>
           <p className="text-inksoft">{customer.address || "—"}</p>
-          <p className="label-mono mt-2">Payment terms</p>
-          <p className="text-inksoft">{customer.terms || "—"}</p>
+          <p className="label-mono mt-3">Payment terms</p>
+          <p className="text-inksoft">{customer.terms || "Due on completion"}</p>
         </div>
-      </div>
+      </section>
 
+      {/* Scope of work */}
+      {notes?.trim() && (
+        <section className="mt-5 rounded-md bg-cream p-3 text-sm">
+          <p className="label-mono">Scope of work</p>
+          <p className="mt-1 leading-relaxed text-inksoft">{notes.trim()}</p>
+        </section>
+      )}
+
+      {/* Line items */}
       <table className="mt-5 w-full border-collapse text-sm">
         <thead>
-          <tr className="border-y border-line">
+          <tr className="border-y border-ink/30">
+            <th className="label-mono w-8 py-2 text-left">#</th>
             <th className="label-mono py-2 text-left">Item description</th>
             <th className="label-mono py-2 text-right">Qty</th>
             <th className="label-mono py-2 text-right">Unit rate</th>
-            <th className="label-mono py-2 text-right">Total</th>
+            <th className="label-mono py-2 text-right">Amount</th>
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
-            <tr key={item.id} className="border-b border-line/60">
-              <td className="py-2 pr-2">{item.description}</td>
+          {items.length === 0 && (
+            <tr className="border-b border-line/60">
+              <td colSpan={5} className="py-4 text-center text-inksoft">
+                No line items on this quote yet.
+              </td>
+            </tr>
+          )}
+          {items.map((item, index) => (
+            <tr key={item.id} className="border-b border-line/60 align-top">
+              <td className="py-2 font-mono text-inksoft">{index + 1}</td>
+              <td className="py-2 pr-2">{item.description || "—"}</td>
               <td className="py-2 text-right font-mono">{item.quantity}</td>
               <td className="py-2 text-right font-mono">{money(item.rate)}</td>
               <td className="py-2 text-right font-mono">{money(lineTotal(item))}</td>
@@ -80,26 +118,44 @@ export function QuoteSheet(props: Props) {
         </tbody>
       </table>
 
-      <div className="mt-4 ml-auto w-full max-w-64 text-sm">
+      {/* Totals */}
+      <div className="mt-4 ml-auto w-full max-w-72 text-sm">
         <div className="flex justify-between py-1">
           <span className="text-inksoft">Subtotal</span>
           <span className="font-mono">{money(subtotal)}</span>
         </div>
-        {taxEnabled && (
-          <div className="flex justify-between py-1">
-            <span className="text-inksoft">Tax ({taxRate}%)</span>
-            <span className="font-mono">{money(tax)}</span>
-          </div>
-        )}
-        <div className="mt-1 flex items-end justify-between border-t border-line pt-2">
+        <div className="flex justify-between py-1">
+          <span className="text-inksoft">Sales tax {taxEnabled ? `(${taxRate}%)` : "(exempt)"}</span>
+          <span className="font-mono">{money(taxEnabled ? tax : 0)}</span>
+        </div>
+        <div className="mt-1 flex items-end justify-between border-t-2 border-ink pt-2">
           <span className="font-semibold">Total due</span>
           <span className="font-mono text-xl font-bold">{money(total)}</span>
         </div>
+        {deposit !== null && (
+          <div className="mt-1 flex justify-between py-1">
+            <span className="text-inksoft">Deposit to book ({depositPct}%)</span>
+            <span className="font-mono font-semibold">{money(deposit)}</span>
+          </div>
+        )}
       </div>
 
-      <p className="mt-6 border-t border-line pt-3 font-mono text-[11px] text-inksoft">
-        Quote valid for 30 days. Work begins once the deposit is received and a start date is
-        confirmed.
+      {/* Acceptance */}
+      <section className="mt-8 grid grid-cols-2 gap-6 text-sm">
+        <div>
+          <div className="h-8 border-b border-ink/40" />
+          <p className="label-mono mt-1">Client signature</p>
+        </div>
+        <div>
+          <div className="h-8 border-b border-ink/40" />
+          <p className="label-mono mt-1">Date</p>
+        </div>
+      </section>
+
+      <p className="mt-6 border-t border-line pt-3 font-mono text-[11px] leading-relaxed text-inksoft">
+        Quote valid for 30 days from the issue date. Prices assume standard site access and may be
+        revised if hidden conditions are found. Work begins once the deposit is received and a start
+        date is confirmed. Thank you for the opportunity to quote — {business}.
       </p>
     </div>
   );
