@@ -600,9 +600,9 @@ function InstaQuote() {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="print-sheet max-h-[88vh] overflow-y-auto bg-white p-0 sm:max-w-lg">
           <DialogHeader className="no-print px-4 pt-4">
-            <DialogTitle>Quote preview</DialogTitle>
+            <DialogTitle>Quote preview — {quoteNo}</DialogTitle>
             <DialogDescription>
-              Print or save as PDF from your browser's print dialog.
+              Print-ready letter page. Choose "Save as PDF" as the destination in the print dialog.
             </DialogDescription>
           </DialogHeader>
           <QuoteSheet
@@ -616,6 +616,7 @@ function InstaQuote() {
             total={total}
             taxRate={taxRate}
             taxEnabled={taxEnabled}
+            notes={notes}
           />
           <div className="no-print sticky bottom-0 flex gap-3 border-t border-line bg-white p-3">
             <button
