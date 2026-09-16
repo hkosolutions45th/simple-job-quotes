@@ -139,16 +139,33 @@ function InstaQuote() {
     setListening(false);
   }, []);
 
-  const generate = () => {
+  const generate = async () => {
     if (!notes.trim()) {
       toast.error("Add some job notes first");
       return;
     }
-    const generated = generateLineItems(notes);
-    setItems(generated);
-    toast.success(`${generated.length} line items drafted`, {
-      description: "Tweak quantities and rates before you send.",
-    });
+    setGenerating(true);
+    try {
+      const { items: aiItems } = await generateItemsFn({ data: { notes } });
+      const rows: LineItem[] = aiItems.map((i) => ({
+        id: newId(),
+        description: i.description,
+        quantity: i.quantity,
+        rate: i.unitRate,
+      }));
+      setItems((prev) => [...prev, ...rows]);
+      toast.success(`${rows.length} line items added`, {
+        description: "Tweak quantities and rates before you send.",
+      });
+    } catch (error) {
+      const generated = generateLineItems(notes);
+      setItems((prev) => [...prev, ...generated]);
+      toast.error(error instanceof Error ? error.message : "Couldn't reach the estimator", {
+        description: "Added a draft from your notes instead — check the rates.",
+      });
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const updateItem = (id: string, patch: Partial<LineItem>) =>
