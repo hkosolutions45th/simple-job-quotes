@@ -148,7 +148,7 @@ function InstaQuote() {
     }
     setGenerating(true);
     try {
-      const { items: aiItems } = await generateItemsFn({ data: { notes } });
+      const { items: aiItems } = await generateQuoteItems({ data: { notes } });
       const rows: LineItem[] = aiItems.map((i) => ({
         id: newId(),
         description: i.description,
