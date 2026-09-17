@@ -94,8 +94,8 @@ export function QuoteSheet(props: Props) {
             <th className="label-mono w-8 py-2 text-left">#</th>
             <th className="label-mono py-2 text-left">Item description</th>
             <th className="label-mono py-2 text-right">Qty</th>
-            <th className="label-mono py-2 text-right">Unit rate</th>
-            <th className="label-mono py-2 text-right">Amount</th>
+            <th className="label-mono py-2 pl-3 text-right">Unit rate</th>
+            <th className="label-mono py-2 pl-3 text-right">Amount</th>
           </tr>
         </thead>
         <tbody>
@@ -111,8 +111,8 @@ export function QuoteSheet(props: Props) {
               <td className="py-2 font-mono text-inksoft">{index + 1}</td>
               <td className="py-2 pr-2">{item.description || "—"}</td>
               <td className="py-2 text-right font-mono">{item.quantity}</td>
-              <td className="py-2 text-right font-mono">{money(item.rate)}</td>
-              <td className="py-2 text-right font-mono">{money(lineTotal(item))}</td>
+              <td className="py-2 pl-3 text-right font-mono whitespace-nowrap">{money(item.rate)}</td>
+              <td className="py-2 pl-3 text-right font-mono whitespace-nowrap">{money(lineTotal(item))}</td>
             </tr>
           ))}
         </tbody>
