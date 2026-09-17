@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CloudUpload, FolderOpen, Loader2, LogOut, Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
