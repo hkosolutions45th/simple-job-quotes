@@ -185,13 +185,9 @@
   .no-print {
     display: none !important;
   }
-  /* Print only the quote sheet, wherever it sits in the DOM. */
-  body * {
-    visibility: hidden !important;
-  }
-  .print-sheet,
-  .print-sheet * {
-    visibility: visible !important;
+  /* Print only the quote sheet: it is portalled to <body> so we can hide siblings. */
+  body > *:not(.print-sheet) {
+    display: none !important;
   }
   .print-sheet {
     display: block !important;
