@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CloudUpload, FolderOpen, Loader2, LogOut, Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
+import { CloudUpload, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -16,6 +16,7 @@ import { QuoteSheet } from "@/components/QuoteSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { generateQuoteItems } from "@/lib/ai-quote.functions";
+import { sendQuoteEmail } from "@/lib/send-quote.functions";
 import {
   generateLineItems,
   lineTotal,
@@ -72,6 +73,10 @@ function InstaQuote() {
   });
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailNote, setEmailNote] = useState("");
+  const [sending, setSending] = useState(false);
   const [savedOpen, setSavedOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<any[]>([]);
