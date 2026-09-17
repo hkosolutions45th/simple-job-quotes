@@ -194,8 +194,8 @@
     visibility: visible !important;
   }
   .print-sheet {
-    position: absolute !important;
-    inset: 0 auto auto 0 !important;
+    display: block !important;
+    position: static !important;
     transform: none !important;
     width: 100% !important;
     max-width: none !important;
@@ -206,6 +206,7 @@
     border: 0 !important;
     border-radius: 0 !important;
     padding: 0 !important;
+    margin: 0 !important;
     background: white !important;
   }
   .quote-sheet {
