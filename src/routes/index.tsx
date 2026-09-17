@@ -612,9 +612,12 @@ function InstaQuote() {
           total={total}
           taxRate={taxRate}
           taxEnabled={taxEnabled}
-          notes={notes}
-        />
-      </div>
+              notes={notes}
+            />
+          </div>,
+          document.body,
+        )}
+
 
       {/* PDF preview */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
