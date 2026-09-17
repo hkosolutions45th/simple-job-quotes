@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CloudUpload, FolderOpen, Loader2, LogOut, Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
@@ -596,9 +597,31 @@ function InstaQuote() {
         </div>
       </div>
 
+      {/* Hidden print-only copy of the quote — printed instead of the dialog */}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <div className="print-sheet hidden print:block" aria-hidden="true">
+            <QuoteSheet
+          business={business}
+          logo={logo}
+          quoteNo={quoteNo}
+          customer={customer}
+          items={items}
+          subtotal={subtotal}
+          tax={tax}
+          total={total}
+          taxRate={taxRate}
+          taxEnabled={taxEnabled}
+              notes={notes}
+            />
+          </div>,
+          document.body,
+        )}
+
+
       {/* PDF preview */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="print-sheet max-h-[88vh] overflow-y-auto bg-white p-0 sm:max-w-lg">
+        <DialogContent className="no-print max-h-[88vh] overflow-y-auto bg-white p-0 sm:max-w-lg">
           <DialogHeader className="no-print px-4 pt-4">
             <DialogTitle>Quote preview — {quoteNo}</DialogTitle>
             <DialogDescription>

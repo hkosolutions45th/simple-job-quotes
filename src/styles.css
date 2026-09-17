@@ -185,17 +185,13 @@
   .no-print {
     display: none !important;
   }
-  /* Print only the quote sheet, wherever it sits in the DOM. */
-  body * {
-    visibility: hidden !important;
-  }
-  .print-sheet,
-  .print-sheet * {
-    visibility: visible !important;
+  /* Print only the quote sheet: it is portalled to <body> so we can hide siblings. */
+  body > *:not(.print-sheet) {
+    display: none !important;
   }
   .print-sheet {
-    position: absolute !important;
-    inset: 0 auto auto 0 !important;
+    display: block !important;
+    position: static !important;
     transform: none !important;
     width: 100% !important;
     max-width: none !important;
@@ -206,6 +202,7 @@
     border: 0 !important;
     border-radius: 0 !important;
     padding: 0 !important;
+    margin: 0 !important;
     background: white !important;
   }
   .quote-sheet {
