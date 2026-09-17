@@ -598,8 +598,10 @@ function InstaQuote() {
       </div>
 
       {/* Hidden print-only copy of the quote — printed instead of the dialog */}
-      <div className="print-sheet hidden print:block" aria-hidden="true">
-        <QuoteSheet
+      {typeof document !== "undefined" &&
+        createPortal(
+          <div className="print-sheet hidden print:block" aria-hidden="true">
+            <QuoteSheet
           business={business}
           logo={logo}
           quoteNo={quoteNo}
