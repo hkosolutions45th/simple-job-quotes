@@ -187,9 +187,25 @@ function InstaQuote() {
   const message = quoteMessage({ business, customer, total, quoteNo });
 
   const openEmail = () => {
+    if (items.length === 0) {
+      toast.info("Nothing to send yet", {
+        description: "Generate or add a line item first.",
+      });
+      return;
+    }
     setEmailTo(customer.email);
     setEmailNote(message);
     setEmailOpen(true);
+  };
+
+  const openSend = () => {
+    if (items.length === 0) {
+      toast.info("Nothing to send yet", {
+        description: "Generate or add a line item first.",
+      });
+      return;
+    }
+    setSendOpen(true);
   };
 
   const sendEmail = async () => {
@@ -623,13 +639,26 @@ function InstaQuote() {
             <button
               onClick={saveQuote}
               disabled={saving}
+              aria-busy={saving}
               aria-label="Save quote to my account"
               className="grid min-h-14 w-14 shrink-0 place-items-center rounded-xl bg-cream ring-1 ring-line active:translate-y-0.5 disabled:opacity-60"
             >
-              <CloudUpload className="size-5" aria-hidden="true" />
+              {saving ? (
+                <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+              ) : (
+                <CloudUpload className="size-5" aria-hidden="true" />
+              )}
             </button>
             <button
-              onClick={() => setPreviewOpen(true)}
+              onClick={() => {
+                if (items.length === 0) {
+                  toast.info("Nothing to preview yet", {
+                    description: "Generate or add a line item first.",
+                  });
+                  return;
+                }
+                setPreviewOpen(true);
+              }}
               className="flex min-h-14 flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream px-3 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
             >
               <Printer className="size-4" aria-hidden="true" /> Preview
