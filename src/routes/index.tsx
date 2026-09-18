@@ -89,6 +89,8 @@ function InstaQuote() {
   const baseNotesRef = useRef("");
 
   const subtotal = useMemo(() => subtotalOf(items), [items]);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const tax = taxEnabled ? (subtotal * taxRate) / 100 : 0;
   const total = subtotal + tax;
 
@@ -632,6 +634,13 @@ function InstaQuote() {
             >
               <Printer className="size-4" aria-hidden="true" /> Preview
             </button>
+            <button
+              onClick={openEmail}
+              aria-label="Send quote by email"
+              className="flex min-h-14 flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream px-3 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
+            >
+              <Mail className="size-4" aria-hidden="true" /> Email
+            </button>
 
             <button
               onClick={() => setSendOpen(true)}
@@ -644,7 +653,7 @@ function InstaQuote() {
       </div>
 
       {/* Hidden print-only copy of the quote — printed instead of the dialog */}
-      {typeof document !== "undefined" &&
+      {mounted &&
         createPortal(
           <div className="print-sheet hidden print:block" aria-hidden="true">
             <QuoteSheet
