@@ -748,6 +748,54 @@ function InstaQuote() {
         </DialogContent>
       </Dialog>
 
+      {/* Send by email */}
+      <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Email this quote</DialogTitle>
+            <DialogDescription>
+              The quote {quoteNo} — with the full item table and totals — is sent as a clean,
+              printable email.
+            </DialogDescription>
+          </DialogHeader>
+          <label className="block">
+            <span className="label-mono">Client email</span>
+            <input
+              type="email"
+              value={emailTo}
+              onChange={(e) => setEmailTo(e.target.value)}
+              placeholder="client@example.com"
+              className="field mt-1"
+            />
+          </label>
+          <label className="block">
+            <span className="label-mono">Message</span>
+            <textarea
+              rows={8}
+              value={emailNote}
+              onChange={(e) => setEmailNote(e.target.value)}
+              className="field mt-1 resize-none leading-relaxed"
+            />
+          </label>
+          <button
+            onClick={sendEmail}
+            disabled={sending}
+            aria-busy={sending}
+            className="clay-shadow flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-clay text-sm font-semibold text-cream active:translate-y-0.5 disabled:opacity-70"
+          >
+            {sending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Sending…
+              </>
+            ) : (
+              <>
+                <Mail className="size-4" aria-hidden="true" /> Send email
+              </>
+            )}
+          </button>
+        </DialogContent>
+      </Dialog>
+
       {/* Saved quotes */}
       <Dialog open={savedOpen} onOpenChange={setSavedOpen}>
         <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-md">
