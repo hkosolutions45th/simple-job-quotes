@@ -672,7 +672,7 @@ function InstaQuote() {
             </button>
 
             <button
-              onClick={() => setSendOpen(true)}
+              onClick={openSend}
               className="clay-shadow flex min-h-14 flex-1 items-center justify-center gap-1.5 rounded-xl bg-clay px-3 text-sm font-semibold text-cream active:translate-y-0.5"
             >
               <Send className="size-4" aria-hidden="true" /> Send
