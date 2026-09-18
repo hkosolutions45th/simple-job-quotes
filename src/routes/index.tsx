@@ -89,6 +89,8 @@ function InstaQuote() {
   const baseNotesRef = useRef("");
 
   const subtotal = useMemo(() => subtotalOf(items), [items]);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const tax = taxEnabled ? (subtotal * taxRate) / 100 : 0;
   const total = subtotal + tax;
 
@@ -183,6 +185,47 @@ function InstaQuote() {
     setItems((prev) => [...prev, { id: newId(), description: "", quantity: 1, rate: 0 }]);
 
   const message = quoteMessage({ business, customer, total, quoteNo });
+
+  const openEmail = () => {
+    setEmailTo(customer.email);
+    setEmailNote(message);
+    setEmailOpen(true);
+  };
+
+  const sendEmail = async () => {
+    const to = emailTo.trim();
+    if (!to) {
+      toast.error("Add the client's email address first.");
+      return;
+    }
+    setSending(true);
+    try {
+      await sendQuoteEmail({
+        data: {
+          to,
+          message: emailNote,
+          business,
+          quoteNo,
+          clientName: customer.name,
+          jobAddress: customer.address,
+          terms: customer.terms,
+          taxRate,
+          taxEnabled,
+          items: items.map(({ description, quantity, rate }) => ({ description, quantity, rate })),
+        },
+      });
+      toast.success(`Quote emailed to ${to}`);
+      setEmailOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't send the email", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
 
   const onLogo = (file?: File) => {
     if (!file) return;
@@ -591,6 +634,13 @@ function InstaQuote() {
             >
               <Printer className="size-4" aria-hidden="true" /> Preview
             </button>
+            <button
+              onClick={openEmail}
+              aria-label="Send quote by email"
+              className="flex min-h-14 flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream px-3 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
+            >
+              <Mail className="size-4" aria-hidden="true" /> Email
+            </button>
 
             <button
               onClick={() => setSendOpen(true)}
@@ -603,7 +653,7 @@ function InstaQuote() {
       </div>
 
       {/* Hidden print-only copy of the quote — printed instead of the dialog */}
-      {typeof document !== "undefined" &&
+      {mounted &&
         createPortal(
           <div className="print-sheet hidden print:block" aria-hidden="true">
             <QuoteSheet
@@ -694,6 +744,54 @@ function InstaQuote() {
             className="min-h-12 w-full rounded-xl text-sm font-semibold text-inksoft underline underline-offset-4"
           >
             Copy message
+          </button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send by email */}
+      <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Email this quote</DialogTitle>
+            <DialogDescription>
+              The quote {quoteNo} — with the full item table and totals — is sent as a clean,
+              printable email.
+            </DialogDescription>
+          </DialogHeader>
+          <label className="block">
+            <span className="label-mono">Client email</span>
+            <input
+              type="email"
+              value={emailTo}
+              onChange={(e) => setEmailTo(e.target.value)}
+              placeholder="client@example.com"
+              className="field mt-1"
+            />
+          </label>
+          <label className="block">
+            <span className="label-mono">Message</span>
+            <textarea
+              rows={8}
+              value={emailNote}
+              onChange={(e) => setEmailNote(e.target.value)}
+              className="field mt-1 resize-none leading-relaxed"
+            />
+          </label>
+          <button
+            onClick={sendEmail}
+            disabled={sending}
+            aria-busy={sending}
+            className="clay-shadow flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-clay text-sm font-semibold text-cream active:translate-y-0.5 disabled:opacity-70"
+          >
+            {sending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Sending…
+              </>
+            ) : (
+              <>
+                <Mail className="size-4" aria-hidden="true" /> Send email
+              </>
+            )}
           </button>
         </DialogContent>
       </Dialog>
