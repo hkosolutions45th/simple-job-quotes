@@ -184,6 +184,47 @@ function InstaQuote() {
 
   const message = quoteMessage({ business, customer, total, quoteNo });
 
+  const openEmail = () => {
+    setEmailTo(customer.email);
+    setEmailNote(message);
+    setEmailOpen(true);
+  };
+
+  const sendEmail = async () => {
+    const to = emailTo.trim();
+    if (!to) {
+      toast.error("Add the client's email address first.");
+      return;
+    }
+    setSending(true);
+    try {
+      await sendQuoteEmail({
+        data: {
+          to,
+          message: emailNote,
+          business,
+          quoteNo,
+          clientName: customer.name,
+          jobAddress: customer.address,
+          terms: customer.terms,
+          taxRate,
+          taxEnabled,
+          items: items.map(({ description, quantity, rate }) => ({ description, quantity, rate })),
+        },
+      });
+      toast.success(`Quote emailed to ${to}`);
+      setEmailOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't send the email", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+
   const onLogo = (file?: File) => {
     if (!file) return;
     const reader = new FileReader();
