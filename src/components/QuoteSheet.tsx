@@ -88,7 +88,7 @@ export function QuoteSheet(props: Props) {
       )}
 
       {/* Line items */}
-      <div className="mt-5 w-full max-w-full overflow-x-auto">
+      <div className="mt-5 min-w-0 w-full max-w-full overflow-x-auto">
       <table className="w-full min-w-[32rem] border-collapse text-sm">
         <thead>
           <tr className="border-y border-ink/30">
