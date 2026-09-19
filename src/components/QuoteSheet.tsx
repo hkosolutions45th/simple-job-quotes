@@ -39,7 +39,7 @@ export function QuoteSheet(props: Props) {
   const deposit = depositPct && depositPct > 0 && depositPct < 100 ? (total * depositPct) / 100 : null;
 
   return (
-    <div className="quote-sheet mx-auto w-full bg-white p-6 text-ink sm:p-8">
+    <div className="quote-sheet mx-auto w-full min-w-0 overflow-hidden bg-white p-6 text-ink sm:p-8">
       {/* Header */}
       <header className="grid grid-cols-1 gap-3 border-b-2 border-ink pb-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-6">
         <div className="flex min-w-0 items-center gap-3">
@@ -50,7 +50,7 @@ export function QuoteSheet(props: Props) {
               {business.slice(0, 1).toUpperCase()}
             </div>
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 overflow-hidden">
             <p className="break-words text-xl leading-tight font-bold">{business}</p>
             <p className="label-mono">Quotation / Estimate</p>
           </div>
@@ -83,12 +83,12 @@ export function QuoteSheet(props: Props) {
       {notes?.trim() && (
         <section className="mt-5 rounded-md bg-cream p-3 text-sm">
           <p className="label-mono">Scope of work</p>
-          <p className="mt-1 leading-relaxed text-inksoft">{notes.trim()}</p>
+          <p className="mt-1 break-words leading-relaxed text-inksoft">{notes.trim()}</p>
         </section>
       )}
 
       {/* Line items */}
-      <div className="mt-5 overflow-x-auto">
+      <div className="mt-5 w-full max-w-full overflow-x-auto">
       <table className="w-full min-w-[32rem] border-collapse text-sm">
         <thead>
           <tr className="border-y border-ink/30">
