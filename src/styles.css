@@ -207,6 +207,7 @@
   }
   .quote-sheet {
     padding: 0 !important;
+    overflow: visible !important;
   }
   .quote-sheet table {
     page-break-inside: auto;

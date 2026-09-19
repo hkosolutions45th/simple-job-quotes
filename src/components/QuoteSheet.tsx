@@ -39,23 +39,23 @@ export function QuoteSheet(props: Props) {
   const deposit = depositPct && depositPct > 0 && depositPct < 100 ? (total * depositPct) / 100 : null;
 
   return (
-    <div className="quote-sheet mx-auto w-full bg-white p-6 text-ink sm:p-8">
+    <div className="quote-sheet mx-auto w-full min-w-0 overflow-hidden bg-white p-6 text-ink sm:p-8">
       {/* Header */}
-      <header className="flex items-start justify-between gap-6 border-b-2 border-ink pb-4">
-        <div className="flex items-center gap-3">
+      <header className="grid grid-cols-1 gap-3 border-b-2 border-ink pb-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-6">
+        <div className="flex min-w-0 items-center gap-3">
           {logo ? (
-            <img src={logo} alt={`${business} logo`} className="size-14 rounded-md object-cover" />
+            <img src={logo} alt={`${business} logo`} className="size-14 shrink-0 rounded-md object-cover" />
           ) : (
-            <div className="grid size-14 place-items-center rounded-md bg-clay font-mono text-xl font-bold text-cream">
+            <div className="grid size-14 shrink-0 place-items-center rounded-md bg-clay font-mono text-xl font-bold text-cream">
               {business.slice(0, 1).toUpperCase()}
             </div>
           )}
-          <div>
-            <p className="text-xl leading-tight font-bold">{business}</p>
+          <div className="min-w-0 overflow-hidden">
+            <p className="break-words text-xl leading-tight font-bold">{business}</p>
             <p className="label-mono">Quotation / Estimate</p>
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-left sm:text-right">
           <p className="label-mono">Quote no.</p>
           <p className="font-mono text-base font-bold">{quoteNo}</p>
           <p className="mt-1 font-mono text-[11px] text-inksoft">Issued {fmt(today)}</p>
@@ -64,14 +64,14 @@ export function QuoteSheet(props: Props) {
       </header>
 
       {/* Client details */}
-      <section className="mt-5 grid grid-cols-2 gap-6 text-sm">
-        <div>
+      <section className="mt-5 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 sm:gap-6">
+        <div className="min-w-0 break-words">
           <p className="label-mono">Prepared for</p>
           <p className="font-semibold">{customer.name || "—"}</p>
           {customer.email && <p className="text-inksoft">{customer.email}</p>}
           {customer.phone && <p className="font-mono text-inksoft">{customer.phone}</p>}
         </div>
-        <div>
+        <div className="min-w-0 break-words">
           <p className="label-mono">Job address</p>
           <p className="text-inksoft">{customer.address || "—"}</p>
           <p className="label-mono mt-3">Payment terms</p>
@@ -83,12 +83,13 @@ export function QuoteSheet(props: Props) {
       {notes?.trim() && (
         <section className="mt-5 rounded-md bg-cream p-3 text-sm">
           <p className="label-mono">Scope of work</p>
-          <p className="mt-1 leading-relaxed text-inksoft">{notes.trim()}</p>
+          <p className="mt-1 break-words leading-relaxed text-inksoft">{notes.trim()}</p>
         </section>
       )}
 
       {/* Line items */}
-      <table className="mt-5 w-full border-collapse text-sm">
+      <div className="mt-5 min-w-0 w-full max-w-full overflow-x-auto">
+      <table className="w-full min-w-[32rem] border-collapse text-sm">
         <thead>
           <tr className="border-y border-ink/30">
             <th className="label-mono w-8 py-2 text-left">#</th>
@@ -117,6 +118,7 @@ export function QuoteSheet(props: Props) {
           ))}
         </tbody>
       </table>
+      </div>
 
       {/* Totals */}
       <div className="mt-4 ml-auto w-full max-w-72 text-sm">

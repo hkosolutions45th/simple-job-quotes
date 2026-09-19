@@ -345,9 +345,9 @@ function InstaQuote() {
 
   return (
     <div className="min-h-screen bg-cream text-ink">
-      <div className="mx-auto max-w-[430px] px-4 pt-5 pb-36">
+      <div className="mx-auto max-w-[430px] px-4 pt-5 pb-36 max-[360px]:pb-40">
         {/* Header */}
-        <header className="flex items-center gap-3">
+        <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
           <label className="clay-shadow relative grid size-12 shrink-0 cursor-pointer place-items-center rounded-xl bg-clay font-mono text-lg font-bold text-cream">
             {logo ? (
               <img src={logo} alt="Business logo" className="size-12 rounded-xl object-cover" />
@@ -373,9 +373,11 @@ function InstaQuote() {
           </div>
           <button
             onClick={newQuote}
-            className="clay-shadow-ink ml-auto flex min-h-12 shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 text-sm font-semibold text-cream active:translate-y-0.5"
+            className="clay-shadow-ink flex min-h-12 shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 text-sm font-semibold text-cream active:translate-y-0.5 max-[340px]:size-12 max-[340px]:justify-center max-[340px]:px-0"
+            aria-label="Start a new quote"
           >
-            <Plus className="size-4" aria-hidden="true" /> New Quote
+            <Plus className="size-4 shrink-0" aria-hidden="true" />
+            <span className="max-[340px]:sr-only">New Quote</span>
           </button>
         </header>
 
@@ -505,8 +507,8 @@ function InstaQuote() {
                   <Trash2 className="size-4" aria-hidden="true" />
                 </button>
               </div>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <label className="block">
+              <div className="mt-3 grid grid-cols-[0.75fr_1fr_1.2fr] gap-2 max-[340px]:grid-cols-2">
+                <label className="block min-w-0">
                   <span className="label-mono">Qty</span>
                   <input
                     type="number"
@@ -517,7 +519,7 @@ function InstaQuote() {
                     className="field mt-1 font-mono"
                   />
                 </label>
-                <label className="block">
+                <label className="block min-w-0">
                   <span className="label-mono">Unit rate</span>
                   <input
                     type="number"
@@ -529,7 +531,7 @@ function InstaQuote() {
                     className="field mt-1 font-mono"
                   />
                 </label>
-                <label className="block">
+                <label className="block min-w-0 max-[340px]:col-span-2">
                   <span className="label-mono">Total</span>
                   <div className="field mt-1 flex items-center font-mono">
                     {money(lineTotal(item))}
@@ -592,7 +594,7 @@ function InstaQuote() {
                 className="field mt-1"
               />
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 max-[340px]:grid-cols-1">
               <label className="block">
                 <span className="label-mono">Email</span>
                 <input
@@ -635,7 +637,7 @@ function InstaQuote() {
       {/* Sticky action bar */}
       <div className="no-print fixed right-0 bottom-0 left-0 z-10">
         <div className="mx-auto max-w-[430px] px-4 pt-2 pb-4">
-          <div className="clay-shadow flex gap-3 rounded-2xl bg-card p-3 ring-1 ring-black/5">
+          <div className="clay-shadow grid grid-cols-[3.5rem_repeat(3,minmax(0,1fr))] gap-2 rounded-2xl bg-card p-3 ring-1 ring-black/5">
             <button
               onClick={saveQuote}
               disabled={saving}
@@ -659,21 +661,21 @@ function InstaQuote() {
                 }
                 setPreviewOpen(true);
               }}
-              className="flex min-h-14 flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream px-3 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
+              className="flex min-h-14 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-cream px-2 text-sm font-semibold ring-1 ring-line active:translate-y-0.5 max-[360px]:flex-col max-[360px]:gap-0.5 max-[360px]:px-1 max-[360px]:text-[11px]"
             >
               <Printer className="size-4" aria-hidden="true" /> Preview
             </button>
             <button
               onClick={openEmail}
               aria-label="Send quote by email"
-              className="flex min-h-14 flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream px-3 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
+              className="flex min-h-14 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-cream px-2 text-sm font-semibold ring-1 ring-line active:translate-y-0.5 max-[360px]:flex-col max-[360px]:gap-0.5 max-[360px]:px-1 max-[360px]:text-[11px]"
             >
               <Mail className="size-4" aria-hidden="true" /> Email
             </button>
 
             <button
               onClick={openSend}
-              className="clay-shadow flex min-h-14 flex-1 items-center justify-center gap-1.5 rounded-xl bg-clay px-3 text-sm font-semibold text-cream active:translate-y-0.5"
+              className="clay-shadow flex min-h-14 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-clay px-2 text-sm font-semibold text-cream active:translate-y-0.5 max-[360px]:flex-col max-[360px]:gap-0.5 max-[360px]:px-1 max-[360px]:text-[11px]"
             >
               <Send className="size-4" aria-hidden="true" /> Send
             </button>
@@ -706,7 +708,7 @@ function InstaQuote() {
       {/* PDF preview */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="no-print max-h-[88vh] overflow-y-auto bg-white p-0 sm:max-w-lg">
-          <DialogHeader className="no-print px-4 pt-4">
+          <DialogHeader className="no-print px-4 pt-4 pr-12">
             <DialogTitle>Quote preview — {quoteNo}</DialogTitle>
             <DialogDescription>
               Print-ready letter page. Choose "Save as PDF" as the destination in the print dialog.
