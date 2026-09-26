@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CloudUpload, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Printer, Send, Trash2, Upload } from "lucide-react";
+import { CloudUpload, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Printer, Send, Settings, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -80,6 +80,14 @@ function InstaQuote() {
   const [savedOpen, setSavedOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<any[]>([]);
+  const [quoteId, setQuoteId] = useState<string | null>(null);
+  const quoteIdRef = useRef<string | null>(null);
+  quoteIdRef.current = quoteId;
+  const [businessPhone, setBusinessPhone] = useState("");
+  const [defaultTerms, setDefaultTerms] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settings, setSettings] = useState({ business_name: "", phone: "", logo_url: "", default_terms: "" });
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -253,7 +261,8 @@ function InstaQuote() {
   const newQuote = () => {
     setItems([]);
     setNotes("");
-    setCustomer({ name: "", email: "", phone: "", address: "", terms: "50% deposit required" });
+    setQuoteId(null);
+    setCustomer({ name: "", email: "", phone: "", address: "", terms: defaultTerms || "50% deposit required" });
     setQuoteNo(`IQ-${Math.floor(2000 + Math.random() * 8000)}`);
     toast.success("Blank quote ready");
   };
@@ -264,18 +273,59 @@ function InstaQuote() {
     let active = true;
     supabase
       .from("user_profiles")
-      .select("business_name, logo_url")
+      .select("business_name, logo_url, phone, default_terms")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (!active || !data) return;
         if (data.business_name) setBusiness(data.business_name);
         if (data.logo_url) setLogo(data.logo_url);
+        setBusinessPhone(data.phone ?? "");
+        if (data.default_terms) {
+          setDefaultTerms(data.default_terms);
+          setCustomer((c) => (quoteIdRef.current ? c : { ...c, terms: data.default_terms! }));
+        }
       });
     return () => {
       active = false;
     };
   }, [user]);
+
+  const openSettings = () => {
+    setSettings({
+      business_name: business,
+      phone: businessPhone,
+      logo_url: logo && !logo.startsWith("data:") ? logo : logo ?? "",
+      default_terms: defaultTerms,
+    });
+    setSettingsOpen(true);
+  };
+
+  const saveSettings = async () => {
+    if (!user) return;
+    setSavingSettings(true);
+    const s = {
+      business_name: settings.business_name.trim() || null,
+      phone: settings.phone.trim() || null,
+      logo_url: settings.logo_url.trim() || null,
+      default_terms: settings.default_terms.trim() || null,
+    };
+    const { error } = await supabase
+      .from("user_profiles")
+      .upsert({ user_id: user.id, ...s }, { onConflict: "user_id" });
+    setSavingSettings(false);
+    if (error) {
+      toast.error("Couldn't save settings", { description: error.message });
+      return;
+    }
+    if (s.business_name) setBusiness(s.business_name);
+    setLogo(s.logo_url);
+    setBusinessPhone(s.phone ?? "");
+    setDefaultTerms(s.default_terms ?? "");
+    if (!quoteId && s.default_terms) setCustomer((c) => ({ ...c, terms: s.default_terms! }));
+    setSettingsOpen(false);
+    toast.success("Business settings saved");
+  };
 
   const saveQuote = async () => {
     if (!user) {
@@ -287,14 +337,27 @@ function InstaQuote() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("quotes").insert({
-      user_id: user.id,
+    const record = {
       client_name: customer.name || null,
       client_email: customer.email || null,
       total_amount: Number(total.toFixed(2)),
-      status: "draft",
       line_items: { quoteNo, notes, items, customer, taxRate, taxEnabled } as any,
-    });
+    };
+    let error;
+    if (quoteId) {
+      ({ error } = await supabase
+        .from("quotes")
+        .update({ ...record, updated_at: new Date().toISOString() })
+        .eq("id", quoteId));
+    } else {
+      const res = await supabase
+        .from("quotes")
+        .insert({ ...record, user_id: user.id, status: "draft" })
+        .select("id")
+        .single();
+      error = res.error;
+      if (res.data) setQuoteId(res.data.id);
+    }
     await supabase
       .from("user_profiles")
       .upsert({ user_id: user.id, business_name: business, logo_url: logo }, { onConflict: "user_id" });
@@ -303,7 +366,31 @@ function InstaQuote() {
       toast.error("Couldn't save this quote", { description: error.message });
       return;
     }
-    toast.success("Quote saved to your account");
+    toast.success(quoteId ? "Quote updated" : "Quote saved to your account");
+  };
+
+  const updateStatus = async (id: string, status: string) => {
+    const prev = saved;
+    setSaved((rows) => rows.map((r) => (r.id === id ? { ...r, status } : r)));
+    const { error } = await supabase.from("quotes").update({ status }).eq("id", id);
+    if (error) {
+      setSaved(prev);
+      toast.error("Couldn't update status", { description: error.message });
+      return;
+    }
+    toast.success(`Marked as ${status}`);
+  };
+
+  const deleteQuote = async (id: string) => {
+    if (!window.confirm("Delete this quote? This can't be undone.")) return;
+    const { error } = await supabase.from("quotes").delete().eq("id", id);
+    if (error) {
+      toast.error("Couldn't delete quote", { description: error.message });
+      return;
+    }
+    setSaved((rows) => rows.filter((r) => r.id !== id));
+    if (id === quoteId) setQuoteId(null);
+    toast.success("Quote deleted");
   };
 
   const openSaved = async () => {
@@ -326,6 +413,7 @@ function InstaQuote() {
 
   const loadQuote = (row: any) => {
     const payload = (row.line_items ?? {}) as any;
+    setQuoteId(row.id);
     setItems(Array.isArray(payload.items) ? payload.items : []);
     setNotes(payload.notes ?? "");
     if (payload.customer) setCustomer(payload.customer);
@@ -333,7 +421,7 @@ function InstaQuote() {
     if (typeof payload.taxRate === "number") setTaxRate(payload.taxRate);
     if (typeof payload.taxEnabled === "boolean") setTaxEnabled(payload.taxEnabled);
     setSavedOpen(false);
-    toast.success("Quote loaded");
+    toast.success("Quote loaded — saving will update it");
   };
 
   const signOut = async () => {
@@ -393,6 +481,13 @@ function InstaQuote() {
                 className="flex min-h-10 items-center gap-1.5 rounded-lg bg-cream px-3 text-xs font-semibold ring-1 ring-line active:translate-y-0.5"
               >
                 <FolderOpen className="size-4" aria-hidden="true" /> Saved
+              </button>
+              <button
+                onClick={openSettings}
+                aria-label="Business settings"
+                className="grid size-10 place-items-center rounded-lg bg-cream text-inksoft ring-1 ring-line active:translate-y-0.5"
+              >
+                <Settings className="size-4" aria-hidden="true" />
               </button>
               <button
                 onClick={signOut}
@@ -843,15 +938,16 @@ function InstaQuote() {
           ) : (
             <ul className="space-y-2">
               {saved.map((row) => (
-                <li key={row.id}>
+                <li key={row.id} className="field rounded-xl p-2">
                   <button
                     type="button"
                     onClick={() => loadQuote(row)}
-                    className="field flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-4 text-left"
+                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-2 text-left"
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold">
                         {row.client_name || "Unnamed client"}
+                        {row.id === quoteId && <span className="ml-1 text-xs text-leaf">· editing</span>}
                       </span>
                       <span className="label-mono block text-xs text-inksoft">
                         {(row.line_items?.quoteNo ?? "").toString()}{" "}
@@ -862,10 +958,67 @@ function InstaQuote() {
                       {money(Number(row.total_amount) || 0)}
                     </span>
                   </button>
+                  <div className="mt-1 flex items-center gap-2 px-1">
+                    <select
+                      value={row.status}
+                      onChange={(e) => updateStatus(row.id, e.target.value)}
+                      aria-label="Quote status"
+                      className="min-h-10 flex-1 rounded-lg bg-cream px-2 text-sm font-semibold ring-1 ring-line"
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="sent">Sent</option>
+                      <option value="accepted">Accepted</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => deleteQuote(row.id)}
+                      aria-label="Delete quote"
+                      className="grid size-10 place-items-center rounded-lg bg-cream text-destructive ring-1 ring-line active:translate-y-0.5"
+                    >
+                      <Trash2 className="size-4" aria-hidden="true" />
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Business settings */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader className="pr-12">
+            <DialogTitle>Business Settings</DialogTitle>
+            <DialogDescription>These details pre-fill every new quote.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {([
+              ["business_name", "Business name", "text"],
+              ["phone", "Phone", "tel"],
+              ["logo_url", "Logo URL", "url"],
+              ["default_terms", "Default payment terms", "text"],
+            ] as const).map(([key, label, type]) => (
+              <label key={key} className="block">
+                <span className="label-mono">{label}</span>
+                <input
+                  type={type}
+                  value={settings[key]}
+                  onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.value }))}
+                  className="field mt-1 min-h-12 w-full rounded-xl px-3"
+                />
+              </label>
+            ))}
+          </div>
+          <button
+            onClick={saveSettings}
+            disabled={savingSettings}
+            aria-busy={savingSettings}
+            className="clay-shadow-leaf flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-leaf font-semibold text-cream disabled:opacity-70"
+          >
+            {savingSettings && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+            {savingSettings ? "Saving…" : "Save settings"}
+          </button>
         </DialogContent>
       </Dialog>
     </div>
