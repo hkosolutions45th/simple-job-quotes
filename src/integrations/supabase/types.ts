@@ -54,6 +54,7 @@ export type Database = {
         Row: {
           business_name: string | null
           created_at: string
+          default_terms: string | null
           id: string
           logo_url: string | null
           phone: string | null
@@ -63,6 +64,7 @@ export type Database = {
         Insert: {
           business_name?: string | null
           created_at?: string
+          default_terms?: string | null
           id?: string
           logo_url?: string | null
           phone?: string | null
@@ -72,6 +74,7 @@ export type Database = {
         Update: {
           business_name?: string | null
           created_at?: string
+          default_terms?: string | null
           id?: string
           logo_url?: string | null
           phone?: string | null

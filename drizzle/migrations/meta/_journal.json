@@ -8,6 +8,13 @@
       "when": 1789332561460,
       "tag": "0000_create_quotes_and_user_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790431130850,
+      "tag": "0001_add_default_terms",
+      "breakpoints": true
     }
   ]
 }
