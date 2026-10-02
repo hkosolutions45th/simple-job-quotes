@@ -157,6 +157,11 @@ function InstaQuote() {
     setListening(false);
   }, []);
 
+  const toggleDictation = useCallback(() => {
+    if (listening) stopDictation();
+    else startDictation();
+  }, [listening, startDictation, stopDictation]);
+
   const generate = async () => {
     if (!notes.trim()) {
       toast.error("Add some job notes first");
@@ -517,28 +522,31 @@ function InstaQuote() {
         {/* Dictate */}
         <section className="mt-5 rounded-2xl bg-card p-4 ring-1 ring-black/5">
           <h1 className="sr-only">Build a quote</h1>
-          <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center">
             <div className="relative grid size-28 place-items-center">
               {listening && (
                 <span
-                  className="mic-pulse absolute size-28 rounded-full border-2 border-clay"
+                  className="mic-pulse absolute size-28 rounded-full border-2 border-red-500"
                   aria-hidden="true"
                 />
               )}
               <button
-                onPointerDown={startDictation}
-                onPointerUp={stopDictation}
-                onPointerLeave={() => listening && stopDictation()}
+                onClick={toggleDictation}
                 aria-pressed={listening}
-                className="clay-shadow relative grid size-28 touch-none place-items-center rounded-full bg-clay text-cream select-none active:translate-y-0.5"
+                aria-label={listening ? "Stop recording" : "Start recording"}
+                className={`clay-shadow relative grid size-28 touch-none place-items-center rounded-full text-cream select-none active:translate-y-0.5 ${
+                  listening ? "animate-pulse bg-red-600" : "bg-clay"
+                }`}
               >
                 <Mic className="size-9" aria-hidden="true" />
                 <span className="font-mono text-[10px] tracking-[0.2em] uppercase">
-                  {listening ? "Listening" : "Hold"}
+                  {listening ? "Stop" : "Tap"}
                 </span>
               </button>
             </div>
-            <p className="mt-4 text-base font-semibold">Hold to dictate your notes</p>
+            <p className="mt-4 text-base font-semibold">
+              {listening ? "Tap to stop recording" : "Tap to dictate your notes"}
+            </p>
             <p className="text-center text-sm text-inksoft">
               Freehand the job while your hands are still gloved.
             </p>
