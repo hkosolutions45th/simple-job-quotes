@@ -15,8 +15,28 @@ export type Customer = {
 
 export const newId = () => Math.random().toString(36).slice(2, 10);
 
-export const money = (n: number) =>
-  n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+export const CURRENCIES = [
+  { code: "USD", symbol: "$", label: "USD $ — US dollar" },
+  { code: "CAD", symbol: "$", label: "CAD $ — Canadian dollar" },
+  { code: "EUR", symbol: "€", label: "EUR € — Euro" },
+  { code: "GBP", symbol: "£", label: "GBP £ — British pound" },
+  { code: "AUD", symbol: "$", label: "AUD $ — Australian dollar" },
+  { code: "MXN", symbol: "$", label: "MXN $ — Mexican peso" },
+] as const;
+
+let activeCurrency = "USD";
+/** Sets the currency used by money() when no code is passed. */
+export const setActiveCurrency = (code: string) => {
+  activeCurrency = code;
+};
+
+export const formatMoney = (n: number, code: string) => {
+  const sym = CURRENCIES.find((c) => c.code === code)?.symbol ?? "";
+  const abs = Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${n < 0 ? "-" : ""}${sym}${abs} ${code}`;
+};
+
+export const money = (n: number, code?: string) => formatMoney(n, code ?? activeCurrency);
 
 export const lineTotal = (i: LineItem) => i.quantity * i.rate;
 

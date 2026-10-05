@@ -19,6 +19,7 @@ export type Database = {
           client_email: string | null
           client_name: string | null
           created_at: string
+          currency: string
           id: string
           line_items: Json
           status: string
@@ -30,6 +31,7 @@ export type Database = {
           client_email?: string | null
           client_name?: string | null
           created_at?: string
+          currency?: string
           id?: string
           line_items?: Json
           status?: string
@@ -41,6 +43,7 @@ export type Database = {
           client_email?: string | null
           client_name?: string | null
           created_at?: string
+          currency?: string
           id?: string
           line_items?: Json
           status?: string
@@ -54,6 +57,7 @@ export type Database = {
         Row: {
           business_name: string | null
           created_at: string
+          default_currency: string
           default_terms: string | null
           id: string
           logo_url: string | null
@@ -64,6 +68,7 @@ export type Database = {
         Insert: {
           business_name?: string | null
           created_at?: string
+          default_currency?: string
           default_terms?: string | null
           id?: string
           logo_url?: string | null
@@ -74,6 +79,7 @@ export type Database = {
         Update: {
           business_name?: string | null
           created_at?: string
+          default_currency?: string
           default_terms?: string | null
           id?: string
           logo_url?: string | null

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { formatMoney } from "@/lib/quote";
 
 const itemSchema = z.object({
   description: z.string().default(""),
@@ -16,6 +17,7 @@ const payloadSchema = z.object({
   jobAddress: z.string().max(240).default(""),
   terms: z.string().max(240).default(""),
   taxRate: z.number().default(13),
+  currency: z.string().max(3).default("USD"),
   taxEnabled: z.boolean().default(true),
   items: z.array(itemSchema).max(200).default([]),
 });
@@ -25,10 +27,11 @@ type Payload = z.infer<typeof payloadSchema>;
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-const money = (n: number) =>
-  n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
+let currentCode = "USD";
+const money = (n: number) => formatMoney(n, currentCode);
 
 function buildHtml(p: Payload) {
+  currentCode = p.currency;
   const subtotal = p.items.reduce((sum, i) => sum + i.quantity * i.rate, 0);
   const tax = p.taxEnabled ? (subtotal * p.taxRate) / 100 : 0;
   const total = subtotal + tax;

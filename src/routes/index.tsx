@@ -21,6 +21,8 @@ import {
   generateLineItems,
   lineTotal,
   money,
+  CURRENCIES,
+  setActiveCurrency,
   newId,
   quoteMessage,
   subtotalOf,
@@ -86,8 +88,12 @@ function InstaQuote() {
   const [businessPhone, setBusinessPhone] = useState("");
   const [defaultTerms, setDefaultTerms] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [savingSettings, setSavingSettings] = useState(false);
-  const [settings, setSettings] = useState({ business_name: "", phone: "", logo_url: "", default_terms: "" });
+const [savingSettings, setSavingSettings] = useState(false);
+  const [settings, setSettings] = useState({ business_name: "", phone: "", logo_url: "", default_terms: "", default_currency: "USD" });
+  const [currency, setCurrency] = useState("USD");
+  const [defaultCurrency, setDefaultCurrency] = useState("USD");
+  // money() everywhere in this render (incl. the quote preview) uses the quote's currency.
+  setActiveCurrency(currency);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -239,6 +245,7 @@ function InstaQuote() {
           jobAddress: customer.address,
           terms: customer.terms,
           taxRate,
+          currency,
           taxEnabled,
           items: items.map(({ description, quantity, rate }) => ({ description, quantity, rate })),
         },
@@ -267,6 +274,7 @@ function InstaQuote() {
     setItems([]);
     setNotes("");
     setQuoteId(null);
+    setCurrency(defaultCurrency);
     setCustomer({ name: "", email: "", phone: "", address: "", terms: defaultTerms || "50% deposit required" });
     setQuoteNo(`IQ-${Math.floor(2000 + Math.random() * 8000)}`);
     toast.success("Blank quote ready");
@@ -278,7 +286,7 @@ function InstaQuote() {
     let active = true;
     supabase
       .from("user_profiles")
-      .select("business_name, logo_url, phone, default_terms")
+      .select("business_name, logo_url, phone, default_terms, default_currency")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -286,6 +294,10 @@ function InstaQuote() {
         if (data.business_name) setBusiness(data.business_name);
         if (data.logo_url) setLogo(data.logo_url);
         setBusinessPhone(data.phone ?? "");
+        if (data.default_currency) {
+          setDefaultCurrency(data.default_currency);
+          if (!quoteIdRef.current) setCurrency(data.default_currency);
+        }
         if (data.default_terms) {
           setDefaultTerms(data.default_terms);
           setCustomer((c) => (quoteIdRef.current ? c : { ...c, terms: data.default_terms! }));
@@ -302,6 +314,7 @@ function InstaQuote() {
       phone: businessPhone,
       logo_url: logo && !logo.startsWith("data:") ? logo : logo ?? "",
       default_terms: defaultTerms,
+      default_currency: defaultCurrency,
     });
     setSettingsOpen(true);
   };
@@ -314,6 +327,7 @@ function InstaQuote() {
       phone: settings.phone.trim() || null,
       logo_url: settings.logo_url.trim() || null,
       default_terms: settings.default_terms.trim() || null,
+      default_currency: settings.default_currency,
     };
     const { error } = await supabase
       .from("user_profiles")
@@ -327,7 +341,11 @@ function InstaQuote() {
     setLogo(s.logo_url);
     setBusinessPhone(s.phone ?? "");
     setDefaultTerms(s.default_terms ?? "");
-    if (!quoteId && s.default_terms) setCustomer((c) => ({ ...c, terms: s.default_terms! }));
+    setDefaultCurrency(s.default_currency);
+    if (!quoteId) {
+      setCurrency(s.default_currency);
+      if (s.default_terms) setCustomer((c) => ({ ...c, terms: s.default_terms! }));
+    }
     setSettingsOpen(false);
     toast.success("Business settings saved");
   };
@@ -346,7 +364,8 @@ function InstaQuote() {
       client_name: customer.name || null,
       client_email: customer.email || null,
       total_amount: Number(total.toFixed(2)),
-      line_items: { quoteNo, notes, items, customer, taxRate, taxEnabled } as any,
+      currency,
+      line_items: { quoteNo, notes, items, customer, taxRate, taxEnabled, currency } as any,
     };
     let error;
     if (quoteId) {
@@ -419,6 +438,7 @@ function InstaQuote() {
   const loadQuote = (row: any) => {
     const payload = (row.line_items ?? {}) as any;
     setQuoteId(row.id);
+    setCurrency(row.currency ?? "USD");
     setItems(Array.isArray(payload.items) ? payload.items : []);
     setNotes(payload.notes ?? "");
     if (payload.customer) setCustomer(payload.customer);
@@ -653,6 +673,19 @@ function InstaQuote() {
 
           {/* Totals */}
           <div className="mt-3 rounded-xl bg-ink p-4 text-cream">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm text-cream/70">Currency</span>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                aria-label="Quote currency"
+                className="min-h-10 rounded-md bg-cream/10 px-2 font-mono text-sm text-cream outline-none"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code} className="text-ink">{c.code} {c.symbol}</option>
+                ))}
+              </select>
+            </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-cream/70">Subtotal</span>
               <span className="font-mono text-sm">{money(subtotal)}</span>
@@ -963,7 +996,7 @@ function InstaQuote() {
                       </span>
                     </span>
                     <span className="label-mono shrink-0 text-sm font-bold">
-                      {money(Number(row.total_amount) || 0)}
+                      {money(Number(row.total_amount) || 0, row.currency ?? "USD")}
                     </span>
                   </button>
                   <div className="mt-1 flex items-center gap-2 px-1">
@@ -1017,6 +1050,18 @@ function InstaQuote() {
                 />
               </label>
             ))}
+            <label className="block">
+              <span className="label-mono">Default currency</span>
+              <select
+                value={settings.default_currency}
+                onChange={(e) => setSettings((s) => ({ ...s, default_currency: e.target.value }))}
+                className="field mt-1 min-h-12 w-full rounded-xl px-3"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.label}</option>
+                ))}
+              </select>
+            </label>
           </div>
           <button
             onClick={saveSettings}
