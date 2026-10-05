@@ -88,7 +88,7 @@ function InstaQuote() {
   const [businessPhone, setBusinessPhone] = useState("");
   const [defaultTerms, setDefaultTerms] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
-...
+const [savingSettings, setSavingSettings] = useState(false);
   const [settings, setSettings] = useState({ business_name: "", phone: "", logo_url: "", default_terms: "", default_currency: "USD" });
   const [currency, setCurrency] = useState("USD");
   const [defaultCurrency, setDefaultCurrency] = useState("USD");
