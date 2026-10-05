@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { formatMoney } from "@/lib/quote";
 
 const itemSchema = z.object({
   description: z.string().default(""),
@@ -30,6 +31,7 @@ let currentCode = "USD";
 const money = (n: number) => formatMoney(n, currentCode);
 
 function buildHtml(p: Payload) {
+  currentCode = p.currency;
   const subtotal = p.items.reduce((sum, i) => sum + i.quantity * i.rate, 0);
   const tax = p.taxEnabled ? (subtotal * p.taxRate) / 100 : 0;
   const total = subtotal + tax;
