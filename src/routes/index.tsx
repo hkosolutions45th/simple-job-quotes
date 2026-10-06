@@ -203,8 +203,12 @@ const [savingSettings, setSavingSettings] = useState(false);
       const base = baseNotesRef.current;
       setNotes((base ? base.trimEnd() + " " : "") + text.trim());
     };
-    rec.onerror = () => {
+    rec.onerror = (event: any) => {
       setListening(false);
+      if (event?.error === "not-allowed" || event?.error === "service-not-allowed") {
+        setMicDenied(true);
+        return;
+      }
       toast.error("Couldn't hear you", { description: "Check microphone access and try again." });
     };
     rec.onend = () => setListening(false);
@@ -218,12 +222,29 @@ const [savingSettings, setSavingSettings] = useState(false);
     };
   }, []);
 
-  const startDictation = useCallback(() => {
+  const [micDenied, setMicDenied] = useState(false);
+
+  const startDictation = useCallback(async () => {
     const rec = recognitionRef.current;
     if (!rec) {
       toast.error("Dictation isn't supported in this browser", {
         description: "Type your notes below instead — everything else works the same.",
       });
+      return;
+    }
+    // Trigger the browser's native mic permission prompt before starting recognition.
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+    } catch (err) {
+      const name = (err as DOMException)?.name;
+      if (name === "NotAllowedError" || name === "NotFoundError") {
+        setMicDenied(true);
+      } else {
+        toast.error("Microphone unavailable", {
+          description: "Check that no other app is using the mic, then try again.",
+        });
+      }
       return;
     }
     // Start every recording from a blank notes field.
@@ -1127,6 +1148,45 @@ const [savingSettings, setSavingSettings] = useState(false);
               </>
             )}
           </button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Microphone permission help */}
+      <Dialog open={micDenied} onOpenChange={setMicDenied}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Microphone access is off</DialogTitle>
+            <DialogDescription>
+              Dictation needs your microphone. To turn it on:
+            </DialogDescription>
+          </DialogHeader>
+          <ol className="list-decimal space-y-2 pl-5 text-sm text-inksoft">
+            <li>Tap the lock or site-settings icon in your browser's address bar.</li>
+            <li>Find <strong className="text-ink">Microphone</strong> and set it to <strong className="text-ink">Allow</strong>.</li>
+            <li>Come back here and tap Try Again below.</li>
+          </ol>
+          <p className="text-xs text-inksoft">
+            On iPhone you may also need Settings → Safari (or your browser) → Microphone → Allow.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setMicDenied(false)}
+              className="field min-h-12 flex-1 rounded-xl px-4 text-sm font-semibold"
+            >
+              Not now
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMicDenied(false);
+                void startDictation();
+              }}
+              className="clay-shadow min-h-12 flex-1 rounded-xl bg-clay px-4 text-sm font-bold text-cream"
+            >
+              Try Again
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
 
