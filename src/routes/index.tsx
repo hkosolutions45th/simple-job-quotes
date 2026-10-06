@@ -203,8 +203,12 @@ const [savingSettings, setSavingSettings] = useState(false);
       const base = baseNotesRef.current;
       setNotes((base ? base.trimEnd() + " " : "") + text.trim());
     };
-    rec.onerror = () => {
+    rec.onerror = (event: any) => {
       setListening(false);
+      if (event?.error === "not-allowed" || event?.error === "service-not-allowed") {
+        setMicDenied(true);
+        return;
+      }
       toast.error("Couldn't hear you", { description: "Check microphone access and try again." });
     };
     rec.onend = () => setListening(false);
