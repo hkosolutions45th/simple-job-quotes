@@ -7,7 +7,9 @@ const SYSTEM_PROMPT = `You are an expert estimator for trade services. Read the 
 
 [{ "description": string, "quantity": number, "unitRate": number, "total": number }]
 
-If unit rates or quantities are implied or missing, make a realistic industry-standard estimation based on the trade context.`;
+If unit rates or quantities are implied or missing, make a realistic industry-standard estimation based on the trade context.
+
+Also extract any client details mentioned in the notes (client name, email, phone, job address) into the "client" object. Use an empty string for any detail that is not mentioned.`;
 
 export type AiLineItem = {
   description: string;
@@ -16,9 +18,16 @@ export type AiLineItem = {
   total: number;
 };
 
+export type AiClient = {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+};
+
 export const generateQuoteItems = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Input.parse(input))
-  .handler(async ({ data }): Promise<{ items: AiLineItem[] }> => {
+  .handler(async ({ data }): Promise<{ items: AiLineItem[]; client: AiClient }> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) throw new Error("AI is not configured for this project.");
 
