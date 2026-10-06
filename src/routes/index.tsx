@@ -70,7 +70,9 @@ function InstaQuote() {
     name: "Marcus Whitfield",
     email: "m.whitfield@example.com",
     phone: "(555) 014-2287",
-    address: "418 Alder Ct, Millbrook",
+    address: "418 Alder Ct",
+    city: "Millbrook",
+    postalCode: "",
     terms: "50% deposit required",
   });
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -242,13 +244,15 @@ const [savingSettings, setSavingSettings] = useState(false);
     setGenerating(true);
     try {
       const { items: aiItems, client } = await generateQuoteItems({ data: { notes } });
-      if (client && (client.name || client.email || client.phone || client.address)) {
+      if (client && (client.name || client.email || client.phone || client.address || client.city || client.postalCode)) {
         setCustomer((c) => ({
           ...c,
           name: client.name || c.name,
           email: client.email || c.email,
           phone: client.phone || c.phone,
           address: client.address || c.address,
+          city: client.city || c.city,
+          postalCode: client.postalCode || c.postalCode,
         }));
       }
       const rows: BaseItem[] = aiItems.map((i) => ({
@@ -336,6 +340,8 @@ const [savingSettings, setSavingSettings] = useState(false);
           quoteNo,
           clientName: customer.name,
           jobAddress: customer.address,
+          city: customer.city,
+          postalCode: customer.postalCode,
           terms: customer.terms,
           taxRate,
           currency,
@@ -370,7 +376,15 @@ const [savingSettings, setSavingSettings] = useState(false);
     setCurrency("USD");
     setRateFactor(1);
     if (defaultCurrency !== "USD") void applyCurrency(defaultCurrency);
-    setCustomer({ name: "", email: "", phone: "", address: "", terms: defaultTerms || "50% deposit required" });
+    setCustomer({
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      postalCode: "",
+      terms: defaultTerms || "50% deposit required",
+    });
     setQuoteNo(`IQ-${Math.floor(2000 + Math.random() * 8000)}`);
     toast.success("Blank quote ready");
   };
@@ -545,7 +559,17 @@ const [savingSettings, setSavingSettings] = useState(false);
       })),
     );
     setNotes(payload.notes ?? "");
-    if (payload.customer) setCustomer(payload.customer);
+    if (payload.customer) {
+      setCustomer({
+        name: payload.customer.name ?? "",
+        email: payload.customer.email ?? "",
+        phone: payload.customer.phone ?? "",
+        address: payload.customer.address ?? "",
+        city: payload.customer.city ?? "",
+        postalCode: payload.customer.postalCode ?? payload.customer.zipCode ?? "",
+        terms: payload.customer.terms ?? defaultTerms || "50% deposit required",
+      });
+    }
     if (payload.quoteNo) setQuoteNo(payload.quoteNo);
     if (typeof payload.taxRate === "number") setTaxRate(payload.taxRate);
     if (typeof payload.taxEnabled === "boolean") setTaxEnabled(payload.taxEnabled);
@@ -856,13 +880,32 @@ const [savingSettings, setSavingSettings] = useState(false);
               </label>
             </div>
             <label className="block">
-              <span className="label-mono">Job address</span>
+              <span className="label-mono">Street address</span>
               <input
                 value={customer.address}
                 onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
                 className="field mt-1"
               />
             </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block min-w-0">
+                <span className="label-mono">City</span>
+                <input
+                  value={customer.city}
+                  onChange={(e) => setCustomer({ ...customer, city: e.target.value })}
+                  className="field mt-1"
+                />
+              </label>
+              <label className="block min-w-0">
+                <span className="label-mono">Postal / ZIP code</span>
+                <input
+                  value={customer.postalCode}
+                  onChange={(e) => setCustomer({ ...customer, postalCode: e.target.value })}
+                  className="field mt-1 font-mono"
+                  autoCapitalize="characters"
+                />
+              </label>
+            </div>
             <label className="block">
               <span className="label-mono">Payment terms</span>
               <input

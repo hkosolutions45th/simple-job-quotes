@@ -9,7 +9,7 @@ const SYSTEM_PROMPT = `You are an expert estimator for trade services. Read the 
 
 If unit rates or quantities are implied or missing, make a realistic industry-standard estimation based on the trade context.
 
-Also extract any client details mentioned in the notes (client name, email, phone, job address) into the "client" object. Use an empty string for any detail that is not mentioned.`;
+Also extract any client details mentioned in the notes into the "client" object: client name, email, phone, street address, city, and postal/ZIP code. Put only the street line in "address", the city in "city", and either a postal code or ZIP code in "postalCode". Use an empty string for every detail that is not mentioned.`;
 
 export type AiLineItem = {
   description: string;
@@ -23,6 +23,8 @@ export type AiClient = {
   email: string;
   phone: string;
   address: string;
+  city: string;
+  postalCode: string;
 };
 
 export const generateQuoteItems = createServerFn({ method: "POST" })
@@ -41,7 +43,9 @@ export const generateQuoteItems = createServerFn({ method: "POST" })
       body: JSON.stringify({
         model: "openai/gpt-6-astra",
         stream: true,
-        reasoning: { effort: "low" },
+        store: false,
+        reasoning: { effort: "low", summary: "auto" },
+        include: ["reasoning.encrypted_content"],
         instructions: SYSTEM_PROMPT,
         input: [
           {
@@ -80,8 +84,10 @@ export const generateQuoteItems = createServerFn({ method: "POST" })
                     email: { type: "string" },
                     phone: { type: "string" },
                     address: { type: "string" },
+                    city: { type: "string" },
+                    postalCode: { type: "string" },
                   },
-                  required: ["name", "email", "phone", "address"],
+                  required: ["name", "email", "phone", "address", "city", "postalCode"],
                 },
               },
               required: ["items", "client"],
@@ -137,7 +143,7 @@ export const generateQuoteItems = createServerFn({ method: "POST" })
   });
 
 function parseClient(text: string): AiClient {
-  const empty: AiClient = { name: "", email: "", phone: "", address: "" };
+  const empty: AiClient = { name: "", email: "", phone: "", address: "", city: "", postalCode: "" };
   const trimmed = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
   try {
     const raw = JSON.parse(trimmed) as { client?: unknown };
@@ -145,7 +151,14 @@ function parseClient(text: string): AiClient {
     if (!c || typeof c !== "object") return empty;
     const r = c as Record<string, unknown>;
     const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
-    return { name: str(r["name"]), email: str(r["email"]), phone: str(r["phone"]), address: str(r["address"]) };
+    return {
+      name: str(r["name"]),
+      email: str(r["email"]),
+      phone: str(r["phone"]),
+      address: str(r["address"]),
+      city: str(r["city"]),
+      postalCode: str(r["postalCode"]) || str(r["zipCode"]),
+    };
   } catch {
     return empty;
   }

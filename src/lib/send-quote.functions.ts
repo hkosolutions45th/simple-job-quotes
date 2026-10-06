@@ -15,6 +15,8 @@ const payloadSchema = z.object({
   quoteNo: z.string().min(1).max(60),
   clientName: z.string().max(120).default(""),
   jobAddress: z.string().max(240).default(""),
+  city: z.string().max(120).default(""),
+  postalCode: z.string().max(24).default(""),
   terms: z.string().max(240).default(""),
   taxRate: z.number().default(13),
   currency: z.string().max(3).default("USD"),
@@ -32,6 +34,7 @@ const money = (n: number) => formatMoney(n, currentCode);
 
 function buildHtml(p: Payload) {
   currentCode = p.currency;
+  const cityPostal = [p.city, p.postalCode].filter(Boolean).join(" ");
   const subtotal = p.items.reduce((sum, i) => sum + i.quantity * i.rate, 0);
   const tax = p.taxEnabled ? (subtotal * p.taxRate) / 100 : 0;
   const total = subtotal + tax;
@@ -70,6 +73,7 @@ function buildHtml(p: Payload) {
     <div style="font-size:13px;color:#7a7266;margin:16px 0">
       ${p.clientName ? `<div><strong style="color:#2b2722">Prepared for:</strong> ${esc(p.clientName)}</div>` : ""}
       ${p.jobAddress ? `<div><strong style="color:#2b2722">Job address:</strong> ${esc(p.jobAddress)}</div>` : ""}
+      ${cityPostal ? `<div>${esc(cityPostal)}</div>` : ""}
       ${p.terms ? `<div><strong style="color:#2b2722">Payment terms:</strong> ${esc(p.terms)}</div>` : ""}
     </div>
     <table style="width:100%;border-collapse:collapse;font-size:13px">
