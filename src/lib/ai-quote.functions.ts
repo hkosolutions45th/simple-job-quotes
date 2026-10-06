@@ -3,13 +3,17 @@ import { z } from "zod";
 
 const Input = z.object({ notes: z.string().min(1).max(8000) });
 
-const SYSTEM_PROMPT = `You are an expert estimator for trade services. Read the job notes and extract line items. Return strictly a JSON array with objects matching:
+const SYSTEM_PROMPT = `You are an expert estimator for trade services. Read the job notes and return strictly a JSON object matching:
 
-[{ "description": string, "quantity": number, "unitRate": number, "total": number }]
+{ "items": [{ "description": string, "quantity": number, "unitRate": number, "total": number }], "client": { "name": string, "email": string, "phone": string, "address": string, "city": string, "postalCode": string }, "scopeSummary": string }
 
 If unit rates or quantities are implied or missing, make a realistic industry-standard estimation based on the trade context.
 
-Also extract any client details mentioned in the notes into the "client" object: client name, email, phone, street address, city, and postal/ZIP code. Put only the street line in "address", the city in "city", and either a postal code or ZIP code in "postalCode". Use an empty string for every detail that is not mentioned.`;
+Also extract any client details mentioned in the notes into the "client" object: client name, email, phone, street address, city, and postal/ZIP code. Put only the street line in "address", the city in "city", and either a postal code or ZIP code in "postalCode". Use an empty string for every detail that is not mentioned.
+
+Write "scopeSummary" as one or two concise, professional sentences focused only on the work to be completed. Exclude client names, emails, phone numbers, addresses, dictation command words, conversational filler, prices, rates, currency codes, and currency symbols.
+
+Line-item descriptions must describe only the work or material. Never include currency codes, currency symbols, exchange-rate wording, or labels such as "estimated CAD", "estimated USD", or "priced in EUR" in a description.`;
 
 export type AiLineItem = {
   description: string;
@@ -27,9 +31,15 @@ export type AiClient = {
   postalCode: string;
 };
 
+export type AiQuoteResult = {
+  items: AiLineItem[];
+  client: AiClient;
+  scopeSummary: string;
+};
+
 export const generateQuoteItems = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Input.parse(input))
-  .handler(async ({ data }): Promise<{ items: AiLineItem[]; client: AiClient }> => {
+  .handler(async ({ data }): Promise<AiQuoteResult> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) throw new Error("AI is not configured for this project.");
 
@@ -89,8 +99,9 @@ export const generateQuoteItems = createServerFn({ method: "POST" })
                   },
                   required: ["name", "email", "phone", "address", "city", "postalCode"],
                 },
+                scopeSummary: { type: "string" },
               },
-              required: ["items", "client"],
+              required: ["items", "client", "scopeSummary"],
             },
           },
         },
@@ -139,8 +150,26 @@ export const generateQuoteItems = createServerFn({ method: "POST" })
 
     const parsed = safeParse(text);
     if (!parsed.length) throw new Error("The AI couldn't find any line items in those notes.");
-    return { items: parsed, client: parseClient(text) };
+    return { items: parsed, client: parseClient(text), scopeSummary: parseScopeSummary(text) };
   });
+
+function parseScopeSummary(text: string): string {
+  const trimmed = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  try {
+    const raw = JSON.parse(trimmed) as { scopeSummary?: unknown };
+    return typeof raw.scopeSummary === "string" ? raw.scopeSummary.trim() : "";
+  } catch {
+    return "";
+  }
+}
+
+function cleanDescription(value: string): string {
+  const currency = "(?:USD|CAD|EUR|GBP|AUD|MXN)";
+  return value
+    .replace(new RegExp(`\\s*[\\(\\[]\\s*(?:estimated\\s+)?${currency}(?:\\s*[$€£])?\\s*[\\)\\]]`, "gi"), "")
+    .replace(new RegExp(`\\s*[-–—,:]\\s*(?:estimated\\s+|priced\\s+in\\s+)?${currency}(?:\\s*[$€£])?\\s*$`, "gi"), "")
+    .trim();
+}
 
 function parseClient(text: string): AiClient {
   const empty: AiClient = { name: "", email: "", phone: "", address: "", city: "", postalCode: "" };
@@ -181,7 +210,7 @@ function safeParse(text: string): AiLineItem[] {
   return list.flatMap((entry) => {
     if (!entry || typeof entry !== "object") return [];
     const e = entry as Record<string, unknown>;
-    const description = typeof e["description"] === "string" ? e["description"].trim() : "";
+    const description = typeof e["description"] === "string" ? cleanDescription(e["description"].trim()) : "";
     const quantity = Number(e["quantity"]);
     const unitRate = Number(e["unitRate"]);
     if (!description) return [];

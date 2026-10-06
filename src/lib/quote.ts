@@ -44,6 +44,15 @@ export const money = (n: number, code?: string) => formatMoney(n, code ?? active
 
 export const lineTotal = (i: LineItem) => i.quantity * i.rate;
 
+/** Removes stale currency annotations from descriptions; currency belongs in money columns only. */
+export const cleanLineItemDescription = (value: string) => {
+  const currency = "(?:USD|CAD|EUR|GBP|AUD|MXN)";
+  return value
+    .replace(new RegExp(`\\s*[\\(\\[]\\s*(?:estimated\\s+)?${currency}(?:\\s*[$€£])?\\s*[\\)\\]]`, "gi"), "")
+    .replace(new RegExp(`\\s*[-–—,:]\\s*(?:estimated\\s+|priced\\s+in\\s+)?${currency}(?:\\s*[$€£])?\\s*$`, "gi"), "")
+    .trim();
+};
+
 export const subtotalOf = (items: LineItem[]) =>
   items.reduce((sum, i) => sum + lineTotal(i), 0);
 
