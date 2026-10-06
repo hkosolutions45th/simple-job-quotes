@@ -173,6 +173,18 @@
   }
 }
 
+.quote-sheet {
+  container-type: inline-size;
+}
+
+@container (min-width: 34rem) {
+  .quote-sheet .quote-money {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.25rem;
+  }
+}
+
 @media print {
   @page {
     size: letter portrait;

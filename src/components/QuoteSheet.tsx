@@ -28,7 +28,7 @@ function MoneyValue({ value, emphasize = false }: { value: number; emphasize?: b
 
   return (
     <span
-      className={`inline-flex max-w-full flex-col items-end justify-end gap-0 font-mono tabular-nums sm:flex-row sm:items-baseline sm:gap-1 ${
+      className={`quote-money inline-flex max-w-full flex-col items-end justify-end gap-0 font-mono tabular-nums ${
         emphasize ? "text-xl font-bold" : ""
       }`}
     >
