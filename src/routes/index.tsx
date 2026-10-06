@@ -62,7 +62,8 @@ function InstaQuote() {
   const [quoteNo, setQuoteNo] = useState("IQ-2041");
   const [notes, setNotes] = useState(SAMPLE);
   const [listening, setListening] = useState(false);
-  const [items, setItems] = useState<LineItem[]>([]);
+  // Source of truth: each item's baseRate is its USD unit price. `rate` here is never trusted.
+  const [baseItems, setItems] = useState<LineItem[]>([]);
   const [generating, setGenerating] = useState(false);
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [taxRate, setTaxRate] = useState(13);
@@ -99,9 +100,40 @@ const [savingSettings, setSavingSettings] = useState(false);
   const [rateFactor, setRateFactor] = useState(1);
   const rateFactorRef = useRef(1);
   rateFactorRef.current = rateFactor;
+  // Displayed items are derived on render: rate = baseRate (USD) × current exchange rate.
+  const items = useMemo(
+    () =>
+      baseItems.map((i) => ({
+        ...i,
+        rate: Math.round((i.baseRate ?? i.rate) * (rateFactor || 1) * 100) / 100,
+      })),
+    [baseItems, rateFactor],
+  );
+  // Persist currency + rate so reloads/tab switches never desync the dropdown from the numbers.
+  const currencyRestored = useRef(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("instaquote:currency");
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (typeof saved?.currency === "string") setCurrency(saved.currency);
+        if (typeof saved?.rateFactor === "number" && saved.rateFactor > 0) setRateFactor(saved.rateFactor);
+        currencyRestored.current = true;
+      }
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("instaquote:currency", JSON.stringify({ currency, rateFactor }));
+    } catch {}
+  }, [currency, rateFactor]);
   const changeCurrency = async (next: string) => {
     if (next === currency) return;
-    if (items.length === 0) {
+    return applyCurrency(next);
+  };
+  const applyCurrency = async (next: string) => {
+    if (next === "USD") {
+      setRateFactor(1);
       setCurrency(next);
       return;
     }
@@ -111,13 +143,6 @@ const [savingSettings, setSavingSettings] = useState(false);
       const json = await res.json();
       const rate = Number(json?.rates?.[next]);
       if (!res.ok || json?.result !== "success" || !(rate > 0)) throw new Error("No rate");
-      setItems((prev) =>
-        prev.map((i) => ({
-          ...i,
-          baseRate: i.baseRate ?? i.rate / rateFactorRef.current,
-          rate: Math.round((i.baseRate ?? i.rate / rateFactorRef.current) * rate * 100) / 100,
-        })),
-      );
       setRateFactor(rate);
       setCurrency(next);
       toast.success(`Converted to ${next}`, {
@@ -227,7 +252,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     } catch (error) {
       const generated = generateLineItems(notes).map((g) => ({
         ...g,
-        baseRate: g.rate / rateFactorRef.current,
+        baseRate: g.rate, // catalog rates are USD
       }));
       setItems((prev) => [...prev, ...generated]);
       toast.error(error instanceof Error ? error.message : "Couldn't reach the estimator", {
@@ -244,7 +269,10 @@ const [savingSettings, setSavingSettings] = useState(false);
         if (i.id !== id) return i;
         const next = { ...i, ...patch };
         // Manual rate edits are entered in the current currency — keep the USD base in sync.
-        if (patch.rate !== undefined) next.baseRate = patch.rate / rateFactorRef.current;
+        if (patch.rate !== undefined) {
+          next.baseRate = patch.rate / (rateFactorRef.current || 1);
+          next.rate = next.baseRate;
+        }
         return next;
       }),
     );
@@ -323,8 +351,9 @@ const [savingSettings, setSavingSettings] = useState(false);
     setItems([]);
     setNotes("");
     setQuoteId(null);
-    setCurrency(defaultCurrency);
+    setCurrency("USD");
     setRateFactor(1);
+    if (defaultCurrency !== "USD") void applyCurrency(defaultCurrency);
     setCustomer({ name: "", email: "", phone: "", address: "", terms: defaultTerms || "50% deposit required" });
     setQuoteNo(`IQ-${Math.floor(2000 + Math.random() * 8000)}`);
     toast.success("Blank quote ready");
@@ -346,7 +375,7 @@ const [savingSettings, setSavingSettings] = useState(false);
         setBusinessPhone(data.phone ?? "");
         if (data.default_currency) {
           setDefaultCurrency(data.default_currency);
-          if (!quoteIdRef.current) setCurrency(data.default_currency);
+          if (!quoteIdRef.current && !currencyRestored.current && data.default_currency === "USD") setCurrency(data.default_currency);
         }
         if (data.default_terms) {
           setDefaultTerms(data.default_terms);
@@ -393,7 +422,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     setDefaultTerms(s.default_terms ?? "");
     setDefaultCurrency(s.default_currency);
     if (!quoteId) {
-      setCurrency(s.default_currency);
+      if (s.default_currency !== currency) void applyCurrency(s.default_currency);
       if (s.default_terms) setCustomer((c) => ({ ...c, terms: s.default_terms! }));
     }
     setSettingsOpen(false);
@@ -415,7 +444,7 @@ const [savingSettings, setSavingSettings] = useState(false);
       client_email: customer.email || null,
       total_amount: Number(total.toFixed(2)),
       currency,
-      line_items: { quoteNo, notes, items, customer, taxRate, taxEnabled, currency, rateFactor } as any,
+      line_items: { quoteNo, notes, items: items.map((i) => ({ ...i, baseRate: baseItems.find((b) => b.id === i.id)?.baseRate ?? i.rate })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
     };
     let error;
     if (quoteId) {
@@ -494,7 +523,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     setItems(
       (Array.isArray(payload.items) ? payload.items : []).map((i: LineItem) => {
         const base = i.baseRate ?? i.rate / factor;
-        return { ...i, baseRate: base, rate: Math.round(base * factor * 100) / 100 };
+        return { ...i, baseRate: base, rate: base };
       }),
     );
     setNotes(payload.notes ?? "");
