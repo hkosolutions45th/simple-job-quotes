@@ -488,7 +488,14 @@ const [savingSettings, setSavingSettings] = useState(false);
     const payload = (row.line_items ?? {}) as any;
     setQuoteId(row.id);
     setCurrency(row.currency ?? "USD");
-    setItems(Array.isArray(payload.items) ? payload.items : []);
+    const factor = typeof payload.rateFactor === "number" && payload.rateFactor > 0 ? payload.rateFactor : 1;
+    setRateFactor(factor);
+    setItems(
+      (Array.isArray(payload.items) ? payload.items : []).map((i: LineItem) => {
+        const base = i.baseRate ?? i.rate / factor;
+        return { ...i, baseRate: base, rate: Math.round(base * factor * 100) / 100 };
+      }),
+    );
     setNotes(payload.notes ?? "");
     if (payload.customer) setCustomer(payload.customer);
     if (payload.quoteNo) setQuoteNo(payload.quoteNo);
