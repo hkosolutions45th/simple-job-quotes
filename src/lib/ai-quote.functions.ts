@@ -165,7 +165,7 @@ function parseScopeSummary(text: string): string {
 
 function cleanDescription(value: string): string {
   const currency = "(?:USD|CAD|EUR|GBP|AUD|MXN)";
-  const unit = "(?:linear\\s*(?:feet|foot|ft)|square\\s*(?:feet|foot|ft)|sq\\.?\\s*ft|feet|foot|ft|hours?|hrs?|days?|yards?|yds?|metres?|meters?|m|kilometres?|kilometers?|km|inches?|in|centimetres?|centimeters?|cm|litres?|liters?|l|gallons?|gal|pounds?|lbs?|tons?|tonnes?|bundles?|units?|pieces?|pcs?|coats?|loads?|each|ea)";
+  const unit = "\\b(?:linear\\s*(?:feet|foot|ft)|square\\s*(?:feet|foot|ft)|sq\\.?\\s*ft|feet|foot|ft|hours?|hrs?|days?|yards?|yds?|metres?|meters?|kilometres?|kilometers?|km|inches?|centimetres?|centimeters?|cm|litres?|liters?|gallons?|gal|pounds?|lbs?|tons?|tonnes?|bundles?|units?|pieces?|pcs?|coats?|loads?|each|ea)\\b";
   return value
     .replace(
       new RegExp(

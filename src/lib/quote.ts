@@ -47,7 +47,7 @@ export const lineTotal = (i: LineItem) => i.quantity * i.rate;
 /** Removes stale currency annotations from descriptions; currency belongs in money columns only. */
 export const cleanLineItemDescription = (value: string) => {
   const currency = "(?:USD|CAD|EUR|GBP|AUD|MXN)";
-  const unit = "(?:linear\\s*(?:feet|foot|ft)|square\\s*(?:feet|foot|ft)|sq\\.?\\s*ft|feet|foot|ft|hours?|hrs?|days?|yards?|yds?|metres?|meters?|m|kilometres?|kilometers?|km|inches?|in|centimetres?|centimeters?|cm|litres?|liters?|l|gallons?|gal|pounds?|lbs?|tons?|tonnes?|bundles?|units?|pieces?|pcs?|coats?|loads?|each|ea)";
+  const unit = "\\b(?:linear\\s*(?:feet|foot|ft)|square\\s*(?:feet|foot|ft)|sq\\.?\\s*ft|feet|foot|ft|hours?|hrs?|days?|yards?|yds?|metres?|meters?|kilometres?|kilometers?|km|inches?|centimetres?|centimeters?|cm|litres?|liters?|gallons?|gal|pounds?|lbs?|tons?|tonnes?|bundles?|units?|pieces?|pcs?|coats?|loads?|each|ea)\\b";
   return value
     // Parenthetical annotations are metadata, not item titles. Remove the whole group
     // when it contains a currency or measurement/unit token, including mixed notes.
@@ -103,7 +103,10 @@ export function scopeSummaryFromNotes(notes: string, client?: Partial<Customer>)
     .replace(/^[\s,.;:—-]+|[\s,;:—-]+$/g, "")
     .trim();
 
-  const firstSentence = work.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim() || work;
+  const firstSentence = work
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.replace(/^[\s,.;:—-]+|[\s,;:—-]+$/g, "").trim())
+    .find((sentence) => /[A-Za-z]{3}/.test(sentence) && !/^(?:client|customer)\b/i.test(sentence)) || work;
   const concise = firstSentence.slice(0, 320).replace(/[\s,;:—-]+$/g, "").trim();
   if (!concise) return "Complete the work described in the job notes.";
   return /[.!?]$/.test(concise) ? concise : `${concise}.`;
