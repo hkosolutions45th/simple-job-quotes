@@ -1151,6 +1151,45 @@ const [savingSettings, setSavingSettings] = useState(false);
         </DialogContent>
       </Dialog>
 
+      {/* Microphone permission help */}
+      <Dialog open={micDenied} onOpenChange={setMicDenied}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Microphone access is off</DialogTitle>
+            <DialogDescription>
+              Dictation needs your microphone. To turn it on:
+            </DialogDescription>
+          </DialogHeader>
+          <ol className="list-decimal space-y-2 pl-5 text-sm text-inksoft">
+            <li>Tap the lock or site-settings icon in your browser's address bar.</li>
+            <li>Find <strong className="text-ink">Microphone</strong> and set it to <strong className="text-ink">Allow</strong>.</li>
+            <li>Come back here and tap Try Again below.</li>
+          </ol>
+          <p className="text-xs text-inksoft">
+            On iPhone you may also need Settings → Safari (or your browser) → Microphone → Allow.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setMicDenied(false)}
+              className="field min-h-12 flex-1 rounded-xl px-4 text-sm font-semibold"
+            >
+              Not now
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMicDenied(false);
+                void startDictation();
+              }}
+              className="clay-shadow min-h-12 flex-1 rounded-xl bg-clay px-4 text-sm font-bold text-cream"
+            >
+              Try Again
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Saved quotes */}
       <Dialog open={savedOpen} onOpenChange={setSavedOpen}>
         <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-md">
