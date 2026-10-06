@@ -110,6 +110,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     () =>
       baseItems.map((i) => ({
         ...i,
+        description: cleanLineItemDescription(i.description),
         // Display only: basePriceUSD × current currency rate (USD = 1.0 exactly).
         rate: currency === "USD" ? i.basePriceUSD : Math.round(i.basePriceUSD * rateFactor * 100) / 100,
       })),
@@ -484,7 +485,7 @@ const [savingSettings, setSavingSettings] = useState(false);
       client_email: customer.email || null,
       total_amount: Number(total.toFixed(2)),
       currency,
-      line_items: { quoteNo, notes, scopeSummary, items: baseItems.map((b) => ({ ...b, rate: items.find((i) => i.id === b.id)?.rate ?? b.basePriceUSD })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
+      line_items: { quoteNo, notes, scopeSummary, items: baseItems.map((b) => ({ ...b, description: cleanLineItemDescription(b.description), rate: items.find((i) => i.id === b.id)?.rate ?? b.basePriceUSD })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
     };
     let error;
     if (quoteId) {
