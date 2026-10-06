@@ -209,14 +209,16 @@ const [savingSettings, setSavingSettings] = useState(false);
       });
       return;
     }
-    baseNotesRef.current = notes;
+    // Start every recording from a blank notes field.
+    baseNotesRef.current = "";
+    setNotes("");
     try {
       rec.start();
       setListening(true);
     } catch {
       /* already running */
     }
-  }, [notes]);
+  }, []);
 
   const stopDictation = useCallback(() => {
     try {
@@ -255,8 +257,8 @@ const [savingSettings, setSavingSettings] = useState(false);
         quantity: i.quantity,
         basePriceUSD: i.unitRate / (rateFactorRef.current || 1),
       }));
-      setItems((prev) => [...prev, ...rows]);
-      toast.success(`${rows.length} line items added`, {
+      setItems(rows);
+      toast.success(`${rows.length} line items generated`, {
         description: "Tweak quantities and rates before you send.",
       });
     } catch (error) {
@@ -266,7 +268,7 @@ const [savingSettings, setSavingSettings] = useState(false);
         quantity: g.quantity,
         basePriceUSD: g.rate, // catalog rates are USD
       }));
-      setItems((prev) => [...prev, ...generated]);
+      setItems(generated);
       toast.error(error instanceof Error ? error.message : "Couldn't reach the estimator", {
         description: "Added a draft from your notes instead — check the rates.",
       });
