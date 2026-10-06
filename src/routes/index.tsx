@@ -296,7 +296,7 @@ const [savingSettings, setSavingSettings] = useState(false);
       prev.map((i) => {
         if (i.id !== id) return i;
         const next: BaseItem = { ...i };
-        if (patch.description !== undefined) next.description = patch.description;
+        if (patch.description !== undefined) next.description = cleanLineItemDescription(patch.description);
         if (patch.quantity !== undefined) next.quantity = patch.quantity;
         // Only a price the user types changes the base: typed value (current currency) → USD.
         if (patch.rate !== undefined) {

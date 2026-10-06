@@ -1,4 +1,10 @@
-import { money, lineTotal, type Customer, type LineItem } from "@/lib/quote";
+import {
+  cleanLineItemDescription,
+  money,
+  lineTotal,
+  type Customer,
+  type LineItem,
+} from "@/lib/quote";
 
 type Props = {
   business: string;
@@ -38,6 +44,7 @@ export function QuoteSheet(props: Props) {
   const depositPct = depositMatch?.[1] ? Number(depositMatch[1]) : null;
   const deposit = depositPct && depositPct > 0 && depositPct < 100 ? (total * depositPct) / 100 : null;
   const cityPostal = [customer.city, customer.postalCode].filter(Boolean).join(" ");
+  const printableScope = scopeSummary?.trim() || "Work is detailed in the line items below.";
 
   return (
     <div className="quote-sheet mx-auto w-full min-w-0 overflow-hidden bg-white p-6 text-ink sm:p-8">
@@ -82,12 +89,10 @@ export function QuoteSheet(props: Props) {
       </section>
 
       {/* Scope of work */}
-      {scopeSummary?.trim() && (
-        <section className="mt-5 rounded-md bg-cream p-3 text-sm">
-          <p className="label-mono">Scope of work</p>
-          <p className="mt-1 break-words leading-relaxed text-inksoft">{scopeSummary.trim()}</p>
-        </section>
-      )}
+      <section className="mt-5 break-inside-avoid rounded-md border border-line bg-cream p-3 text-sm">
+        <p className="label-mono font-bold text-ink">Scope of work</p>
+        <p className="mt-1 break-words leading-relaxed text-inksoft">{printableScope}</p>
+      </section>
 
       {/* Line items */}
       <div className="mt-5 min-w-0 w-full max-w-full overflow-x-auto">
@@ -112,7 +117,7 @@ export function QuoteSheet(props: Props) {
           {items.map((item, index) => (
             <tr key={item.id} className="border-b border-line/60 align-top">
               <td className="py-2 font-mono text-inksoft">{index + 1}</td>
-              <td className="py-2 pr-2">{item.description || "—"}</td>
+               <td className="py-2 pr-2">{cleanLineItemDescription(item.description) || "—"}</td>
               <td className="py-2 text-right font-mono">{item.quantity}</td>
               <td className="py-2 pl-3 text-right font-mono whitespace-nowrap">{money(item.rate)}</td>
               <td className="py-2 pl-3 text-right font-mono whitespace-nowrap">{money(lineTotal(item))}</td>
