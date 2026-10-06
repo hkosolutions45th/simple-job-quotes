@@ -324,6 +324,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     setNotes("");
     setQuoteId(null);
     setCurrency(defaultCurrency);
+    setRateFactor(1);
     setCustomer({ name: "", email: "", phone: "", address: "", terms: defaultTerms || "50% deposit required" });
     setQuoteNo(`IQ-${Math.floor(2000 + Math.random() * 8000)}`);
     toast.success("Blank quote ready");
