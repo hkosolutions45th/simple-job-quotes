@@ -47,7 +47,17 @@ export const lineTotal = (i: LineItem) => i.quantity * i.rate;
 /** Removes stale currency annotations from descriptions; currency belongs in money columns only. */
 export const cleanLineItemDescription = (value: string) => {
   const currency = "(?:USD|CAD|EUR|GBP|AUD|MXN)";
+  const unit = "\\b(?:linear\\s*(?:feet|foot|ft)|square\\s*(?:feet|foot|ft)|sq\\.?\\s*ft|feet|foot|ft|hours?|hrs?|days?|yards?|yds?|metres?|meters?|kilometres?|kilometers?|km|inches?|centimetres?|centimeters?|cm|litres?|liters?|gallons?|gal|pounds?|lbs?|tons?|tonnes?|bundles?|units?|pieces?|pcs?|coats?|loads?|each|ea)\\b";
   return value
+    // Parenthetical annotations are metadata, not item titles. Remove the whole group
+    // when it contains a currency or measurement/unit token, including mixed notes.
+    .replace(
+      new RegExp(
+        `\\s*[\\(\\[][^\\)\\]]*(?:${currency}|(?:estimated|estimate|priced)\\s+(?:in\\s+)?${currency}|${unit})[^\\)\\]]*[\\)\\]]`,
+        "gi",
+      ),
+      "",
+    )
     .replace(
       new RegExp(
         `\\s*[\\(\\[]\\s*(?:(?:estimated|estimate|priced)\\s+)?(?:[$€£]\\s*)?${currency}(?:\\s*[$€£])?\\s*[\\)\\]]`,
@@ -66,6 +76,44 @@ export const cleanLineItemDescription = (value: string) => {
     .replace(/\s+([,.;:])/g, "$1")
     .trim();
 };
+
+/** Builds a private, work-only sentence when the AI omits its scope summary. */
+export function scopeSummaryFromNotes(notes: string, client?: Partial<Customer>): string {
+  let work = notes.replace(/[\r\n]+/g, ". ");
+  const privateValues = client
+    ? [client.name, client.email, client.phone, client.address, client.city, client.postalCode]
+        .filter((value): value is string => Boolean(value?.trim()))
+        .sort((a, b) => b.length - a.length)
+    : [];
+
+  for (const value of privateValues) {
+    work = work.replace(new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), " ");
+  }
+
+  work = work
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, " ")
+    .replace(/(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}/g, " ")
+    .replace(/\b[A-Z]\d[A-Z][ -]?\d[A-Z]\d\b/gi, " ")
+    .replace(/\b\d{5}(?:-\d{4})?\b/g, " ")
+    .replace(/\b(?:at|in)\s+\d{1,6}\s+[A-Za-z.' -]{2,50}\s(?:street|st|avenue|ave|road|rd|boulevard|blvd|drive|dr|lane|ln|court|ct|way|highway|hwy|trail|trl)\b\.?/gi, " ")
+    .replace(/,\s*[A-Z][A-Za-z.' -]+(?=\s*(?:[A-Z]\d[A-Z][ -]?\d[A-Z]\d|\d{5}(?:-\d{4})?|[.!?]|$))/g, " ")
+    .replace(/\b(?:client|customer)\s*(?:name)?\s*(?:is|:)?\s*[A-Z][A-Za-z'’-]+(?:\s+[A-Z][A-Za-z'’-]+){0,2}/gi, " ")
+    .replace(/\b(?:email|phone|telephone|address|located at|job site|dictation|new quote|start quote|create quote|generate quote)\s*(?:is|:|at)?/gi, " ")
+    .replace(/\b(?:at|in|for)\s*(?=[,.;])/gi, " ")
+    .replace(/(?:\s*[,.;]){2,}/g, ".")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/^[\s,.;:—-]+|[\s,;:—-]+$/g, "")
+    .trim();
+
+  const firstSentence = work
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.replace(/^[\s,.;:—-]+|[\s,;:—-]+$/g, "").trim())
+    .find((sentence) => /[A-Za-z]{3}/.test(sentence) && !/^(?:client|customer)\b/i.test(sentence)) || work;
+  const concise = firstSentence.slice(0, 320).replace(/[\s,;:—-]+$/g, "").trim();
+  if (!concise) return "Complete the work described in the job notes.";
+  return /[.!?]$/.test(concise) ? concise : `${concise}.`;
+}
 
 export const subtotalOf = (items: LineItem[]) =>
   items.reduce((sum, i) => sum + lineTotal(i), 0);
