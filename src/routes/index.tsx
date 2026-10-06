@@ -55,8 +55,59 @@ export const Route = createFileRoute("/")({
 });
 
 
+type BusinessProfile = {
+  companyName: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  taxRate: number;
+  defaultTerms: string;
+};
+
+const PROFILE_KEY = "instaquote:businessProfile";
+const EMPTY_PROFILE: BusinessProfile = {
+  companyName: "",
+  phone: "",
+  email: "",
+  address: "",
+  city: "",
+  postalCode: "",
+  taxRate: 13,
+  defaultTerms: "",
+};
+
 function InstaQuote() {
-  const [business, setBusiness] = useState("Tanner & Field Roofing");
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(EMPTY_PROFILE);
+  const profileLoaded = useRef(false);
+  // Load the device-saved profile after hydration, then keep it in sync.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (raw) {
+        const p = { ...EMPTY_PROFILE, ...JSON.parse(raw) } as BusinessProfile;
+        setBusinessProfile(p);
+        setTaxRate(p.taxRate);
+        if (p.defaultTerms) setCustomer((c) => ({ ...c, terms: p.defaultTerms }));
+      }
+    } catch {
+      /* ignore corrupt storage */
+    }
+    profileLoaded.current = true;
+  }, []);
+  useEffect(() => {
+    if (profileLoaded.current) localStorage.setItem(PROFILE_KEY, JSON.stringify(businessProfile));
+  }, [businessProfile]);
+  const business = businessProfile.companyName.trim() || "Your Business Name";
+  const setBusiness = (name: string) => setBusinessProfile((p) => ({ ...p, companyName: name }));
+  const businessContact = {
+    phone: businessProfile.phone,
+    email: businessProfile.email,
+    address: [businessProfile.address, [businessProfile.city, businessProfile.postalCode].filter(Boolean).join(" ")]
+      .filter(Boolean)
+      .join(", "),
+  };
   const [logo, setLogo] = useState<string | null>(null);
   const [quoteNo, setQuoteNo] = useState("IQ-2041");
   const [notes, setNotes] = useState("");
@@ -88,11 +139,21 @@ function InstaQuote() {
   const [quoteId, setQuoteId] = useState<string | null>(null);
   const quoteIdRef = useRef<string | null>(null);
   quoteIdRef.current = quoteId;
-  const [businessPhone, setBusinessPhone] = useState("");
-  const [defaultTerms, setDefaultTerms] = useState("");
+  const defaultTerms = businessProfile.defaultTerms;
   const [settingsOpen, setSettingsOpen] = useState(false);
-const [savingSettings, setSavingSettings] = useState(false);
-  const [settings, setSettings] = useState({ business_name: "", phone: "", logo_url: "", default_terms: "", default_currency: "USD" });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settings, setSettings] = useState({
+    business_name: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: "",
+    postal_code: "",
+    tax_rate: "13",
+    logo_url: "",
+    default_terms: "",
+    default_currency: "USD",
+  });
   const [currency, setCurrency] = useState("USD");
   const [defaultCurrency, setDefaultCurrency] = useState("USD");
   // money() everywhere in this render (incl. the quote preview) uses the quote's currency.
@@ -373,6 +434,9 @@ const [savingSettings, setSavingSettings] = useState(false);
           to,
           message: emailNote,
           business,
+          businessPhone: businessProfile.phone,
+          businessEmail: businessProfile.email,
+          businessAddress: businessContact.address,
           quoteNo,
           clientName: customer.name,
           jobAddress: customer.address,
@@ -421,6 +485,7 @@ const [savingSettings, setSavingSettings] = useState(false);
       postalCode: "",
       terms: defaultTerms || "50% deposit required",
     });
+    setTaxRate(businessProfile.taxRate);
     setQuoteNo(`IQ-${Math.floor(2000 + Math.random() * 8000)}`);
     toast.success("Blank quote ready");
   };
@@ -436,16 +501,19 @@ const [savingSettings, setSavingSettings] = useState(false);
       .maybeSingle()
       .then(({ data }) => {
         if (!active || !data) return;
-        if (data.business_name) setBusiness(data.business_name);
+        setBusinessProfile((p) => ({
+          ...p,
+          companyName: p.companyName || data.business_name || "",
+          phone: p.phone || data.phone || "",
+          defaultTerms: p.defaultTerms || data.default_terms || "",
+        }));
         if (data.logo_url) setLogo(data.logo_url);
-        setBusinessPhone(data.phone ?? "");
         if (data.default_currency) {
           setDefaultCurrency(data.default_currency);
           if (!quoteIdRef.current && !currencyRestored.current && data.default_currency === "USD") setCurrency(data.default_currency);
         }
         if (data.default_terms) {
-          setDefaultTerms(data.default_terms);
-          setCustomer((c) => (quoteIdRef.current ? c : { ...c, terms: data.default_terms! }));
+          setCustomer((c) => (quoteIdRef.current ? c : { ...c, terms: c.terms || data.default_terms! }));
         }
       });
     return () => {
@@ -455,8 +523,13 @@ const [savingSettings, setSavingSettings] = useState(false);
 
   const openSettings = () => {
     setSettings({
-      business_name: business,
-      phone: businessPhone,
+      business_name: businessProfile.companyName,
+      phone: businessProfile.phone,
+      email: businessProfile.email,
+      address: businessProfile.address,
+      city: businessProfile.city,
+      postal_code: businessProfile.postalCode,
+      tax_rate: String(businessProfile.taxRate),
       logo_url: logo && !logo.startsWith("data:") ? logo : logo ?? "",
       default_terms: defaultTerms,
       default_currency: defaultCurrency,
@@ -465,34 +538,45 @@ const [savingSettings, setSavingSettings] = useState(false);
   };
 
   const saveSettings = async () => {
-    if (!user) return;
-    setSavingSettings(true);
+    const rate = Number(settings.tax_rate);
+    const nextProfile: BusinessProfile = {
+      companyName: settings.business_name.trim(),
+      phone: settings.phone.trim(),
+      email: settings.email.trim(),
+      address: settings.address.trim(),
+      city: settings.city.trim(),
+      postalCode: settings.postal_code.trim(),
+      taxRate: Number.isFinite(rate) && rate >= 0 ? rate : 13,
+      defaultTerms: settings.default_terms.trim(),
+    };
     const s = {
-      business_name: settings.business_name.trim() || null,
-      phone: settings.phone.trim() || null,
+      business_name: nextProfile.companyName || null,
+      phone: nextProfile.phone || null,
       logo_url: settings.logo_url.trim() || null,
-      default_terms: settings.default_terms.trim() || null,
+      default_terms: nextProfile.defaultTerms || null,
       default_currency: settings.default_currency,
     };
-    const { error } = await supabase
-      .from("user_profiles")
-      .upsert({ user_id: user.id, ...s }, { onConflict: "user_id" });
-    setSavingSettings(false);
-    if (error) {
-      toast.error("Couldn't save settings", { description: error.message });
-      return;
+    if (user) {
+      setSavingSettings(true);
+      const { error } = await supabase
+        .from("user_profiles")
+        .upsert({ user_id: user.id, ...s }, { onConflict: "user_id" });
+      setSavingSettings(false);
+      if (error) {
+        toast.error("Couldn't save settings", { description: error.message });
+        return;
+      }
     }
-    if (s.business_name) setBusiness(s.business_name);
+    setBusinessProfile(nextProfile);
     setLogo(s.logo_url);
-    setBusinessPhone(s.phone ?? "");
-    setDefaultTerms(s.default_terms ?? "");
     setDefaultCurrency(s.default_currency);
     if (!quoteId) {
       if (s.default_currency !== currency) void applyCurrency(s.default_currency);
       if (s.default_terms) setCustomer((c) => ({ ...c, terms: s.default_terms! }));
+      setTaxRate(nextProfile.taxRate);
     }
     setSettingsOpen(false);
-    toast.success("Business settings saved");
+    toast.success("Business settings saved on this device");
   };
 
   const saveQuote = async () => {
@@ -642,7 +726,8 @@ const [savingSettings, setSavingSettings] = useState(false);
           <div className="min-w-0">
             <p className="label-mono tracking-[0.22em]">InstaQuote · {quoteNo}</p>
             <input
-              value={business}
+              value={businessProfile.companyName}
+              placeholder="Your Business Name — tap to edit"
               onChange={(e) => setBusiness(e.target.value)}
               aria-label="Business name"
               className="w-full truncate bg-transparent text-lg font-bold leading-tight outline-none"
@@ -691,6 +776,13 @@ const [savingSettings, setSavingSettings] = useState(false);
               <span className="min-w-0 flex-1 px-2 text-xs text-inksoft">
                 Sign in to save quotes to your account.
               </span>
+              <button
+                onClick={openSettings}
+                aria-label="Business settings"
+                className="grid size-10 shrink-0 place-items-center rounded-lg bg-cream text-inksoft ring-1 ring-line active:translate-y-0.5"
+              >
+                <Settings className="size-4" aria-hidden="true" />
+              </button>
               <Link
                 to="/auth"
                 className="flex min-h-10 items-center rounded-lg bg-ink px-4 text-xs font-semibold text-cream active:translate-y-0.5"
@@ -1015,6 +1107,7 @@ const [savingSettings, setSavingSettings] = useState(false);
           <div className="print-sheet hidden print:block" aria-hidden="true">
             <QuoteSheet
           business={business}
+          businessContact={businessContact}
           logo={logo}
           quoteNo={quoteNo}
           customer={customer}
@@ -1041,6 +1134,7 @@ const [savingSettings, setSavingSettings] = useState(false);
           </DialogHeader>
           <QuoteSheet
             business={business}
+            businessContact={businessContact}
             logo={logo}
             quoteNo={quoteNo}
             customer={customer}
@@ -1262,16 +1356,60 @@ const [savingSettings, setSavingSettings] = useState(false);
           </DialogHeader>
           <div className="space-y-3">
             {([
-              ["business_name", "Business name", "text"],
-              ["phone", "Phone", "tel"],
-              ["logo_url", "Logo URL", "url"],
-              ["default_terms", "Default payment terms", "text"],
-            ] as const).map(([key, label, type]) => (
+              ["business_name", "Business name", "text", "Your Business Name"],
+              ["phone", "Phone number", "tel", "(416) 555-0100"],
+              ["email", "Business email", "email", "you@yourbusiness.com"],
+              ["address", "Street address", "text", "100 Yonge Street"],
+            ] as const).map(([key, label, type, ph]) => (
               <label key={key} className="block">
                 <span className="label-mono">{label}</span>
                 <input
                   type={type}
                   value={settings[key]}
+                  placeholder={ph}
+                  onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.value }))}
+                  className="field mt-1 min-h-12 w-full rounded-xl px-3"
+                />
+              </label>
+            ))}
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                ["city", "City", "Toronto"],
+                ["postal_code", "Postal / ZIP", "M5C 2C7"],
+              ] as const).map(([key, label, ph]) => (
+                <label key={key} className="block min-w-0">
+                  <span className="label-mono">{label}</span>
+                  <input
+                    value={settings[key]}
+                    placeholder={ph}
+                    onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.value }))}
+                    className="field mt-1 min-h-12 w-full rounded-xl px-3"
+                  />
+                </label>
+              ))}
+            </div>
+            <label className="block">
+              <span className="label-mono">Default tax rate (%)</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.01"
+                value={settings.tax_rate}
+                onChange={(e) => setSettings((s) => ({ ...s, tax_rate: e.target.value }))}
+                className="field mt-1 min-h-12 w-full rounded-xl px-3"
+              />
+            </label>
+            {([
+              ["default_terms", "Default payment terms", "text", "50% deposit required"],
+              ["logo_url", "Logo URL", "url", "https://…"],
+            ] as const).map(([key, label, type, ph]) => (
+              <label key={key} className="block">
+                <span className="label-mono">{label}</span>
+                <input
+                  type={type}
+                  value={settings[key]}
+                  placeholder={ph}
                   onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.value }))}
                   className="field mt-1 min-h-12 w-full rounded-xl px-3"
                 />
