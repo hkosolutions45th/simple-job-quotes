@@ -20,6 +20,24 @@ type Props = {
   scopeSummary?: string;
 };
 
+function MoneyValue({ value, emphasize = false }: { value: number; emphasize?: boolean }) {
+  const formatted = money(value);
+  const splitAt = formatted.lastIndexOf(" ");
+  const amount = splitAt > 0 ? formatted.slice(0, splitAt) : formatted;
+  const code = splitAt > 0 ? formatted.slice(splitAt + 1) : "";
+
+  return (
+    <span
+      className={`inline-flex max-w-full items-baseline justify-end gap-1 font-mono tabular-nums ${
+        emphasize ? "text-xl font-bold" : ""
+      }`}
+    >
+      <span className="whitespace-nowrap">{amount}</span>
+      {code && <span className="whitespace-nowrap text-[0.75em] sm:text-[1em]">{code}</span>}
+    </span>
+  );
+}
+
 export function QuoteSheet(props: Props) {
   const {
     business,
@@ -126,8 +144,8 @@ export function QuoteSheet(props: Props) {
               <td className="py-2 font-mono text-inksoft">{index + 1}</td>
                <td className="break-words py-2 pr-2">{cleanLineItemDescription(item.description) || "—"}</td>
               <td className="py-2 text-right font-mono">{item.quantity}</td>
-              <td className="py-2 pl-3 text-right font-mono whitespace-nowrap">{money(item.rate)}</td>
-              <td className="py-2 pl-3 text-right font-mono whitespace-nowrap">{money(lineTotal(item))}</td>
+               <td className="py-2 pl-1 text-right text-[11px] sm:pl-3 sm:text-sm"><MoneyValue value={item.rate} /></td>
+               <td className="py-2 pl-1 text-right text-[11px] sm:pl-3 sm:text-sm"><MoneyValue value={lineTotal(item)} /></td>
             </tr>
           ))}
         </tbody>
@@ -138,20 +156,20 @@ export function QuoteSheet(props: Props) {
       <div className="mt-4 ml-auto w-full max-w-72 text-sm tabular-nums">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 py-1">
           <span className="text-inksoft">Subtotal</span>
-          <span className="whitespace-nowrap font-mono">{money(subtotal)}</span>
+          <MoneyValue value={subtotal} />
         </div>
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 py-1">
           <span className="text-inksoft">Sales tax {taxEnabled ? `(${taxRate}%)` : "(exempt)"}</span>
-          <span className="whitespace-nowrap font-mono">{money(taxEnabled ? tax : 0)}</span>
+          <MoneyValue value={taxEnabled ? tax : 0} />
         </div>
         <div className="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 border-t-2 border-ink pt-2">
           <span className="font-semibold">Total due</span>
-          <span className="whitespace-nowrap font-mono text-xl font-bold">{money(total)}</span>
+          <MoneyValue value={total} emphasize />
         </div>
         {deposit !== null && (
           <div className="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 py-1">
             <span className="text-inksoft">Deposit to book ({depositPct}%)</span>
-            <span className="whitespace-nowrap font-mono font-semibold">{money(deposit)}</span>
+            <span className="font-semibold"><MoneyValue value={deposit} /></span>
           </div>
         )}
       </div>
