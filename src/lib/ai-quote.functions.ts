@@ -133,8 +133,23 @@ export const generateQuoteItems = createServerFn({ method: "POST" })
 
     const parsed = safeParse(text);
     if (!parsed.length) throw new Error("The AI couldn't find any line items in those notes.");
-    return { items: parsed };
+    return { items: parsed, client: parseClient(text) };
   });
+
+function parseClient(text: string): AiClient {
+  const empty: AiClient = { name: "", email: "", phone: "", address: "" };
+  const trimmed = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  try {
+    const raw = JSON.parse(trimmed) as { client?: unknown };
+    const c = raw?.client;
+    if (!c || typeof c !== "object") return empty;
+    const r = c as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+    return { name: str(r["name"]), email: str(r["email"]), phone: str(r["phone"]), address: str(r["address"]) };
+  } catch {
+    return empty;
+  }
+}
 
 function safeParse(text: string): AiLineItem[] {
   const trimmed = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
