@@ -95,6 +95,10 @@ const [savingSettings, setSavingSettings] = useState(false);
   // money() everywhere in this render (incl. the quote preview) uses the quote's currency.
   setActiveCurrency(currency);
   const [converting, setConverting] = useState(false);
+  // Current currency's exchange rate vs USD (1 = USD). Rates always derive from baseRate * rateFactor.
+  const [rateFactor, setRateFactor] = useState(1);
+  const rateFactorRef = useRef(1);
+  rateFactorRef.current = rateFactor;
   const changeCurrency = async (next: string) => {
     if (next === currency) return;
     if (items.length === 0) {
@@ -103,16 +107,21 @@ const [savingSettings, setSavingSettings] = useState(false);
     }
     setConverting(true);
     try {
-      const res = await fetch(`https://open.er-api.com/v6/latest/${currency}`);
+      const res = await fetch(`https://open.er-api.com/v6/latest/USD`);
       const json = await res.json();
       const rate = Number(json?.rates?.[next]);
       if (!res.ok || json?.result !== "success" || !(rate > 0)) throw new Error("No rate");
       setItems((prev) =>
-        prev.map((i) => ({ ...i, rate: Math.round(i.rate * rate * 100) / 100 })),
+        prev.map((i) => ({
+          ...i,
+          baseRate: i.baseRate ?? i.rate / rateFactorRef.current,
+          rate: Math.round((i.baseRate ?? i.rate / rateFactorRef.current) * rate * 100) / 100,
+        })),
       );
+      setRateFactor(rate);
       setCurrency(next);
       toast.success(`Converted to ${next}`, {
-        description: `1 ${currency} = ${rate.toFixed(4)} ${next} (live rate)`,
+        description: `1 USD = ${rate.toFixed(4)} ${next} (live rate)`,
       });
     } catch {
       toast.error("Couldn't get live exchange rates", {
@@ -209,13 +218,17 @@ const [savingSettings, setSavingSettings] = useState(false);
         description: i.description,
         quantity: i.quantity,
         rate: i.unitRate,
+        baseRate: i.unitRate / rateFactorRef.current,
       }));
       setItems((prev) => [...prev, ...rows]);
       toast.success(`${rows.length} line items added`, {
         description: "Tweak quantities and rates before you send.",
       });
     } catch (error) {
-      const generated = generateLineItems(notes);
+      const generated = generateLineItems(notes).map((g) => ({
+        ...g,
+        baseRate: g.rate / rateFactorRef.current,
+      }));
       setItems((prev) => [...prev, ...generated]);
       toast.error(error instanceof Error ? error.message : "Couldn't reach the estimator", {
         description: "Added a draft from your notes instead — check the rates.",
@@ -226,10 +239,18 @@ const [savingSettings, setSavingSettings] = useState(false);
   };
 
   const updateItem = (id: string, patch: Partial<LineItem>) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        const next = { ...i, ...patch };
+        // Manual rate edits are entered in the current currency — keep the USD base in sync.
+        if (patch.rate !== undefined) next.baseRate = patch.rate / rateFactorRef.current;
+        return next;
+      }),
+    );
 
   const addRow = () =>
-    setItems((prev) => [...prev, { id: newId(), description: "", quantity: 1, rate: 0 }]);
+    setItems((prev) => [...prev, { id: newId(), description: "", quantity: 1, rate: 0, baseRate: 0 }]);
 
   const message = quoteMessage({ business, customer, total, quoteNo });
 
@@ -303,6 +324,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     setNotes("");
     setQuoteId(null);
     setCurrency(defaultCurrency);
+    setRateFactor(1);
     setCustomer({ name: "", email: "", phone: "", address: "", terms: defaultTerms || "50% deposit required" });
     setQuoteNo(`IQ-${Math.floor(2000 + Math.random() * 8000)}`);
     toast.success("Blank quote ready");
@@ -393,7 +415,7 @@ const [savingSettings, setSavingSettings] = useState(false);
       client_email: customer.email || null,
       total_amount: Number(total.toFixed(2)),
       currency,
-      line_items: { quoteNo, notes, items, customer, taxRate, taxEnabled, currency } as any,
+      line_items: { quoteNo, notes, items, customer, taxRate, taxEnabled, currency, rateFactor } as any,
     };
     let error;
     if (quoteId) {
@@ -467,7 +489,14 @@ const [savingSettings, setSavingSettings] = useState(false);
     const payload = (row.line_items ?? {}) as any;
     setQuoteId(row.id);
     setCurrency(row.currency ?? "USD");
-    setItems(Array.isArray(payload.items) ? payload.items : []);
+    const factor = typeof payload.rateFactor === "number" && payload.rateFactor > 0 ? payload.rateFactor : 1;
+    setRateFactor(factor);
+    setItems(
+      (Array.isArray(payload.items) ? payload.items : []).map((i: LineItem) => {
+        const base = i.baseRate ?? i.rate / factor;
+        return { ...i, baseRate: base, rate: Math.round(base * factor * 100) / 100 };
+      }),
+    );
     setNotes(payload.notes ?? "");
     if (payload.customer) setCustomer(payload.customer);
     if (payload.quoteNo) setQuoteNo(payload.quoteNo);
