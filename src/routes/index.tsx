@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { generateQuoteItems } from "@/lib/ai-quote.functions";
 import { sendQuoteEmail } from "@/lib/send-quote.functions";
 import {
+  cleanLineItemDescription,
   generateLineItems,
   lineTotal,
   money,
@@ -59,6 +60,7 @@ function InstaQuote() {
   const [logo, setLogo] = useState<string | null>(null);
   const [quoteNo, setQuoteNo] = useState("IQ-2041");
   const [notes, setNotes] = useState("");
+  const [scopeSummary, setScopeSummary] = useState("");
   const [listening, setListening] = useState(false);
   // Source of truth: each item stores ONLY its fixed basePriceUSD. No converted price is ever stored.
   type BaseItem = { id: string; description: string; quantity: number; basePriceUSD: number };
@@ -214,6 +216,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     // Start every recording from a blank notes field.
     baseNotesRef.current = "";
     setNotes("");
+    setScopeSummary("");
     try {
       rec.start();
       setListening(true);
@@ -243,7 +246,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     }
     setGenerating(true);
     try {
-      const { items: aiItems, client } = await generateQuoteItems({ data: { notes } });
+      const { items: aiItems, client, scopeSummary: generatedScopeSummary } = await generateQuoteItems({ data: { notes } });
       if (client && (client.name || client.email || client.phone || client.address || client.city || client.postalCode)) {
         setCustomer((c) => ({
           ...c,
@@ -257,22 +260,28 @@ const [savingSettings, setSavingSettings] = useState(false);
       }
       const rows: BaseItem[] = aiItems.map((i) => ({
         id: newId(),
-        description: i.description,
+        description: cleanLineItemDescription(i.description),
         quantity: i.quantity,
         basePriceUSD: i.unitRate / (rateFactorRef.current || 1),
       }));
       setItems(rows);
+      setScopeSummary(generatedScopeSummary);
       toast.success(`${rows.length} line items generated`, {
         description: "Tweak quantities and rates before you send.",
       });
     } catch (error) {
       const generated: BaseItem[] = generateLineItems(notes).map((g) => ({
         id: g.id,
-        description: g.description,
+        description: cleanLineItemDescription(g.description),
         quantity: g.quantity,
         basePriceUSD: g.rate, // catalog rates are USD
       }));
       setItems(generated);
+      setScopeSummary(
+        generated.length
+          ? `Complete the quoted work, including ${generated.map((item) => item.description.toLowerCase()).join(", ")}.`
+          : "",
+      );
       toast.error(error instanceof Error ? error.message : "Couldn't reach the estimator", {
         description: "Added a draft from your notes instead — check the rates.",
       });
@@ -372,6 +381,7 @@ const [savingSettings, setSavingSettings] = useState(false);
   const newQuote = () => {
     setItems([]);
     setNotes("");
+    setScopeSummary("");
     setQuoteId(null);
     setCurrency("USD");
     setRateFactor(1);
@@ -474,7 +484,7 @@ const [savingSettings, setSavingSettings] = useState(false);
       client_email: customer.email || null,
       total_amount: Number(total.toFixed(2)),
       currency,
-      line_items: { quoteNo, notes, items: baseItems.map((b) => ({ ...b, rate: items.find((i) => i.id === b.id)?.rate ?? b.basePriceUSD })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
+      line_items: { quoteNo, notes, scopeSummary, items: baseItems.map((b) => ({ ...b, rate: items.find((i) => i.id === b.id)?.rate ?? b.basePriceUSD })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
     };
     let error;
     if (quoteId) {
@@ -553,12 +563,13 @@ const [savingSettings, setSavingSettings] = useState(false);
     setItems(
       (Array.isArray(payload.items) ? payload.items : []).map((i: any): BaseItem => ({
         id: i.id ?? newId(),
-        description: i.description ?? "",
+        description: cleanLineItemDescription(i.description ?? ""),
         quantity: Number(i.quantity) || 0,
         basePriceUSD: Number(i.basePriceUSD ?? i.baseRate ?? (Number(i.rate) || 0) / factor),
       })),
     );
     setNotes(payload.notes ?? "");
+    setScopeSummary(payload.scopeSummary ?? "");
     if (payload.customer) {
       setCustomer({
         name: payload.customer.name ?? "",
@@ -988,7 +999,7 @@ const [savingSettings, setSavingSettings] = useState(false);
           total={total}
           taxRate={taxRate}
           taxEnabled={taxEnabled}
-              notes={notes}
+              scopeSummary={scopeSummary}
             />
           </div>,
           document.body,
@@ -1015,7 +1026,7 @@ const [savingSettings, setSavingSettings] = useState(false);
             total={total}
             taxRate={taxRate}
             taxEnabled={taxEnabled}
-            notes={notes}
+            scopeSummary={scopeSummary}
           />
           <div className="no-print sticky bottom-0 flex gap-3 border-t border-line bg-white p-3">
             <button
