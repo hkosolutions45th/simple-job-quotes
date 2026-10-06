@@ -95,6 +95,10 @@ const [savingSettings, setSavingSettings] = useState(false);
   // money() everywhere in this render (incl. the quote preview) uses the quote's currency.
   setActiveCurrency(currency);
   const [converting, setConverting] = useState(false);
+  // Current currency's exchange rate vs USD (1 = USD). Rates always derive from baseRate * rateFactor.
+  const [rateFactor, setRateFactor] = useState(1);
+  const rateFactorRef = useRef(1);
+  rateFactorRef.current = rateFactor;
   const changeCurrency = async (next: string) => {
     if (next === currency) return;
     if (items.length === 0) {
@@ -103,16 +107,21 @@ const [savingSettings, setSavingSettings] = useState(false);
     }
     setConverting(true);
     try {
-      const res = await fetch(`https://open.er-api.com/v6/latest/${currency}`);
+      const res = await fetch(`https://open.er-api.com/v6/latest/USD`);
       const json = await res.json();
       const rate = Number(json?.rates?.[next]);
       if (!res.ok || json?.result !== "success" || !(rate > 0)) throw new Error("No rate");
       setItems((prev) =>
-        prev.map((i) => ({ ...i, rate: Math.round(i.rate * rate * 100) / 100 })),
+        prev.map((i) => ({
+          ...i,
+          baseRate: i.baseRate ?? i.rate / rateFactorRef.current,
+          rate: Math.round((i.baseRate ?? i.rate / rateFactorRef.current) * rate * 100) / 100,
+        })),
       );
+      setRateFactor(rate);
       setCurrency(next);
       toast.success(`Converted to ${next}`, {
-        description: `1 ${currency} = ${rate.toFixed(4)} ${next} (live rate)`,
+        description: `1 USD = ${rate.toFixed(4)} ${next} (live rate)`,
       });
     } catch {
       toast.error("Couldn't get live exchange rates", {
