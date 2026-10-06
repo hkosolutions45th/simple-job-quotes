@@ -13,7 +13,7 @@ Also extract any client details mentioned in the notes into the "client" object:
 
 Write "scopeSummary" as one or two concise, professional sentences focused only on the work to be completed. Exclude client names, emails, phone numbers, addresses, dictation command words, conversational filler, prices, rates, currency codes, and currency symbols.
 
-Line-item descriptions must describe only the work or material. Never include currency codes, currency symbols, exchange-rate wording, or labels such as "estimated CAD", "estimated USD", or "priced in EUR" in a description.`;
+Line-item descriptions must be short titles describing only the work or material. Put quantity and pricing only in their dedicated numeric fields. Never append parenthetical or bracketed currency, measurement, unit, quantity, pricing, estimation, supply-only, or rate notes to a description. For example, return "Supply and install composite deck railing", never "Supply and install composite deck railing (linear feet; estimated CAD)".`;
 
 export type AiLineItem = {
   description: string;
@@ -165,7 +165,15 @@ function parseScopeSummary(text: string): string {
 
 function cleanDescription(value: string): string {
   const currency = "(?:USD|CAD|EUR|GBP|AUD|MXN)";
+  const unit = "(?:linear\\s*(?:feet|foot|ft)|square\\s*(?:feet|foot|ft)|sq\\.?\\s*ft|feet|foot|ft|hours?|hrs?|days?|yards?|yds?|metres?|meters?|m|kilometres?|kilometers?|km|inches?|in|centimetres?|centimeters?|cm|litres?|liters?|l|gallons?|gal|pounds?|lbs?|tons?|tonnes?|bundles?|units?|pieces?|pcs?|coats?|loads?|each|ea)";
   return value
+    .replace(
+      new RegExp(
+        `\\s*[\\(\\[][^\\)\\]]*(?:${currency}|(?:estimated|estimate|priced)\\s+(?:in\\s+)?${currency}|${unit})[^\\)\\]]*[\\)\\]]`,
+        "gi",
+      ),
+      "",
+    )
     .replace(
       new RegExp(
         `\\s*[\\(\\[]\\s*(?:(?:estimated|estimate|priced)\\s+)?(?:[$€£]\\s*)?${currency}(?:\\s*[$€£])?\\s*[\\)\\]]`,

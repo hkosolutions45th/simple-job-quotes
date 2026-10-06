@@ -26,6 +26,7 @@ import {
   setActiveCurrency,
   newId,
   quoteMessage,
+  scopeSummaryFromNotes,
   subtotalOf,
   type Customer,
   type LineItem,
@@ -116,6 +117,19 @@ const [savingSettings, setSavingSettings] = useState(false);
       })),
     [baseItems, rateFactor, currency],
   );
+  // Normalize legacy/active rows in state, not only at render and output boundaries.
+  useEffect(() => {
+    setItems((current) => {
+      let changed = false;
+      const cleaned = current.map((item) => {
+        const description = cleanLineItemDescription(item.description);
+        if (description === item.description) return item;
+        changed = true;
+        return { ...item, description };
+      });
+      return changed ? cleaned : current;
+    });
+  }, []);
   // Persist currency + rate so reloads/tab switches never desync the dropdown from the numbers.
   const currencyRestored = useRef(false);
   useEffect(() => {
@@ -172,6 +186,10 @@ const [savingSettings, setSavingSettings] = useState(false);
   const baseNotesRef = useRef("");
 
   const subtotal = useMemo(() => subtotalOf(items), [items]);
+  const resolvedScopeSummary = useMemo(
+    () => scopeSummary.trim() || scopeSummaryFromNotes(notes, customer),
+    [scopeSummary, notes, customer],
+  );
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const tax = taxEnabled ? (subtotal * taxRate) / 100 : 0;
@@ -266,7 +284,7 @@ const [savingSettings, setSavingSettings] = useState(false);
         basePriceUSD: i.unitRate / (rateFactorRef.current || 1),
       }));
       setItems(rows);
-      setScopeSummary(generatedScopeSummary);
+      setScopeSummary(generatedScopeSummary.trim() || scopeSummaryFromNotes(notes, { ...customer, ...client }));
       toast.success(`${rows.length} line items generated`, {
         description: "Tweak quantities and rates before you send.",
       });
@@ -353,7 +371,7 @@ const [savingSettings, setSavingSettings] = useState(false);
           city: customer.city,
           postalCode: customer.postalCode,
           terms: customer.terms,
-          scopeSummary,
+          scopeSummary: resolvedScopeSummary,
           taxRate,
           currency,
           taxEnabled,
@@ -486,7 +504,7 @@ const [savingSettings, setSavingSettings] = useState(false);
       client_email: customer.email || null,
       total_amount: Number(total.toFixed(2)),
       currency,
-      line_items: { quoteNo, notes, scopeSummary, items: baseItems.map((b) => ({ ...b, description: cleanLineItemDescription(b.description), rate: items.find((i) => i.id === b.id)?.rate ?? b.basePriceUSD })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
+      line_items: { quoteNo, notes, scopeSummary: resolvedScopeSummary, items: baseItems.map((b) => ({ ...b, description: cleanLineItemDescription(b.description), rate: items.find((i) => i.id === b.id)?.rate ?? b.basePriceUSD })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
     };
     let error;
     if (quoteId) {
@@ -1001,7 +1019,7 @@ const [savingSettings, setSavingSettings] = useState(false);
           total={total}
           taxRate={taxRate}
           taxEnabled={taxEnabled}
-              scopeSummary={scopeSummary}
+              scopeSummary={resolvedScopeSummary}
             />
           </div>,
           document.body,
@@ -1028,7 +1046,7 @@ const [savingSettings, setSavingSettings] = useState(false);
             total={total}
             taxRate={taxRate}
             taxEnabled={taxEnabled}
-            scopeSummary={scopeSummary}
+            scopeSummary={resolvedScopeSummary}
           />
           <div className="no-print sticky bottom-0 flex gap-3 border-t border-line bg-white p-3">
             <button
