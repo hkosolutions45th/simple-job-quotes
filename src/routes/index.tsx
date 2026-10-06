@@ -877,7 +877,7 @@ const [savingSettings, setSavingSettings] = useState(false);
                   type="tel"
                   value={customer.phone}
                   onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
-                  placeholder="e.g. (705) 555-0192"
+                  placeholder="e.g. (416) 555-0192"
                   className="field mt-1 font-mono"
                 />
               </label>
@@ -887,7 +887,7 @@ const [savingSettings, setSavingSettings] = useState(false);
               <input
                 value={customer.address}
                 onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
-                placeholder="e.g. 142 Maple Avenue"
+                placeholder="e.g. 100 Yonge Street"
                 className="field mt-1"
               />
             </label>
@@ -897,7 +897,7 @@ const [savingSettings, setSavingSettings] = useState(false);
                 <input
                   value={customer.city}
                   onChange={(e) => setCustomer({ ...customer, city: e.target.value })}
-                  placeholder="e.g. Barrie"
+                  placeholder="e.g. Toronto"
                   className="field mt-1"
                 />
               </label>
@@ -906,7 +906,7 @@ const [savingSettings, setSavingSettings] = useState(false);
                 <input
                   value={customer.postalCode}
                   onChange={(e) => setCustomer({ ...customer, postalCode: e.target.value })}
-                  placeholder="e.g. L4M 3X9"
+                  placeholder="e.g. M5C 2C7"
                   className="field mt-1 font-mono"
                   autoCapitalize="characters"
                 />
