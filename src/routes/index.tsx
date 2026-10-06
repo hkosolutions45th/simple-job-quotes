@@ -567,7 +567,7 @@ const [savingSettings, setSavingSettings] = useState(false);
         address: payload.customer.address ?? "",
         city: payload.customer.city ?? "",
         postalCode: payload.customer.postalCode ?? payload.customer.zipCode ?? "",
-        terms: payload.customer.terms ?? defaultTerms || "50% deposit required",
+        terms: payload.customer.terms ?? (defaultTerms || "50% deposit required"),
       });
     }
     if (payload.quoteNo) setQuoteNo(payload.quoteNo);
