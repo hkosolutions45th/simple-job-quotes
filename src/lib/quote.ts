@@ -12,6 +12,8 @@ export type Customer = {
   email: string;
   phone: string;
   address: string;
+  city: string;
+  postalCode: string;
   terms: string;
 };
 
@@ -119,10 +121,14 @@ export function quoteMessage(opts: {
   quoteNo: string;
 }) {
   const first = opts.customer.name.trim().split(" ")[0] || "there";
+  const jobAddress = [opts.customer.address, opts.customer.city, opts.customer.postalCode]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(", ");
   return [
     `Hi ${first},`,
     "",
-    `Thanks for having us out${opts.customer.address ? ` at ${opts.customer.address}` : ""}. Your quote ${opts.quoteNo} from ${opts.business} comes to ${money(opts.total)} including tax.`,
+    `Thanks for having us out${jobAddress ? ` at ${jobAddress}` : ""}. Your quote ${opts.quoteNo} from ${opts.business} comes to ${money(opts.total)} including tax.`,
     "",
     opts.customer.terms ? `Terms: ${opts.customer.terms}.` : "",
     "Reply to this message to book a start date and we'll get you on the schedule.",
