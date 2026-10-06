@@ -11,7 +11,7 @@ type Props = {
   total: number;
   taxRate: number;
   taxEnabled: boolean;
-  notes?: string;
+  scopeSummary?: string;
 };
 
 export function QuoteSheet(props: Props) {
@@ -26,7 +26,7 @@ export function QuoteSheet(props: Props) {
     total,
     taxRate,
     taxEnabled,
-    notes,
+    scopeSummary,
   } = props;
 
   const today = new Date();
@@ -82,10 +82,10 @@ export function QuoteSheet(props: Props) {
       </section>
 
       {/* Scope of work */}
-      {notes?.trim() && (
+      {scopeSummary?.trim() && (
         <section className="mt-5 rounded-md bg-cream p-3 text-sm">
           <p className="label-mono">Scope of work</p>
-          <p className="mt-1 break-words leading-relaxed text-inksoft">{notes.trim()}</p>
+          <p className="mt-1 break-words leading-relaxed text-inksoft">{scopeSummary.trim()}</p>
         </section>
       )}
 
