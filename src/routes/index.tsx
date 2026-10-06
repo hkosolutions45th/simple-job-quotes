@@ -67,11 +67,11 @@ function InstaQuote() {
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [taxRate, setTaxRate] = useState(13);
   const [customer, setCustomer] = useState<Customer>({
-    name: "Marcus Whitfield",
-    email: "m.whitfield@example.com",
-    phone: "(555) 014-2287",
-    address: "418 Alder Ct",
-    city: "Millbrook",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
     postalCode: "",
     terms: "50% deposit required",
   });
@@ -856,6 +856,7 @@ const [savingSettings, setSavingSettings] = useState(false);
               <input
                 value={customer.name}
                 onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
+                placeholder="e.g. Sarah Jenkins"
                 className="field mt-1"
               />
             </label>
@@ -866,6 +867,7 @@ const [savingSettings, setSavingSettings] = useState(false);
                   type="email"
                   value={customer.email}
                   onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
+                  placeholder="e.g. sarah@example.com"
                   className="field mt-1"
                 />
               </label>
@@ -875,6 +877,7 @@ const [savingSettings, setSavingSettings] = useState(false);
                   type="tel"
                   value={customer.phone}
                   onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+                  placeholder="e.g. (705) 555-0192"
                   className="field mt-1 font-mono"
                 />
               </label>
@@ -884,6 +887,7 @@ const [savingSettings, setSavingSettings] = useState(false);
               <input
                 value={customer.address}
                 onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
+                placeholder="e.g. 142 Maple Avenue"
                 className="field mt-1"
               />
             </label>
@@ -893,6 +897,7 @@ const [savingSettings, setSavingSettings] = useState(false);
                 <input
                   value={customer.city}
                   onChange={(e) => setCustomer({ ...customer, city: e.target.value })}
+                  placeholder="e.g. Barrie"
                   className="field mt-1"
                 />
               </label>
@@ -901,6 +906,7 @@ const [savingSettings, setSavingSettings] = useState(false);
                 <input
                   value={customer.postalCode}
                   onChange={(e) => setCustomer({ ...customer, postalCode: e.target.value })}
+                  placeholder="e.g. L4M 3X9"
                   className="field mt-1 font-mono"
                   autoCapitalize="characters"
                 />
