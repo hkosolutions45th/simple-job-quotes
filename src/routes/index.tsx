@@ -209,14 +209,16 @@ const [savingSettings, setSavingSettings] = useState(false);
       });
       return;
     }
-    baseNotesRef.current = notes;
+    // Start every recording from a blank notes field.
+    baseNotesRef.current = "";
+    setNotes("");
     try {
       rec.start();
       setListening(true);
     } catch {
       /* already running */
     }
-  }, [notes]);
+  }, []);
 
   const stopDictation = useCallback(() => {
     try {
