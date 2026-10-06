@@ -9,7 +9,6 @@ import {
 type Props = {
   business: string;
   businessContact?: { phone: string; email: string; address: string };
-  businessContact?: { phone: string; email: string; address: string };
   logo: string | null;
   quoteNo: string;
   customer: Customer;
@@ -42,7 +41,6 @@ function MoneyValue({ value, emphasize = false }: { value: number; emphasize?: b
 export function QuoteSheet(props: Props) {
   const {
     business,
-    businessContact,
     businessContact,
     logo,
     quoteNo,
