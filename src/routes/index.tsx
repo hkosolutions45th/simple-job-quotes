@@ -422,7 +422,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     setDefaultTerms(s.default_terms ?? "");
     setDefaultCurrency(s.default_currency);
     if (!quoteId) {
-      setCurrency(s.default_currency);
+      if (s.default_currency !== currency) void applyCurrency(s.default_currency);
       if (s.default_terms) setCustomer((c) => ({ ...c, terms: s.default_terms! }));
     }
     setSettingsOpen(false);
