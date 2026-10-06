@@ -48,8 +48,22 @@ export const lineTotal = (i: LineItem) => i.quantity * i.rate;
 export const cleanLineItemDescription = (value: string) => {
   const currency = "(?:USD|CAD|EUR|GBP|AUD|MXN)";
   return value
-    .replace(new RegExp(`\\s*[\\(\\[]\\s*(?:estimated\\s+)?${currency}(?:\\s*[$€£])?\\s*[\\)\\]]`, "gi"), "")
-    .replace(new RegExp(`\\s*[-–—,:]\\s*(?:estimated\\s+|priced\\s+in\\s+)?${currency}(?:\\s*[$€£])?\\s*$`, "gi"), "")
+    .replace(
+      new RegExp(
+        `\\s*[\\(\\[]\\s*(?:(?:estimated|estimate|priced)\\s+)?(?:[$€£]\\s*)?${currency}(?:\\s*[$€£])?\\s*[\\)\\]]`,
+        "gi",
+      ),
+      "",
+    )
+    .replace(
+      new RegExp(
+        `\\s*[-–—,:]\\s*(?:(?:estimated|estimate|priced)\\s+(?:in\\s+)?)?(?:[$€£]\\s*)?${currency}(?:\\s*[$€£])?\\s*$`,
+        "gi",
+      ),
+      "",
+    )
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([,.;:])/g, "$1")
     .trim();
 };
 
