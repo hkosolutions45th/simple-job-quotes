@@ -26,7 +26,6 @@ import {
   setActiveCurrency,
   newId,
   quoteMessage,
-  scopeSummaryFromNotes,
   subtotalOf,
   type Customer,
   type LineItem,
@@ -61,7 +60,6 @@ function InstaQuote() {
   const [logo, setLogo] = useState<string | null>(null);
   const [quoteNo, setQuoteNo] = useState("IQ-2041");
   const [notes, setNotes] = useState("");
-  const [scopeSummary, setScopeSummary] = useState("");
   const [listening, setListening] = useState(false);
   // Source of truth: each item stores ONLY its fixed basePriceUSD. No converted price is ever stored.
   type BaseItem = { id: string; description: string; quantity: number; basePriceUSD: number };
@@ -186,10 +184,6 @@ const [savingSettings, setSavingSettings] = useState(false);
   const baseNotesRef = useRef("");
 
   const subtotal = useMemo(() => subtotalOf(items), [items]);
-  const resolvedScopeSummary = useMemo(
-    () => scopeSummary.trim() || scopeSummaryFromNotes(notes, customer),
-    [scopeSummary, notes, customer],
-  );
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const tax = taxEnabled ? (subtotal * taxRate) / 100 : 0;
@@ -235,7 +229,6 @@ const [savingSettings, setSavingSettings] = useState(false);
     // Start every recording from a blank notes field.
     baseNotesRef.current = "";
     setNotes("");
-    setScopeSummary("");
     try {
       rec.start();
       setListening(true);
@@ -265,7 +258,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     }
     setGenerating(true);
     try {
-      const { items: aiItems, client, scopeSummary: generatedScopeSummary } = await generateQuoteItems({ data: { notes } });
+      const { items: aiItems, client } = await generateQuoteItems({ data: { notes } });
       if (client && (client.name || client.email || client.phone || client.address || client.city || client.postalCode)) {
         setCustomer((c) => ({
           ...c,
@@ -284,7 +277,6 @@ const [savingSettings, setSavingSettings] = useState(false);
         basePriceUSD: i.unitRate / (rateFactorRef.current || 1),
       }));
       setItems(rows);
-      setScopeSummary(generatedScopeSummary.trim() || scopeSummaryFromNotes(notes, { ...customer, ...client }));
       toast.success(`${rows.length} line items generated`, {
         description: "Tweak quantities and rates before you send.",
       });
@@ -296,11 +288,6 @@ const [savingSettings, setSavingSettings] = useState(false);
         basePriceUSD: g.rate, // catalog rates are USD
       }));
       setItems(generated);
-      setScopeSummary(
-        generated.length
-          ? `Complete the quoted work, including ${generated.map((item) => item.description.toLowerCase()).join(", ")}.`
-          : "",
-      );
       toast.error(error instanceof Error ? error.message : "Couldn't reach the estimator", {
         description: "Added a draft from your notes instead — check the rates.",
       });
@@ -371,7 +358,6 @@ const [savingSettings, setSavingSettings] = useState(false);
           city: customer.city,
           postalCode: customer.postalCode,
           terms: customer.terms,
-          scopeSummary: resolvedScopeSummary,
           taxRate,
           currency,
           taxEnabled,
@@ -401,7 +387,6 @@ const [savingSettings, setSavingSettings] = useState(false);
   const newQuote = () => {
     setItems([]);
     setNotes("");
-    setScopeSummary("");
     setQuoteId(null);
     setCurrency("USD");
     setRateFactor(1);
@@ -504,7 +489,7 @@ const [savingSettings, setSavingSettings] = useState(false);
       client_email: customer.email || null,
       total_amount: Number(total.toFixed(2)),
       currency,
-      line_items: { quoteNo, notes, scopeSummary: resolvedScopeSummary, items: baseItems.map((b) => ({ ...b, description: cleanLineItemDescription(b.description), rate: items.find((i) => i.id === b.id)?.rate ?? b.basePriceUSD })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
+      line_items: { quoteNo, notes, items: baseItems.map((b) => ({ ...b, description: cleanLineItemDescription(b.description), rate: items.find((i) => i.id === b.id)?.rate ?? b.basePriceUSD })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
     };
     let error;
     if (quoteId) {
@@ -589,7 +574,6 @@ const [savingSettings, setSavingSettings] = useState(false);
       })),
     );
     setNotes(payload.notes ?? "");
-    setScopeSummary(payload.scopeSummary ?? "");
     if (payload.customer) {
       setCustomer({
         name: payload.customer.name ?? "",
@@ -1019,7 +1003,6 @@ const [savingSettings, setSavingSettings] = useState(false);
           total={total}
           taxRate={taxRate}
           taxEnabled={taxEnabled}
-              scopeSummary={resolvedScopeSummary}
             />
           </div>,
           document.body,
@@ -1046,7 +1029,6 @@ const [savingSettings, setSavingSettings] = useState(false);
             total={total}
             taxRate={taxRate}
             taxEnabled={taxEnabled}
-            scopeSummary={resolvedScopeSummary}
           />
           <div className="no-print sticky bottom-0 flex gap-3 border-t border-line bg-white p-3">
             <button

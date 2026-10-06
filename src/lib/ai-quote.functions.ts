@@ -5,13 +5,11 @@ const Input = z.object({ notes: z.string().min(1).max(8000) });
 
 const SYSTEM_PROMPT = `You are an expert estimator for trade services. Read the job notes and return strictly a JSON object matching:
 
-{ "items": [{ "description": string, "quantity": number, "unitRate": number, "total": number }], "client": { "name": string, "email": string, "phone": string, "address": string, "city": string, "postalCode": string }, "scopeSummary": string }
+{ "items": [{ "description": string, "quantity": number, "unitRate": number, "total": number }], "client": { "name": string, "email": string, "phone": string, "address": string, "city": string, "postalCode": string } }
 
 If unit rates or quantities are implied or missing, make a realistic industry-standard estimation based on the trade context.
 
 Also extract any client details mentioned in the notes into the "client" object: client name, email, phone, street address, city, and postal/ZIP code. Put only the street line in "address", the city in "city", and either a postal code or ZIP code in "postalCode". Use an empty string for every detail that is not mentioned.
-
-Write "scopeSummary" as one or two concise, professional sentences focused only on the work to be completed. Exclude client names, emails, phone numbers, addresses, dictation command words, conversational filler, prices, rates, currency codes, and currency symbols.
 
 Line-item descriptions must be short titles describing only the work or material. Put quantity and pricing only in their dedicated numeric fields. Never append parenthetical or bracketed currency, measurement, unit, quantity, pricing, estimation, supply-only, or rate notes to a description. For example, return "Supply and install composite deck railing", never "Supply and install composite deck railing (linear feet; estimated CAD)".`;
 
@@ -34,7 +32,6 @@ export type AiClient = {
 export type AiQuoteResult = {
   items: AiLineItem[];
   client: AiClient;
-  scopeSummary: string;
 };
 
 export const generateQuoteItems = createServerFn({ method: "POST" })
@@ -99,9 +96,8 @@ export const generateQuoteItems = createServerFn({ method: "POST" })
                   },
                   required: ["name", "email", "phone", "address", "city", "postalCode"],
                 },
-                scopeSummary: { type: "string" },
               },
-              required: ["items", "client", "scopeSummary"],
+              required: ["items", "client"],
             },
           },
         },
@@ -150,18 +146,8 @@ export const generateQuoteItems = createServerFn({ method: "POST" })
 
     const parsed = safeParse(text);
     if (!parsed.length) throw new Error("The AI couldn't find any line items in those notes.");
-    return { items: parsed, client: parseClient(text), scopeSummary: parseScopeSummary(text) };
+    return { items: parsed, client: parseClient(text) };
   });
-
-function parseScopeSummary(text: string): string {
-  const trimmed = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-  try {
-    const raw = JSON.parse(trimmed) as { scopeSummary?: unknown };
-    return typeof raw.scopeSummary === "string" ? raw.scopeSummary.trim() : "";
-  } catch {
-    return "";
-  }
-}
 
 function cleanDescription(value: string): string {
   const currency = "(?:USD|CAD|EUR|GBP|AUD|MXN)";
