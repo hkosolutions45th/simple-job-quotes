@@ -218,12 +218,29 @@ const [savingSettings, setSavingSettings] = useState(false);
     };
   }, []);
 
-  const startDictation = useCallback(() => {
+  const [micDenied, setMicDenied] = useState(false);
+
+  const startDictation = useCallback(async () => {
     const rec = recognitionRef.current;
     if (!rec) {
       toast.error("Dictation isn't supported in this browser", {
         description: "Type your notes below instead — everything else works the same.",
       });
+      return;
+    }
+    // Trigger the browser's native mic permission prompt before starting recognition.
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+    } catch (err) {
+      const name = (err as DOMException)?.name;
+      if (name === "NotAllowedError" || name === "NotFoundError") {
+        setMicDenied(true);
+      } else {
+        toast.error("Microphone unavailable", {
+          description: "Check that no other app is using the mic, then try again.",
+        });
+      }
       return;
     }
     // Start every recording from a blank notes field.
