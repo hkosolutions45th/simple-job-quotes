@@ -62,8 +62,9 @@ function InstaQuote() {
   const [quoteNo, setQuoteNo] = useState("IQ-2041");
   const [notes, setNotes] = useState(SAMPLE);
   const [listening, setListening] = useState(false);
-  // Source of truth: each item's baseRate is its USD unit price. `rate` here is never trusted.
-  const [baseItems, setItems] = useState<LineItem[]>([]);
+  // Source of truth: each item stores ONLY its fixed basePriceUSD. No converted price is ever stored.
+  type BaseItem = { id: string; description: string; quantity: number; basePriceUSD: number };
+  const [baseItems, setItems] = useState<BaseItem[]>([]);
   const [generating, setGenerating] = useState(false);
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [taxRate, setTaxRate] = useState(13);
@@ -105,9 +106,10 @@ const [savingSettings, setSavingSettings] = useState(false);
     () =>
       baseItems.map((i) => ({
         ...i,
-        rate: Math.round((i.baseRate ?? i.rate) * (rateFactor || 1) * 100) / 100,
+        // Display only: basePriceUSD × current currency rate (USD = 1.0 exactly).
+        rate: currency === "USD" ? i.basePriceUSD : Math.round(i.basePriceUSD * rateFactor * 100) / 100,
       })),
-    [baseItems, rateFactor],
+    [baseItems, rateFactor, currency],
   );
   // Persist currency + rate so reloads/tab switches never desync the dropdown from the numbers.
   const currencyRestored = useRef(false);
@@ -238,12 +240,11 @@ const [savingSettings, setSavingSettings] = useState(false);
     setGenerating(true);
     try {
       const { items: aiItems } = await generateQuoteItems({ data: { notes } });
-      const rows: LineItem[] = aiItems.map((i) => ({
+      const rows: BaseItem[] = aiItems.map((i) => ({
         id: newId(),
         description: i.description,
         quantity: i.quantity,
-        rate: i.unitRate,
-        baseRate: i.unitRate / rateFactorRef.current,
+        basePriceUSD: i.unitRate / (rateFactorRef.current || 1),
       }));
       setItems((prev) => [...prev, ...rows]);
       toast.success(`${rows.length} line items added`, {
@@ -252,7 +253,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     } catch (error) {
       const generated = generateLineItems(notes).map((g) => ({
         ...g,
-        baseRate: g.rate, // catalog rates are USD
+        basePriceUSD: g.rate, // catalog rates are USD
       }));
       setItems((prev) => [...prev, ...generated]);
       toast.error(error instanceof Error ? error.message : "Couldn't reach the estimator", {

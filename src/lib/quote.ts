@@ -3,8 +3,8 @@ export type LineItem = {
   description: string;
   quantity: number;
   rate: number;
-  /** Immutable USD rate captured at creation; conversions always derive from this. */
-  baseRate?: number;
+  /** Fixed USD unit price — the only stored price. `rate` is derived for display. */
+  basePriceUSD?: number;
 };
 
 export type Customer = {
