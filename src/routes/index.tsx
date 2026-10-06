@@ -218,13 +218,17 @@ const [savingSettings, setSavingSettings] = useState(false);
         description: i.description,
         quantity: i.quantity,
         rate: i.unitRate,
+        baseRate: i.unitRate / rateFactorRef.current,
       }));
       setItems((prev) => [...prev, ...rows]);
       toast.success(`${rows.length} line items added`, {
         description: "Tweak quantities and rates before you send.",
       });
     } catch (error) {
-      const generated = generateLineItems(notes);
+      const generated = generateLineItems(notes).map((g) => ({
+        ...g,
+        baseRate: g.rate / rateFactorRef.current,
+      }));
       setItems((prev) => [...prev, ...generated]);
       toast.error(error instanceof Error ? error.message : "Couldn't reach the estimator", {
         description: "Added a draft from your notes instead — check the rates.",
@@ -235,10 +239,18 @@ const [savingSettings, setSavingSettings] = useState(false);
   };
 
   const updateItem = (id: string, patch: Partial<LineItem>) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        const next = { ...i, ...patch };
+        // Manual rate edits are entered in the current currency — keep the USD base in sync.
+        if (patch.rate !== undefined) next.baseRate = patch.rate / rateFactorRef.current;
+        return next;
+      }),
+    );
 
   const addRow = () =>
-    setItems((prev) => [...prev, { id: newId(), description: "", quantity: 1, rate: 0 }]);
+    setItems((prev) => [...prev, { id: newId(), description: "", quantity: 1, rate: 0, baseRate: 0 }]);
 
   const message = quoteMessage({ business, customer, total, quoteNo });
 
@@ -402,7 +414,7 @@ const [savingSettings, setSavingSettings] = useState(false);
       client_email: customer.email || null,
       total_amount: Number(total.toFixed(2)),
       currency,
-      line_items: { quoteNo, notes, items, customer, taxRate, taxEnabled, currency } as any,
+      line_items: { quoteNo, notes, items, customer, taxRate, taxEnabled, currency, rateFactor } as any,
     };
     let error;
     if (quoteId) {
