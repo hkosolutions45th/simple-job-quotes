@@ -239,7 +239,16 @@ const [savingSettings, setSavingSettings] = useState(false);
     }
     setGenerating(true);
     try {
-      const { items: aiItems } = await generateQuoteItems({ data: { notes } });
+      const { items: aiItems, client } = await generateQuoteItems({ data: { notes } });
+      if (client && (client.name || client.email || client.phone || client.address)) {
+        setCustomer((c) => ({
+          ...c,
+          name: client.name || c.name,
+          email: client.email || c.email,
+          phone: client.phone || c.phone,
+          address: client.address || c.address,
+        }));
+      }
       const rows: BaseItem[] = aiItems.map((i) => ({
         id: newId(),
         description: i.description,
