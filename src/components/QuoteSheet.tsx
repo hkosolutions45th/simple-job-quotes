@@ -17,7 +17,6 @@ type Props = {
   total: number;
   taxRate: number;
   taxEnabled: boolean;
-  scopeSummary?: string;
 };
 
 function MoneyValue({ value, emphasize = false }: { value: number; emphasize?: boolean }) {
@@ -50,7 +49,6 @@ export function QuoteSheet(props: Props) {
     total,
     taxRate,
     taxEnabled,
-    scopeSummary,
   } = props;
 
   const today = new Date();
@@ -62,7 +60,6 @@ export function QuoteSheet(props: Props) {
   const depositPct = depositMatch?.[1] ? Number(depositMatch[1]) : null;
   const deposit = depositPct && depositPct > 0 && depositPct < 100 ? (total * depositPct) / 100 : null;
   const cityPostal = [customer.city, customer.postalCode].filter(Boolean).join(" ");
-  const printableScope = scopeSummary?.trim() ?? "";
 
   return (
     <div className="quote-sheet mx-auto w-full min-w-0 overflow-hidden bg-white p-6 text-ink sm:p-8">
@@ -105,12 +102,6 @@ export function QuoteSheet(props: Props) {
           </div>
         </div>
       </header>
-
-      {/* Scope of work */}
-      <section className="mt-5 break-inside-avoid rounded-md border border-line bg-cream p-3 text-sm">
-        <p className="label-mono font-bold text-ink">Scope of work</p>
-        <p className="mt-1 min-h-5 break-words leading-relaxed text-inksoft">{printableScope || "—"}</p>
-      </section>
 
       {/* Line items */}
       <div className="mt-5 min-w-0 w-full max-w-full overflow-hidden">

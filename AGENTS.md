@@ -9,5 +9,4 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Treat the AI quote result as one structured object containing items, client details, and a PDF scope summary so all generated quote content stays synchronized.
-- Resolve an empty AI scope summary from sanitized job notes once in quote state, then reuse it for persistence, PDF, and email so outputs cannot diverge.
+- Treat the AI quote result as one structured object containing synchronized line items and client details; scope summaries are intentionally excluded.
