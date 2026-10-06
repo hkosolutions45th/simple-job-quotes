@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { formatMoney } from "@/lib/quote";
+import { cleanLineItemDescription, formatMoney } from "@/lib/quote";
 
 const itemSchema = z.object({
   description: z.string().default(""),
@@ -18,6 +18,7 @@ const payloadSchema = z.object({
   city: z.string().max(120).default(""),
   postalCode: z.string().max(24).default(""),
   terms: z.string().max(240).default(""),
+  scopeSummary: z.string().max(1200).default(""),
   taxRate: z.number().default(13),
   currency: z.string().max(3).default("USD"),
   taxEnabled: z.boolean().default(true),
@@ -50,7 +51,7 @@ function buildHtml(p: Payload) {
     .map(
       (i, n) => `<tr>
   <td style="padding:8px 4px;border-bottom:1px solid #e7e0d4;color:#7a7266">${n + 1}</td>
-  <td style="padding:8px 4px;border-bottom:1px solid #e7e0d4">${esc(i.description || "—")}</td>
+  <td style="padding:8px 4px;border-bottom:1px solid #e7e0d4;overflow-wrap:anywhere">${esc(cleanLineItemDescription(i.description) || "—")}</td>
   <td style="padding:8px 4px;border-bottom:1px solid #e7e0d4;text-align:right">${i.quantity}</td>
   <td style="padding:8px 4px;border-bottom:1px solid #e7e0d4;text-align:right">${money(i.rate)}</td>
   <td style="padding:8px 4px;border-bottom:1px solid #e7e0d4;text-align:right">${money(i.quantity * i.rate)}</td>
@@ -76,6 +77,7 @@ function buildHtml(p: Payload) {
       ${cityPostal ? `<div>${esc(cityPostal)}</div>` : ""}
       ${p.terms ? `<div><strong style="color:#2b2722">Payment terms:</strong> ${esc(p.terms)}</div>` : ""}
     </div>
+    ${p.scopeSummary.trim() ? `<div style="margin:16px 0;padding:12px;border:1px solid #e7e0d4;border-radius:6px;background:#f6efe3"><div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2b2722">Scope of work</div><div style="margin-top:5px;font-size:13px;line-height:1.55;color:#5f584f">${esc(p.scopeSummary.trim())}</div></div>` : ""}
     <table style="width:100%;border-collapse:collapse;font-size:13px">
       <thead><tr style="border-bottom:1px solid #2b2722">
         <th style="text-align:left;padding:6px 4px">#</th>

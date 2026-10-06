@@ -353,6 +353,7 @@ const [savingSettings, setSavingSettings] = useState(false);
           city: customer.city,
           postalCode: customer.postalCode,
           terms: customer.terms,
+          scopeSummary,
           taxRate,
           currency,
           taxEnabled,
