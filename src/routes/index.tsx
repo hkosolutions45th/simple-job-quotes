@@ -94,6 +94,34 @@ const [savingSettings, setSavingSettings] = useState(false);
   const [defaultCurrency, setDefaultCurrency] = useState("USD");
   // money() everywhere in this render (incl. the quote preview) uses the quote's currency.
   setActiveCurrency(currency);
+  const [converting, setConverting] = useState(false);
+  const changeCurrency = async (next: string) => {
+    if (next === currency) return;
+    if (items.length === 0) {
+      setCurrency(next);
+      return;
+    }
+    setConverting(true);
+    try {
+      const res = await fetch(`https://open.er-api.com/v6/latest/${currency}`);
+      const json = await res.json();
+      const rate = Number(json?.rates?.[next]);
+      if (!res.ok || json?.result !== "success" || !(rate > 0)) throw new Error("No rate");
+      setItems((prev) =>
+        prev.map((i) => ({ ...i, rate: Math.round(i.rate * rate * 100) / 100 })),
+      );
+      setCurrency(next);
+      toast.success(`Converted to ${next}`, {
+        description: `1 ${currency} = ${rate.toFixed(4)} ${next} (live rate)`,
+      });
+    } catch {
+      toast.error("Couldn't get live exchange rates", {
+        description: "Currency not changed. Check your connection and try again.",
+      });
+    } finally {
+      setConverting(false);
+    }
+  };
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -677,7 +705,8 @@ const [savingSettings, setSavingSettings] = useState(false);
               <span className="text-sm text-cream/70">Currency</span>
               <select
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
+                onChange={(e) => changeCurrency(e.target.value)}
+                disabled={converting}
                 aria-label="Quote currency"
                 className="min-h-10 rounded-md bg-cream/10 px-2 font-mono text-sm text-cream outline-none"
               >
