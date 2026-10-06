@@ -53,14 +53,12 @@ export const Route = createFileRoute("/")({
   component: InstaQuote,
 });
 
-const SAMPLE =
-  "Three car garage — 2 coats premium elastomeric on asphalt shingle. North slope needs an ice/water shield patch along the ridge.";
 
 function InstaQuote() {
   const [business, setBusiness] = useState("Tanner & Field Roofing");
   const [logo, setLogo] = useState<string | null>(null);
   const [quoteNo, setQuoteNo] = useState("IQ-2041");
-  const [notes, setNotes] = useState(SAMPLE);
+  const [notes, setNotes] = useState("");
   const [listening, setListening] = useState(false);
   // Source of truth: each item stores ONLY its fixed basePriceUSD. No converted price is ever stored.
   type BaseItem = { id: string; description: string; quantity: number; basePriceUSD: number };
@@ -675,7 +673,7 @@ const [savingSettings, setSavingSettings] = useState(false);
             rows={4}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Describe the job — materials, measurements, hours…"
+            placeholder="Tap the button above to dictate or type job notes here..."
             className="mt-1 w-full resize-none rounded-xl bg-cream p-3 text-sm leading-relaxed ring-1 ring-line outline-none focus-visible:ring-2 focus-visible:ring-clay"
           />
 
