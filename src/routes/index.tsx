@@ -129,6 +129,9 @@ const [savingSettings, setSavingSettings] = useState(false);
   }, [currency, rateFactor]);
   const changeCurrency = async (next: string) => {
     if (next === currency) return;
+    return applyCurrency(next);
+  };
+  const applyCurrency = async (next: string) => {
     if (next === "USD") {
       setRateFactor(1);
       setCurrency(next);
@@ -249,7 +252,7 @@ const [savingSettings, setSavingSettings] = useState(false);
     } catch (error) {
       const generated = generateLineItems(notes).map((g) => ({
         ...g,
-        baseRate: g.rate / rateFactorRef.current,
+        baseRate: g.rate, // catalog rates are USD
       }));
       setItems((prev) => [...prev, ...generated]);
       toast.error(error instanceof Error ? error.message : "Couldn't reach the estimator", {
@@ -348,8 +351,9 @@ const [savingSettings, setSavingSettings] = useState(false);
     setItems([]);
     setNotes("");
     setQuoteId(null);
-    setCurrency(defaultCurrency);
+    setCurrency("USD");
     setRateFactor(1);
+    if (defaultCurrency !== "USD") void applyCurrency(defaultCurrency);
     setCustomer({ name: "", email: "", phone: "", address: "", terms: defaultTerms || "50% deposit required" });
     setQuoteNo(`IQ-${Math.floor(2000 + Math.random() * 8000)}`);
     toast.success("Blank quote ready");
