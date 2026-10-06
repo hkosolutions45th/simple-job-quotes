@@ -8,6 +8,7 @@ import {
 
 type Props = {
   business: string;
+  businessContact?: { phone: string; email: string; address: string };
   logo: string | null;
   quoteNo: string;
   customer: Customer;
@@ -40,6 +41,7 @@ function MoneyValue({ value, emphasize = false }: { value: number; emphasize?: b
 export function QuoteSheet(props: Props) {
   const {
     business,
+    businessContact,
     logo,
     quoteNo,
     customer,
@@ -79,6 +81,13 @@ export function QuoteSheet(props: Props) {
               <p className="label-mono">Quotation / Estimate</p>
             </div>
           </div>
+          {businessContact && (businessContact.phone || businessContact.email || businessContact.address) && (
+            <div className="mt-2 min-w-0 break-words text-[11px] leading-snug text-inksoft">
+              {businessContact.address && <p>{businessContact.address}</p>}
+              {businessContact.phone && <p className="font-mono">{businessContact.phone}</p>}
+              {businessContact.email && <p>{businessContact.email}</p>}
+            </div>
+          )}
           <div className="mt-5 min-w-0 break-words text-sm">
           <p className="label-mono">Prepared for</p>
           <p className="font-semibold">{customer.name || "—"}</p>

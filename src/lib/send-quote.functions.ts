@@ -12,6 +12,9 @@ const payloadSchema = z.object({
   to: z.string().email(),
   message: z.string().max(4000).default(""),
   business: z.string().min(1).max(120),
+  businessPhone: z.string().max(40).default(""),
+  businessEmail: z.string().max(160).default(""),
+  businessAddress: z.string().max(300).default(""),
   quoteNo: z.string().min(1).max(60),
   clientName: z.string().max(120).default(""),
   jobAddress: z.string().max(240).default(""),
@@ -66,7 +69,8 @@ function buildHtml(p: Payload) {
   <div style="background:#ffffff;border-radius:14px;padding:24px">
     <div style="display:flex;justify-content:space-between;border-bottom:2px solid #2b2722;padding-bottom:12px">
       <div><div style="font-size:20px;font-weight:700">${esc(p.business)}</div>
-      <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#7a7266">Quotation / Estimate</div></div>
+      <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#7a7266">Quotation / Estimate</div>
+      ${[p.businessAddress, p.businessPhone, p.businessEmail].filter(Boolean).map((v) => `<div style="font-size:12px;color:#7a7266">${esc(v)}</div>`).join("")}</div>
       <div style="text-align:right;font-size:12px;color:#7a7266">Quote ${esc(p.quoteNo)}<br/>Issued ${issued}</div>
     </div>
     ${p.message.trim() ? `<p style="white-space:pre-wrap;line-height:1.6;margin:18px 0">${esc(p.message.trim())}</p>` : ""}
@@ -120,6 +124,7 @@ export const sendQuoteEmail = createServerFn({ method: "POST" })
       body: JSON.stringify({
         from: `${data.business} <onboarding@resend.dev>`,
         to: [data.to],
+        ...(data.businessEmail.includes("@") ? { reply_to: data.businessEmail } : {}),
         subject: `Quote ${data.quoteNo} from ${data.business}`,
         html: buildHtml(data),
       }),
