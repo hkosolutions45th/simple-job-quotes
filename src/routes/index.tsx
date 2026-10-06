@@ -100,6 +100,8 @@ const [savingSettings, setSavingSettings] = useState(false);
   // Current currency's exchange rate vs USD (1 = USD). Rates always derive from baseRate * rateFactor.
   const [rateFactor, setRateFactor] = useState(1);
   const rateFactorRef = useRef(1);
+  const currencyRef = useRef(currency);
+  currencyRef.current = currency;
   rateFactorRef.current = rateFactor;
   // Displayed items are derived on render: rate = baseRate (USD) × current exchange rate.
   const items = useMemo(
@@ -251,8 +253,10 @@ const [savingSettings, setSavingSettings] = useState(false);
         description: "Tweak quantities and rates before you send.",
       });
     } catch (error) {
-      const generated = generateLineItems(notes).map((g) => ({
-        ...g,
+      const generated: BaseItem[] = generateLineItems(notes).map((g) => ({
+        id: g.id,
+        description: g.description,
+        quantity: g.quantity,
         basePriceUSD: g.rate, // catalog rates are USD
       }));
       setItems((prev) => [...prev, ...generated]);
@@ -268,18 +272,20 @@ const [savingSettings, setSavingSettings] = useState(false);
     setItems((prev) =>
       prev.map((i) => {
         if (i.id !== id) return i;
-        const next = { ...i, ...patch };
-        // Manual rate edits are entered in the current currency — keep the USD base in sync.
+        const next: BaseItem = { ...i };
+        if (patch.description !== undefined) next.description = patch.description;
+        if (patch.quantity !== undefined) next.quantity = patch.quantity;
+        // Only a price the user types changes the base: typed value (current currency) → USD.
         if (patch.rate !== undefined) {
-          next.baseRate = patch.rate / (rateFactorRef.current || 1);
-          next.rate = next.baseRate;
+          const f = currencyRef.current === "USD" ? 1 : rateFactorRef.current || 1;
+          next.basePriceUSD = patch.rate / f;
         }
         return next;
       }),
     );
 
   const addRow = () =>
-    setItems((prev) => [...prev, { id: newId(), description: "", quantity: 1, rate: 0, baseRate: 0 }]);
+    setItems((prev) => [...prev, { id: newId(), description: "", quantity: 1, basePriceUSD: 0 }]);
 
   const message = quoteMessage({ business, customer, total, quoteNo });
 
@@ -445,7 +451,7 @@ const [savingSettings, setSavingSettings] = useState(false);
       client_email: customer.email || null,
       total_amount: Number(total.toFixed(2)),
       currency,
-      line_items: { quoteNo, notes, items: items.map((i) => ({ ...i, baseRate: baseItems.find((b) => b.id === i.id)?.baseRate ?? i.rate })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
+      line_items: { quoteNo, notes, items: baseItems.map((b) => ({ ...b, rate: items.find((i) => i.id === b.id)?.rate ?? b.basePriceUSD })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
     };
     let error;
     if (quoteId) {
@@ -522,10 +528,12 @@ const [savingSettings, setSavingSettings] = useState(false);
     const factor = typeof payload.rateFactor === "number" && payload.rateFactor > 0 ? payload.rateFactor : 1;
     setRateFactor(factor);
     setItems(
-      (Array.isArray(payload.items) ? payload.items : []).map((i: LineItem) => {
-        const base = i.baseRate ?? i.rate / factor;
-        return { ...i, baseRate: base, rate: base };
-      }),
+      (Array.isArray(payload.items) ? payload.items : []).map((i: any): BaseItem => ({
+        id: i.id ?? newId(),
+        description: i.description ?? "",
+        quantity: Number(i.quantity) || 0,
+        basePriceUSD: Number(i.basePriceUSD ?? i.baseRate ?? (Number(i.rate) || 0) / factor),
+      })),
     );
     setNotes(payload.notes ?? "");
     if (payload.customer) setCustomer(payload.customer);
