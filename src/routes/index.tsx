@@ -606,7 +606,7 @@ function InstaQuote() {
           if (!quoteIdRef.current && !currencyRestored.current && data.default_currency === "USD") setCurrency(data.default_currency);
         }
         if (data.default_terms) {
-          setCustomer((c) => (quoteIdRef.current ? c : { ...c, terms: c.terms || data.default_terms ?? "" }));
+          setCustomer((c) => (quoteIdRef.current ? c : { ...c, terms: c.terms || (data.default_terms ?? "") }));
         }
       });
     return () => {
