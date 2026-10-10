@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CloudUpload, Copy, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Printer, Send, Settings, Trash2, Upload } from "lucide-react";
+import { Copy, FileText, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Save, Send, Settings, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -1211,21 +1211,22 @@ function InstaQuote() {
       </div>
 
       {/* Sticky action bar */}
-      <div className="no-print fixed right-0 bottom-0 left-0 z-10">
-        <div className="app-safe-actions mx-auto max-w-[430px] px-4 pt-2 pb-4">
-          <div className="clay-shadow grid grid-cols-[3.5rem_repeat(3,minmax(0,1fr))] gap-2 rounded-2xl bg-card p-3 ring-1 ring-black/5">
+      <div className="no-print fixed right-0 bottom-0 left-0 z-10 bg-gradient-to-t from-background via-background/95 to-transparent">
+        <div className="app-safe-actions mx-auto max-w-[430px] px-3 pt-2 pb-4">
+          <div className="clay-shadow grid grid-cols-4 gap-1.5 rounded-2xl bg-card p-2 ring-1 ring-black/5">
             <button
               onClick={saveQuote}
               disabled={saving}
               aria-busy={saving}
               aria-label="Save quote to my account"
-              className="grid min-h-14 w-14 shrink-0 place-items-center rounded-xl bg-cream ring-1 ring-line active:translate-y-0.5 disabled:opacity-60"
+              className="clay-shadow-ink flex min-h-16 min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl bg-ink px-0.5 text-[11px] leading-none font-semibold text-cream active:translate-y-0.5 disabled:opacity-60 max-[360px]:text-[10px]"
             >
               {saving ? (
-                <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+                <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
               ) : (
-                <CloudUpload className="size-5" aria-hidden="true" />
+                <Save className="size-4 shrink-0" aria-hidden="true" />
               )}
+              <span className="whitespace-nowrap">{saving ? "Saving…" : "Save Quote"}</span>
             </button>
             <button
               onClick={() => {
@@ -1237,23 +1238,27 @@ function InstaQuote() {
                 }
                 setPreviewOpen(true);
               }}
-              className="flex min-h-14 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-cream px-2 text-sm font-semibold ring-1 ring-line active:translate-y-0.5 max-[360px]:flex-col max-[360px]:gap-0.5 max-[360px]:px-1 max-[360px]:text-[11px]"
+              aria-label="View quote PDF"
+              className="flex min-h-16 min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl bg-cream px-1 text-[11px] leading-none font-semibold text-ink ring-1 ring-line active:translate-y-0.5 max-[360px]:text-[10px]"
             >
-              <Printer className="size-4" aria-hidden="true" /> Preview
+              <FileText className="size-4 shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">View PDF</span>
             </button>
             <button
               onClick={openEmail}
-              aria-label="Send quote by email"
-              className="flex min-h-14 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-cream px-2 text-sm font-semibold ring-1 ring-line active:translate-y-0.5 max-[360px]:flex-col max-[360px]:gap-0.5 max-[360px]:px-1 max-[360px]:text-[11px]"
+              aria-label="Email quote PDF"
+              className="flex min-h-16 min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl bg-cream px-1 text-[11px] leading-none font-semibold text-ink ring-1 ring-line active:translate-y-0.5 max-[360px]:text-[10px]"
             >
-              <Mail className="size-4" aria-hidden="true" /> Email
+              <Mail className="size-4 shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">Email PDF</span>
             </button>
-
             <button
               onClick={openSend}
-              className="clay-shadow flex min-h-14 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-clay px-2 text-sm font-semibold text-cream active:translate-y-0.5 max-[360px]:flex-col max-[360px]:gap-0.5 max-[360px]:px-1 max-[360px]:text-[11px]"
+              aria-label="Send quote by text or email"
+              className="clay-shadow flex min-h-16 min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl bg-clay px-1 text-[11px] leading-none font-semibold text-cream active:translate-y-0.5 max-[360px]:text-[10px]"
             >
-              <Send className="size-4" aria-hidden="true" /> Send
+              <Send className="size-4 shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">Send</span>
             </button>
           </div>
         </div>
@@ -1453,7 +1458,7 @@ function InstaQuote() {
           </DialogHeader>
           {saved.length === 0 ? (
             <p className="py-6 text-center text-sm text-inksoft">
-              No saved quotes yet. Save one with the cloud button.
+              No saved quotes yet. Save one with the Save Quote button.
             </p>
           ) : (
             <ul className="space-y-2">
