@@ -1219,7 +1219,7 @@ function InstaQuote() {
               disabled={saving}
               aria-busy={saving}
               aria-label="Save quote to my account"
-              className="clay-shadow-ink flex min-h-16 min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl bg-ink px-1 text-[11px] leading-none font-semibold text-cream active:translate-y-0.5 disabled:opacity-60 max-[360px]:text-[10px]"
+              className="clay-shadow-ink flex min-h-16 min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl bg-ink px-0.5 text-[11px] leading-none font-semibold text-cream active:translate-y-0.5 disabled:opacity-60 max-[360px]:text-[10px]"
             >
               {saving ? (
                 <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
