@@ -170,6 +170,37 @@ function InstaQuote() {
     (c) => c.name.trim().toLowerCase() === customer.name.trim().toLowerCase(),
   );
   const clientSaved = Boolean(clientMatch);
+  const clientModified = Boolean(
+    clientMatch &&
+      (clientMatch.email !== customer.email ||
+        clientMatch.phone !== customer.phone ||
+        clientMatch.address !== customer.address ||
+        clientMatch.city !== customer.city ||
+        clientMatch.postalCode !== customer.postalCode ||
+        clientMatch.name !== customer.name.trim()),
+  );
+  const updateClient = async () => {
+    if (!clientMatch) return;
+    const updated: SavedClient = {
+      ...clientMatch,
+      name: customer.name.trim(),
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      city: customer.city,
+      postalCode: customer.postalCode,
+    };
+    storeClients(savedClients.map((c) => (c.id === clientMatch.id ? updated : c)).sort((a, b) => a.name.localeCompare(b.name)));
+    if (user) {
+      const { error } = await supabase
+        .from("saved_clients")
+        .update({ name: updated.name, email: updated.email, phone: updated.phone, address: updated.address, city: updated.city, postal_code: updated.postalCode })
+        .eq("id", clientMatch.id)
+        .eq("user_id", user.id);
+      if (error) toast.warning("Updated on this device only", { description: "We'll sync it to your account next time you're online." });
+    }
+    toast.success(`${updated.name} updated in your clients`);
+  };
   const toggleSaveClient = async (on: boolean) => {
     if (on) {
       let entry: SavedClient = {
