@@ -1,4 +1,5 @@
-import { test, expect, beforeEach } from "bun:test";
+import { test, beforeEach } from "node:test";
+import assert from "node:assert/strict";
 import { nextQuoteNumber, readDeviceJSON, readDeviceText, writeDeviceText } from "./device-storage";
 import { duplicateQuoteRecord } from "./duplicate-quote";
 
@@ -43,7 +44,7 @@ test("duplicates preserve item quantities, base prices and display prices", () =
   const copy = duplicateQuoteRecord(source, "IQ-1004", "user");
   expect(copy.line_items.items).toEqual(source.line_items.items);
   copy.line_items.items[0].quantity = 5;
-  expect(source.line_items.items[0].quantity).toBe(2);
+  expect(source.line_items.items[0]?.quantity).toBe(2);
 });
 test("duplicates preserve currency, tax and deposit terms", () => {
   const copy = duplicateQuoteRecord(source, "IQ-1004", "user");
