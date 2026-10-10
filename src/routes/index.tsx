@@ -889,6 +889,7 @@ function InstaQuote() {
       terms: "50% deposit required",
     });
     toast.success("Signed out");
+    navigate({ to: "/auth", replace: true });
   };
 
 
@@ -899,6 +900,33 @@ function InstaQuote() {
       <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-accent" aria-hidden="true" />
     </div>
   );
+
+  // Auth guard: signed-out users see a clean sign-in landing, never the estimator or cached drafts.
+  if (!user) {
+    return (
+      <div className="app-safe-layout flex min-h-screen flex-col items-center justify-center gap-8 bg-cream px-6 text-center text-ink">
+        <div className="clay-shadow grid size-24 place-items-center rounded-2xl bg-clay text-cream">
+          <Mic className="size-11" aria-hidden="true" />
+        </div>
+        <div>
+          <h1 className="text-4xl font-bold leading-tight">InstaQuote</h1>
+          <p className="mt-1 font-mono text-xs tracking-widest text-muted-foreground">PRO</p>
+          <p className="mx-auto mt-4 max-w-xs text-base text-muted-foreground">
+            Dictate job notes on site and turn them into a priced, print-ready quote you can text or email in seconds.
+          </p>
+        </div>
+        <Link
+          to="/auth"
+          className="clay-shadow flex min-h-14 w-full max-w-xs items-center justify-center rounded-2xl bg-clay text-lg font-bold text-cream"
+        >
+          Sign in or create an account
+        </Link>
+        <p className="max-w-xs text-xs text-muted-foreground">
+          Your business settings, saved clients and quotes stay with your account on every device.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-cream text-ink">
