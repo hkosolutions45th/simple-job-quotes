@@ -1,0 +1,6 @@
+{
+  "appId": "com.instaquote.app",
+  "appName": "InstaQuote Pro",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

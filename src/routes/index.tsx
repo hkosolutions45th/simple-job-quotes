@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CloudUpload, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Printer, Send, Settings, Trash2, Upload } from "lucide-react";
+import { CloudUpload, Copy, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Printer, Send, Settings, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -11,6 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { duplicateQuoteRecord } from "@/lib/duplicate-quote";
+import { nextQuoteNumber, readDeviceJSON, readDeviceText, writeDeviceText } from "@/lib/device-storage";
 import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -80,13 +83,18 @@ const EMPTY_PROFILE: BusinessProfile = {
 
 function InstaQuote() {
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(EMPTY_PROFILE);
-  const profileLoaded = useRef(false);
+  const [deviceReady, setDeviceReady] = useState(false);
   // Load the device-saved profile after hydration, then keep it in sync.
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(PROFILE_KEY);
+      const raw = readDeviceText(PROFILE_KEY);
       if (raw) {
-        const p = { ...EMPTY_PROFILE, ...JSON.parse(raw) } as BusinessProfile;
+        const value = JSON.parse(raw);
+        const p = { ...EMPTY_PROFILE };
+        for (const key of ["companyName", "phone", "email", "address", "city", "postalCode", "defaultTerms"] as const) {
+          if (typeof value?.[key] === "string") p[key] = value[key];
+        }
+        if (Number.isFinite(value?.taxRate) && value.taxRate >= 0) p.taxRate = value.taxRate;
         setBusinessProfile(p);
         setTaxRate(p.taxRate);
         if (p.defaultTerms) setCustomer((c) => ({ ...c, terms: p.defaultTerms }));
@@ -94,11 +102,11 @@ function InstaQuote() {
     } catch {
       /* ignore corrupt storage */
     }
-    profileLoaded.current = true;
+    setDeviceReady(true);
   }, []);
   useEffect(() => {
-    if (profileLoaded.current) localStorage.setItem(PROFILE_KEY, JSON.stringify(businessProfile));
-  }, [businessProfile]);
+    if (deviceReady) writeDeviceText(PROFILE_KEY, JSON.stringify(businessProfile));
+  }, [businessProfile, deviceReady]);
   const business = businessProfile.companyName.trim() || "Your Business Name";
   const setBusiness = (name: string) => setBusinessProfile((p) => ({ ...p, companyName: name }));
   const businessContact = {
@@ -112,33 +120,33 @@ function InstaQuote() {
   const [quoteNo, setQuoteNo] = useState("IQ-1001");
   // Auto-incrementing quote numbers stored on this device.
   const takeNextQuoteNo = () => {
-    const n = Math.max(1001, Number(localStorage.getItem("nextQuoteNumber")) || 1001);
-    localStorage.setItem("nextQuoteNumber", String(n + 1));
-    localStorage.setItem("instaquote:currentQuoteNo", `IQ-${n}`);
-    return `IQ-${n}`;
+    const number = nextQuoteNumber(saved.map((row) => row.line_items?.quoteNo ?? ""));
+    writeDeviceText("instaquote:currentQuoteNo", number);
+    return number;
   };
   useEffect(() => {
-    const current = localStorage.getItem("instaquote:currentQuoteNo");
+    const current = readDeviceText("instaquote:currentQuoteNo");
     setQuoteNo(current || takeNextQuoteNo());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
-    if (quoteNo.trim()) localStorage.setItem("instaquote:currentQuoteNo", quoteNo);
-  }, [quoteNo]);
+    if (deviceReady && quoteNo.trim()) writeDeviceText("instaquote:currentQuoteNo", quoteNo);
+  }, [quoteNo, deviceReady]);
 
   // Saved clients directory (this device).
   type SavedClient = { id: string; name: string; email: string; phone: string; address: string; city: string; postalCode: string };
   const [savedClients, setSavedClients] = useState<SavedClient[]>([]);
   useEffect(() => {
     try {
-      setSavedClients(JSON.parse(localStorage.getItem("instaquote:clients") || "[]"));
+      setSavedClients(readDeviceJSON<SavedClient[]>("instaquote:clients", [], (v): v is SavedClient[] =>
+        Array.isArray(v) && v.every((c) => c && ["id", "name", "email", "phone", "address", "city", "postalCode"].every((key) => typeof c[key] === "string"))));
     } catch {
       /* ignore */
     }
   }, []);
   const storeClients = (next: SavedClient[]) => {
     setSavedClients(next);
-    localStorage.setItem("instaquote:clients", JSON.stringify(next));
+    if (!writeDeviceText("instaquote:clients", JSON.stringify(next))) toast.warning("Device storage is unavailable", { description: "Your clients may not survive closing this app." });
   };
   const [notes, setNotes] = useState("");
   const [listening, setListening] = useState(false);
@@ -245,10 +253,10 @@ function InstaQuote() {
   const currencyRestored = useRef(false);
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("instaquote:currency");
+      const raw = readDeviceText("instaquote:currency");
       if (raw) {
         const saved = JSON.parse(raw);
-        if (typeof saved?.currency === "string") setCurrency(saved.currency);
+        if (CURRENCIES.some((c) => c.code === saved?.currency)) setCurrency(saved.currency);
         if (typeof saved?.rateFactor === "number" && saved.rateFactor > 0) setRateFactor(saved.rateFactor);
         currencyRestored.current = true;
       }
@@ -256,9 +264,9 @@ function InstaQuote() {
   }, []);
   useEffect(() => {
     try {
-      localStorage.setItem("instaquote:currency", JSON.stringify({ currency, rateFactor }));
+      if (deviceReady) writeDeviceText("instaquote:currency", JSON.stringify({ currency, rateFactor }));
     } catch {}
-  }, [currency, rateFactor]);
+  }, [currency, rateFactor, deviceReady]);
   const changeCurrency = async (next: string) => {
     if (next === currency) return;
     return applyCurrency(next);
@@ -289,7 +297,27 @@ function InstaQuote() {
     }
   };
 
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [cacheOwner, setCacheOwner] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user) { setCacheOwner(null); return; }
+    setSaved(readDeviceJSON<any[]>(`instaquote:savedQuotes:${user.id}`, [], (v): v is any[] =>
+      Array.isArray(v) && v.every((row) => row && typeof row.id === "string" && row.user_id === user.id)));
+    setCacheOwner(user.id);
+  }, [user?.id]);
+  useEffect(() => {
+    if (user && cacheOwner === user.id) writeDeviceText(`instaquote:savedQuotes:${user.id}`, JSON.stringify(saved));
+  }, [saved, user?.id, cacheOwner]);
+  useEffect(() => {
+    const stored = readDeviceJSON<{ logo: string | null; currency: string }>("instaquote:businessExtras", { logo: null, currency: "USD" },
+      (v): v is { logo: string | null; currency: string } => Boolean(v && typeof v === "object" && "currency" in v && CURRENCIES.some((c) => c.code === v.currency) && "logo" in v && (v.logo === null || typeof v.logo === "string")));
+    setLogo(stored.logo);
+    setDefaultCurrency(stored.currency);
+  }, []);
+  useEffect(() => {
+    if (deviceReady) writeDeviceText("instaquote:businessExtras", JSON.stringify({ logo, currency: defaultCurrency }));
+  }, [logo, defaultCurrency, deviceReady]);
   const navigate = useNavigate();
 
 
@@ -578,7 +606,7 @@ function InstaQuote() {
           if (!quoteIdRef.current && !currencyRestored.current && data.default_currency === "USD") setCurrency(data.default_currency);
         }
         if (data.default_terms) {
-          setCustomer((c) => (quoteIdRef.current ? c : { ...c, terms: c.terms || data.default_terms! }));
+          setCustomer((c) => (quoteIdRef.current ? c : { ...c, terms: c.terms || (data.default_terms ?? "") }));
         }
       });
     return () => {
@@ -637,7 +665,7 @@ function InstaQuote() {
     setDefaultCurrency(s.default_currency);
     if (!quoteId) {
       if (s.default_currency !== currency) void applyCurrency(s.default_currency);
-      if (s.default_terms) setCustomer((c) => ({ ...c, terms: s.default_terms! }));
+      if (s.default_terms) setCustomer((c) => ({ ...c, terms: s.default_terms ?? "" }));
       setTaxRate(nextProfile.taxRate);
     }
     setSettingsOpen(false);
@@ -684,6 +712,8 @@ function InstaQuote() {
       toast.error("Couldn't save this quote", { description: error.message });
       return;
     }
+    const { data: history } = await supabase.from("quotes").select("*").order("created_at", { ascending: false }).limit(30);
+    if (history) setSaved(history);
     toast.success(quoteId ? "Quote updated" : "Quote saved to your account");
   };
 
@@ -697,6 +727,22 @@ function InstaQuote() {
       return;
     }
     toast.success(`Marked as ${status}`);
+  };
+
+  const duplicateQuote = async (row: any) => {
+    if (!user || duplicating) return;
+    setDuplicating(row.id);
+    try {
+      const number = nextQuoteNumber([quoteNo, ...saved.map((r) => r.line_items?.quoteNo ?? "")]);
+      const record = duplicateQuoteRecord(row, number, user.id);
+      const { data, error } = await supabase.from("quotes").insert(record).select("*").single();
+      if (error) throw error;
+      if (!data) throw new Error("No duplicated quote returned");
+      setSaved((rows) => [data, ...rows]);
+      toast.success(`${number} duplicated — ready for a new client`);
+    } catch (error) {
+      toast.error("Couldn't duplicate quote", { description: error instanceof Error ? error.message : "Try again." });
+    } finally { setDuplicating(null); }
   };
 
   const deleteQuote = async (id: string) => {
@@ -769,11 +815,19 @@ function InstaQuote() {
   };
 
 
+  if (!deviceReady || authLoading) return (
+    <div role="status" aria-label="Loading InstaQuote" className="startup-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background text-foreground">
+      <div className="clay-shadow grid size-20 place-items-center rounded-xl bg-primary text-primary-foreground"><Mic className="size-9" aria-hidden="true" /></div>
+      <div className="text-center"><h1 className="text-3xl font-bold">InstaQuote</h1><p className="mt-1 font-mono text-xs text-muted-foreground">PRO</p></div>
+      <Loader2 className="size-6 animate-spin motion-reduce:animate-none text-accent" aria-hidden="true" />
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-cream text-ink">
-      <div className="mx-auto max-w-[430px] px-4 pt-5 pb-36 max-[360px]:pb-40">
+      <div className="app-safe-layout mx-auto max-w-[430px] px-4 pt-5 pb-36 max-[360px]:pb-40">
         {/* Header */}
-        <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+        <header className="app-safe-header grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
           <label className="clay-shadow relative grid size-12 shrink-0 cursor-pointer place-items-center rounded-xl bg-clay font-mono text-lg font-bold text-cream">
             {logo ? (
               <img src={logo} alt="Business logo" className="size-12 rounded-xl object-cover" />
@@ -1158,7 +1212,7 @@ function InstaQuote() {
 
       {/* Sticky action bar */}
       <div className="no-print fixed right-0 bottom-0 left-0 z-10">
-        <div className="mx-auto max-w-[430px] px-4 pt-2 pb-4">
+        <div className="app-safe-actions mx-auto max-w-[430px] px-4 pt-2 pb-4">
           <div className="clay-shadow grid grid-cols-[3.5rem_repeat(3,minmax(0,1fr))] gap-2 rounded-2xl bg-card p-3 ring-1 ring-black/5">
             <button
               onClick={saveQuote}
@@ -1408,19 +1462,19 @@ function InstaQuote() {
                   <button
                     type="button"
                     onClick={() => loadQuote(row)}
-                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-2 text-left"
+                    className="grid min-h-12 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 rounded-lg px-2 text-left"
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold">
                         {row.client_name || "Unnamed client"}
                         {row.id === quoteId && <span className="ml-1 text-xs text-leaf">· editing</span>}
                       </span>
-                      <span className="label-mono block text-xs text-inksoft">
+                      <span className="label-mono block break-words text-xs text-inksoft">
                         {(row.line_items?.quoteNo ?? "").toString()}{" "}
                         {new Date(row.created_at).toLocaleDateString()}
                       </span>
                     </span>
-                    <span className="label-mono shrink-0 text-sm font-bold">
+                    <span className="label-mono col-span-2 break-words text-sm font-bold">
                       {money(Number(row.total_amount) || 0, row.currency ?? "USD")}
                     </span>
                   </button>
@@ -1429,12 +1483,15 @@ function InstaQuote() {
                       value={row.status}
                       onChange={(e) => updateStatus(row.id, e.target.value)}
                       aria-label="Quote status"
-                      className="min-h-10 flex-1 rounded-lg bg-cream px-2 text-sm font-semibold ring-1 ring-line"
+                      className="min-h-10 min-w-0 flex-1 rounded-lg bg-cream px-2 text-sm font-semibold ring-1 ring-line"
                     >
                       <option value="draft">Draft</option>
                       <option value="sent">Sent</option>
                       <option value="accepted">Accepted</option>
                     </select>
+                    <Button type="button" variant="outline" size="icon" title="Duplicate quote" aria-label="Duplicate quote" aria-busy={duplicating === row.id} disabled={duplicating !== null} onClick={() => void duplicateQuote(row)} className="size-10 shrink-0 bg-cream text-ink">
+                      {duplicating === row.id ? <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Copy aria-hidden="true" />}
+                    </Button>
                     <button
                       type="button"
                       onClick={() => deleteQuote(row.id)}
