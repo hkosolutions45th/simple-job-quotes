@@ -109,7 +109,37 @@ function InstaQuote() {
       .join(", "),
   };
   const [logo, setLogo] = useState<string | null>(null);
-  const [quoteNo, setQuoteNo] = useState("IQ-2041");
+  const [quoteNo, setQuoteNo] = useState("IQ-1001");
+  // Auto-incrementing quote numbers stored on this device.
+  const takeNextQuoteNo = () => {
+    const n = Math.max(1001, Number(localStorage.getItem("nextQuoteNumber")) || 1001);
+    localStorage.setItem("nextQuoteNumber", String(n + 1));
+    localStorage.setItem("instaquote:currentQuoteNo", `IQ-${n}`);
+    return `IQ-${n}`;
+  };
+  useEffect(() => {
+    const current = localStorage.getItem("instaquote:currentQuoteNo");
+    setQuoteNo(current || takeNextQuoteNo());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (quoteNo.trim()) localStorage.setItem("instaquote:currentQuoteNo", quoteNo);
+  }, [quoteNo]);
+
+  // Saved clients directory (this device).
+  type SavedClient = { id: string; name: string; email: string; phone: string; address: string; city: string; postalCode: string };
+  const [savedClients, setSavedClients] = useState<SavedClient[]>([]);
+  useEffect(() => {
+    try {
+      setSavedClients(JSON.parse(localStorage.getItem("instaquote:clients") || "[]"));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const storeClients = (next: SavedClient[]) => {
+    setSavedClients(next);
+    localStorage.setItem("instaquote:clients", JSON.stringify(next));
+  };
   const [notes, setNotes] = useState("");
   const [listening, setListening] = useState(false);
   // Source of truth: each item stores ONLY its fixed basePriceUSD. No converted price is ever stored.
@@ -429,6 +459,18 @@ function InstaQuote() {
     }
     setSending(true);
     try {
+      const pdfItems = items.map(({ description, quantity, rate }) => ({ description, quantity, rate }));
+      const { buildQuotePdfBase64 } = await import("@/lib/quote-pdf");
+      const pdfBase64 = await buildQuotePdfBase64({
+        business,
+        businessContact,
+        quoteNo,
+        customer,
+        items: pdfItems,
+        taxRate,
+        taxEnabled,
+        currency,
+      });
       await sendQuoteEmail({
         data: {
           to,
@@ -446,7 +488,8 @@ function InstaQuote() {
           taxRate,
           currency,
           taxEnabled,
-          items: items.map(({ description, quantity, rate }) => ({ description, quantity, rate })),
+          items: pdfItems,
+          pdfBase64,
         },
       });
       toast.success(`Quote emailed to ${to}`);
@@ -486,7 +529,7 @@ function InstaQuote() {
       terms: defaultTerms || "50% deposit required",
     });
     setTaxRate(businessProfile.taxRate);
-    setQuoteNo(`IQ-${Math.floor(2000 + Math.random() * 8000)}`);
+    setQuoteNo(takeNextQuoteNo());
     toast.success("Blank quote ready");
   };
 
@@ -724,7 +767,15 @@ function InstaQuote() {
             />
           </label>
           <div className="min-w-0">
-            <p className="label-mono tracking-[0.22em]">InstaQuote · {quoteNo}</p>
+            <p className="label-mono flex items-center gap-1 tracking-[0.22em]">
+              <span>InstaQuote ·</span>
+              <input
+                value={quoteNo}
+                onChange={(e) => setQuoteNo(e.target.value.slice(0, 40))}
+                aria-label="Quote number"
+                className="w-24 min-w-0 rounded bg-transparent font-mono outline-none focus:ring-1 focus:ring-clay"
+              />
+            </p>
             <input
               value={businessProfile.companyName}
               placeholder="Your Business Name — tap to edit"
@@ -979,15 +1030,36 @@ function InstaQuote() {
         <section className="mt-6 rounded-2xl bg-card p-4 ring-1 ring-black/5">
           <h2 className="text-base font-bold">Client &amp; job</h2>
           <div className="mt-3 grid grid-cols-1 gap-3">
-            <label className="block">
-              <span className="label-mono">Client name</span>
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <label htmlFor="client-name" className="label-mono">Client name</label>
+                <select
+                  aria-label="Saved clients"
+                  value=""
+                  onChange={(e) => {
+                    const c = savedClients.find((s) => s.id === e.target.value);
+                    if (!c) return;
+                    setCustomer((prev) => ({ ...prev, name: c.name, email: c.email, phone: c.phone, address: c.address, city: c.city, postalCode: c.postalCode }));
+                    toast.success(`${c.name} added to this quote`);
+                  }}
+                  className="min-h-10 max-w-[55%] rounded-full bg-cream px-3 text-sm font-semibold ring-1 ring-black/10"
+                >
+                  <option value="">
+                    {savedClients.length ? `Saved clients (${savedClients.length})` : "No saved clients"}
+                  </option>
+                  {savedClients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
               <input
+                id="client-name"
                 value={customer.name}
                 onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
                 placeholder="e.g. Sarah Jenkins"
                 className="field mt-1"
               />
-            </label>
+            </div>
             <div className="grid grid-cols-2 gap-3 max-[340px]:grid-cols-1">
               <label className="block">
                 <span className="label-mono">Email</span>
@@ -1040,6 +1112,16 @@ function InstaQuote() {
                 />
               </label>
             </div>
+            {customer.name.trim() && (
+              <label className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-cream px-3 ring-1 ring-black/5">
+                <span className="text-sm font-semibold">Save client to directory</span>
+                <Switch
+                  checked={clientSaved}
+                  onCheckedChange={toggleSaveClient}
+                  aria-label="Save client to directory"
+                />
+              </label>
+            )}
             <label className="block">
               <span className="label-mono">Payment terms</span>
               <input
