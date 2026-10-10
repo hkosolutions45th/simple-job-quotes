@@ -1211,7 +1211,7 @@ function InstaQuote() {
       </div>
 
       {/* Sticky action bar */}
-      <div className="no-print fixed right-0 bottom-0 left-0 z-10">
+      <div className="no-print fixed right-0 bottom-0 left-0 z-10 bg-gradient-to-t from-background via-background/95 to-transparent">
         <div className="app-safe-actions mx-auto max-w-[430px] px-3 pt-2 pb-4">
           <div className="clay-shadow grid grid-cols-4 gap-1.5 rounded-2xl bg-card p-2 ring-1 ring-black/5">
             <button
