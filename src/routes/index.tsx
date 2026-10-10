@@ -861,8 +861,33 @@ function InstaQuote() {
   };
 
   const signOut = async () => {
+    const uid = user?.id;
     await supabase.auth.signOut();
+    // Clear user-specific device data: saved quotes, saved clients, business profile (+ extras).
+    if (uid) clearDeviceText(`instaquote:savedQuotes:${uid}`);
+    clearDeviceText(PROFILE_KEY);
+    clearDeviceText("instaquote:clients");
+    clearDeviceText("instaquote:businessExtras");
+    // Guest defaults: blank business profile, no saved clients, and a fresh draft quote.
+    setBusinessProfile(EMPTY_PROFILE);
+    setSavedClients([]);
     setSaved([]);
+    setQuoteId(null);
+    setLogo(null);
+    setDefaultCurrency("USD");
+    setItems([]);
+    setNotes("");
+    setTaxEnabled(true);
+    setTaxRate(EMPTY_PROFILE.taxRate);
+    setCustomer({
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      postalCode: "",
+      terms: "50% deposit required",
+    });
     toast.success("Signed out");
   };
 
