@@ -1,5 +1,11 @@
 # Roadmap
 
+- [ ] Add mobile safe-area spacing and branded startup loading
+- [ ] Duplicate saved quotes with fresh numbers and blank client details
+- [ ] Harden device storage restoration and quote caching
+- [ ] Add requested Capacitor configuration and document release limitations
+- [ ] Verify duplication rules, restart persistence, and mobile layout
+
 - [x] Enable Lovable Cloud
 - [x] Create `quotes` and `user_profiles` tables with RLS + grants
 - [x] Email + Google sign-in, sign-in page, account strip
