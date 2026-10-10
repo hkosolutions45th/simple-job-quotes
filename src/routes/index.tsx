@@ -82,6 +82,7 @@ const EMPTY_PROFILE: BusinessProfile = {
 };
 
 function InstaQuote() {
+  const { user, loading: authLoading } = useAuth();
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(EMPTY_PROFILE);
   const [deviceReady, setDeviceReady] = useState(false);
   // Load the device-saved profile after hydration, then keep it in sync.
@@ -336,7 +337,6 @@ function InstaQuote() {
     }
   };
 
-  const { user, loading: authLoading } = useAuth();
   const [cacheOwner, setCacheOwner] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   useEffect(() => {
@@ -721,7 +721,7 @@ function InstaQuote() {
       setTaxRate(nextProfile.taxRate);
     }
     setSettingsOpen(false);
-    toast.success("Business settings saved on this device");
+    toast.success(user ? "Business settings saved to your account" : "Business settings saved on this device");
   };
 
   const saveQuote = async () => {
