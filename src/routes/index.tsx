@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { duplicateQuoteRecord } from "@/lib/duplicate-quote";
-import { nextQuoteNumber, readDeviceJSON, readDeviceText, writeDeviceText } from "@/lib/device-storage";
+import { clearDeviceText, nextQuoteNumber, readDeviceJSON, readDeviceText, writeDeviceText } from "@/lib/device-storage";
 import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -861,8 +861,33 @@ function InstaQuote() {
   };
 
   const signOut = async () => {
+    const uid = user?.id;
     await supabase.auth.signOut();
+    // Clear user-specific device data: saved quotes, saved clients, business profile (+ extras).
+    if (uid) clearDeviceText(`instaquote:savedQuotes:${uid}`);
+    clearDeviceText(PROFILE_KEY);
+    clearDeviceText("instaquote:clients");
+    clearDeviceText("instaquote:businessExtras");
+    // Guest defaults: blank business profile, no saved clients, and a fresh draft quote.
+    setBusinessProfile(EMPTY_PROFILE);
+    setSavedClients([]);
     setSaved([]);
+    setQuoteId(null);
+    setLogo(null);
+    setDefaultCurrency("USD");
+    setItems([]);
+    setNotes("");
+    setTaxEnabled(true);
+    setTaxRate(EMPTY_PROFILE.taxRate);
+    setCustomer({
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      postalCode: "",
+      terms: "50% deposit required",
+    });
     toast.success("Signed out");
   };
 

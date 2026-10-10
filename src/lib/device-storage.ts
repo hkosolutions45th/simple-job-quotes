@@ -18,6 +18,15 @@ export function writeDeviceText(key: string, value: string): boolean {
     return false;
   }
 }
+export function clearDeviceText(key: string): boolean {
+  fallback.set(key, "");
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
 export function readDeviceJSON<T>(key: string, initial: T, validate: (value: unknown) => value is T): T {
   try {
     const raw = readDeviceText(key);
