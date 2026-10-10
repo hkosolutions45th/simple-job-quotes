@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CloudUpload, Copy, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Printer, Send, Settings, Trash2, Upload } from "lucide-react";
+import { Copy, FileText, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Save, Send, Settings, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -1453,7 +1453,7 @@ function InstaQuote() {
           </DialogHeader>
           {saved.length === 0 ? (
             <p className="py-6 text-center text-sm text-inksoft">
-              No saved quotes yet. Save one with the cloud button.
+              No saved quotes yet. Save one with the Save Quote button.
             </p>
           ) : (
             <ul className="space-y-2">
