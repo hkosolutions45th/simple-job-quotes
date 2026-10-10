@@ -157,6 +157,28 @@ function InstaQuote() {
     postalCode: "",
     terms: "50% deposit required",
   });
+  const clientMatch = savedClients.find(
+    (c) => c.name.trim().toLowerCase() === customer.name.trim().toLowerCase(),
+  );
+  const clientSaved = Boolean(clientMatch);
+  const toggleSaveClient = (on: boolean) => {
+    if (on) {
+      const entry: SavedClient = {
+        id: newId(),
+        name: customer.name.trim(),
+        email: customer.email,
+        phone: customer.phone,
+        address: customer.address,
+        city: customer.city,
+        postalCode: customer.postalCode,
+      };
+      storeClients([...savedClients, entry].sort((a, b) => a.name.localeCompare(b.name)));
+      toast.success(`${entry.name} saved to your clients`);
+    } else if (clientMatch) {
+      storeClients(savedClients.filter((c) => c.id !== clientMatch.id));
+      toast.success(`${clientMatch.name} removed from your clients`);
+    }
+  };
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
