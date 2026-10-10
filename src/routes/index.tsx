@@ -889,6 +889,7 @@ function InstaQuote() {
       terms: "50% deposit required",
     });
     toast.success("Signed out");
+    navigate({ to: "/auth", replace: true });
   };
 
 
