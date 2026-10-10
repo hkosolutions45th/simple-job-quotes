@@ -14,3 +14,4 @@
 - Keep saved-quote device caches scoped to the signed-in user, with Cloud as the authoritative store, so history survives restarts without exposing another user's records.
 - Clone quotes through the shared duplication helper before inserting a new Cloud record, so identity and private client data never carry into duplicates.
 - Treat the Capacitor root configuration as packaging preparation only; preserve the TanStack Start server runtime and do not assume its output is a standalone native web bundle.
+- Saved clients and business profile sync to the signed-in user's account (Cloud authoritative on load) with device storage as offline cache — so data follows the user across domains and devices.
