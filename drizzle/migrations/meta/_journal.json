@@ -22,6 +22,13 @@
       "when": 1791244103492,
       "tag": "0002_add_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791674187477,
+      "tag": "0003_migration",
+      "breakpoints": true
     }
   ]
 }

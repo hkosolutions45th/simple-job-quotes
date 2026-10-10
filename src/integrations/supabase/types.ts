@@ -53,37 +53,88 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_clients: {
+        Row: {
+          address: string
+          city: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string
+          postal_code: string
+          user_id: string
+        }
+        Insert: {
+          address?: string
+          city?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name: string
+          phone?: string
+          postal_code?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string
+          postal_code?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
+          business_email: string | null
           business_name: string | null
+          city: string | null
           created_at: string
           default_currency: string
           default_terms: string | null
           id: string
           logo_url: string | null
           phone: string | null
+          postal_code: string | null
+          street_address: string | null
+          tax_rate: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          business_email?: string | null
           business_name?: string | null
+          city?: string | null
           created_at?: string
           default_currency?: string
           default_terms?: string | null
           id?: string
           logo_url?: string | null
           phone?: string | null
+          postal_code?: string | null
+          street_address?: string | null
+          tax_rate?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          business_email?: string | null
           business_name?: string | null
+          city?: string | null
           created_at?: string
           default_currency?: string
           default_terms?: string | null
           id?: string
           logo_url?: string | null
           phone?: string | null
+          postal_code?: string | null
+          street_address?: string | null
+          tax_rate?: number | null
           updated_at?: string
           user_id?: string
         }

@@ -82,6 +82,7 @@ const EMPTY_PROFILE: BusinessProfile = {
 };
 
 function InstaQuote() {
+  const { user, loading: authLoading } = useAuth();
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(EMPTY_PROFILE);
   const [deviceReady, setDeviceReady] = useState(false);
   // Load the device-saved profile after hydration, then keep it in sync.
@@ -169,9 +170,9 @@ function InstaQuote() {
     (c) => c.name.trim().toLowerCase() === customer.name.trim().toLowerCase(),
   );
   const clientSaved = Boolean(clientMatch);
-  const toggleSaveClient = (on: boolean) => {
+  const toggleSaveClient = async (on: boolean) => {
     if (on) {
-      const entry: SavedClient = {
+      let entry: SavedClient = {
         id: newId(),
         name: customer.name.trim(),
         email: customer.email,
@@ -180,13 +181,52 @@ function InstaQuote() {
         city: customer.city,
         postalCode: customer.postalCode,
       };
+      if (user) {
+        const { data, error } = await supabase
+          .from("saved_clients")
+          .insert({ user_id: user.id, name: entry.name, email: entry.email, phone: entry.phone, address: entry.address, city: entry.city, postal_code: entry.postalCode })
+          .select("id")
+          .single();
+        if (data) entry = { ...entry, id: data.id };
+        else if (error) toast.warning("Saved on this device only", { description: "We'll sync it to your account next time you're online." });
+      }
       storeClients([...savedClients, entry].sort((a, b) => a.name.localeCompare(b.name)));
       toast.success(`${entry.name} saved to your clients`);
     } else if (clientMatch) {
       storeClients(savedClients.filter((c) => c.id !== clientMatch.id));
+      if (user) await supabase.from("saved_clients").delete().eq("id", clientMatch.id).eq("user_id", user.id);
       toast.success(`${clientMatch.name} removed from your clients`);
     }
   };
+  // Signed in: load clients from the account, and upload any device-only clients.
+  useEffect(() => {
+    if (!user || !deviceReady) return;
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("saved_clients")
+        .select("id, name, email, phone, address, city, postal_code")
+        .eq("user_id", user.id);
+      if (!active || error || !data) return;
+      const cloud: SavedClient[] = data.map((r) => ({ id: r.id, name: r.name, email: r.email, phone: r.phone, address: r.address, city: r.city, postalCode: r.postal_code }));
+      const names = new Set(cloud.map((c) => c.name.trim().toLowerCase()));
+      const local = readDeviceJSON<SavedClient[]>("instaquote:clients", [], (v): v is SavedClient[] => Array.isArray(v));
+      const missing = local.filter((c) => c?.name && !names.has(c.name.trim().toLowerCase()));
+      if (missing.length) {
+        const { data: added } = await supabase
+          .from("saved_clients")
+          .insert(missing.map((c) => ({ user_id: user.id, name: c.name, email: c.email ?? "", phone: c.phone ?? "", address: c.address ?? "", city: c.city ?? "", postal_code: c.postalCode ?? "" })))
+          .select("id, name, email, phone, address, city, postal_code");
+        added?.forEach((r) => cloud.push({ id: r.id, name: r.name, email: r.email, phone: r.phone, address: r.address, city: r.city, postalCode: r.postal_code }));
+      }
+      if (!active) return;
+      storeClients(cloud.sort((a, b) => a.name.localeCompare(b.name)));
+    })();
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, deviceReady]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -297,7 +337,6 @@ function InstaQuote() {
     }
   };
 
-  const { user, loading: authLoading } = useAuth();
   const [cacheOwner, setCacheOwner] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   useEffect(() => {
@@ -589,17 +628,25 @@ function InstaQuote() {
     let active = true;
     supabase
       .from("user_profiles")
-      .select("business_name, logo_url, phone, default_terms, default_currency")
+      .select("business_name, logo_url, phone, default_terms, default_currency, business_email, street_address, city, postal_code, tax_rate")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (!active || !data) return;
+        // Account data is authoritative; device values fill any gaps (offline cache).
+        const cloudRate = data.tax_rate == null ? NaN : Number(data.tax_rate);
         setBusinessProfile((p) => ({
           ...p,
-          companyName: p.companyName || data.business_name || "",
-          phone: p.phone || data.phone || "",
-          defaultTerms: p.defaultTerms || data.default_terms || "",
+          companyName: data.business_name || p.companyName,
+          phone: data.phone || p.phone,
+          email: data.business_email || p.email,
+          address: data.street_address || p.address,
+          city: data.city || p.city,
+          postalCode: data.postal_code || p.postalCode,
+          taxRate: Number.isFinite(cloudRate) && cloudRate >= 0 ? cloudRate : p.taxRate,
+          defaultTerms: data.default_terms || p.defaultTerms,
         }));
+        if (Number.isFinite(cloudRate) && cloudRate >= 0 && !quoteIdRef.current) setTaxRate(cloudRate);
         if (data.logo_url) setLogo(data.logo_url);
         if (data.default_currency) {
           setDefaultCurrency(data.default_currency);
@@ -648,6 +695,11 @@ function InstaQuote() {
       logo_url: settings.logo_url.trim() || null,
       default_terms: nextProfile.defaultTerms || null,
       default_currency: settings.default_currency,
+      business_email: nextProfile.email || null,
+      street_address: nextProfile.address || null,
+      city: nextProfile.city || null,
+      postal_code: nextProfile.postalCode || null,
+      tax_rate: nextProfile.taxRate,
     };
     if (user) {
       setSavingSettings(true);
@@ -669,7 +721,7 @@ function InstaQuote() {
       setTaxRate(nextProfile.taxRate);
     }
     setSettingsOpen(false);
-    toast.success("Business settings saved on this device");
+    toast.success(user ? "Business settings saved to your account" : "Business settings saved on this device");
   };
 
   const saveQuote = async () => {
