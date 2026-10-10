@@ -25,6 +25,7 @@ const payloadSchema = z.object({
   currency: z.string().max(3).default("USD"),
   taxEnabled: z.boolean().default(true),
   items: z.array(itemSchema).max(200).default([]),
+  pdfBase64: z.string().max(8_000_000).regex(/^[A-Za-z0-9+/=]*$/).optional(),
 });
 
 type Payload = z.infer<typeof payloadSchema>;
@@ -127,6 +128,16 @@ export const sendQuoteEmail = createServerFn({ method: "POST" })
         ...(data.businessEmail.includes("@") ? { reply_to: data.businessEmail } : {}),
         subject: `Quote ${data.quoteNo} from ${data.business}`,
         html: buildHtml(data),
+        ...(data.pdfBase64
+          ? {
+              attachments: [
+                {
+                  filename: `Quote_${data.quoteNo.replace(/[^A-Za-z0-9_-]/g, "_")}.pdf`,
+                  content: data.pdfBase64,
+                },
+              ],
+            }
+          : {}),
       }),
     });
 
