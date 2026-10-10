@@ -1462,19 +1462,19 @@ function InstaQuote() {
                   <button
                     type="button"
                     onClick={() => loadQuote(row)}
-                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-2 text-left"
+                    className="grid min-h-12 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 rounded-lg px-2 text-left"
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold">
                         {row.client_name || "Unnamed client"}
                         {row.id === quoteId && <span className="ml-1 text-xs text-leaf">· editing</span>}
                       </span>
-                      <span className="label-mono block text-xs text-inksoft">
+                      <span className="label-mono block break-words text-xs text-inksoft">
                         {(row.line_items?.quoteNo ?? "").toString()}{" "}
                         {new Date(row.created_at).toLocaleDateString()}
                       </span>
                     </span>
-                    <span className="label-mono shrink-0 text-sm font-bold">
+                    <span className="label-mono col-span-2 break-words text-sm font-bold">
                       {money(Number(row.total_amount) || 0, row.currency ?? "USD")}
                     </span>
                   </button>
@@ -1483,7 +1483,7 @@ function InstaQuote() {
                       value={row.status}
                       onChange={(e) => updateStatus(row.id, e.target.value)}
                       aria-label="Quote status"
-                      className="min-h-10 flex-1 rounded-lg bg-cream px-2 text-sm font-semibold ring-1 ring-line"
+                      className="min-h-10 min-w-0 flex-1 rounded-lg bg-cream px-2 text-sm font-semibold ring-1 ring-line"
                     >
                       <option value="draft">Draft</option>
                       <option value="sent">Sent</option>
