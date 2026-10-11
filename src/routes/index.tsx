@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Copy, FileText, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Save, Send, Settings, Trash2, Upload } from "lucide-react";
+import { Copy, FileText, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Save, Send, Settings, Trash2, Undo2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -200,6 +200,20 @@ function InstaQuote() {
       if (error) toast.warning("Updated on this device only", { description: "We'll sync it to your account next time you're online." });
     }
     toast.success(`${updated.name} updated in your clients`);
+  };
+  const revertClient = () => {
+    if (!clientMatch) return;
+    const saved = clientMatch;
+    setCustomer((prev) => ({
+      ...prev,
+      name: saved.name,
+      email: saved.email,
+      phone: saved.phone,
+      address: saved.address,
+      city: saved.city,
+      postalCode: saved.postalCode,
+    }));
+    toast.info("Changes discarded", { description: `${saved.name}'s saved details are back.` });
   };
   const toggleSaveClient = async (on: boolean) => {
     if (on) {
@@ -1325,14 +1339,24 @@ function InstaQuote() {
               </label>
             </div>
             {customer.name.trim() && clientModified && clientMatch ? (
-              <button
-                type="button"
-                onClick={updateClient}
-                className="clay-shadow flex min-h-12 items-center justify-center gap-2 rounded-xl bg-clay px-3 text-sm font-semibold text-cream active:translate-y-0.5"
-              >
-                <Save className="size-4 shrink-0" aria-hidden="true" />
-                Update client information
-              </button>
+              <div className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={updateClient}
+                  className="clay-shadow flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-clay px-3 text-sm font-semibold text-cream active:translate-y-0.5"
+                >
+                  <Save className="size-4 shrink-0" aria-hidden="true" />
+                  Update client information
+                </button>
+                <button
+                  type="button"
+                  onClick={revertClient}
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-ink/70 underline underline-offset-4 ring-1 ring-transparent active:text-ink"
+                >
+                  <Undo2 className="size-4 shrink-0" aria-hidden="true" />
+                  Revert to saved
+                </button>
+              </div>
             ) : customer.name.trim() ? (
               <label className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-cream px-3 ring-1 ring-black/5">
                 <span className="text-sm font-semibold">Save client to directory</span>
