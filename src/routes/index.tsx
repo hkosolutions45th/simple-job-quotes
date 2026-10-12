@@ -588,20 +588,9 @@ function InstaQuote() {
     }
   };
 
-  // Share via the native sheet when available, else open the sms:/mailto: link,
-  // else copy to clipboard so nothing is lost in privacy modes.
+  // Open the native SMS/mail app directly with the encoded summary.
+  // If nothing launches, copy to clipboard so nothing is lost in privacy modes.
   const sendVia = async (kind: "text" | "email", link: string) => {
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({
-          title: `Quote ${quoteNo} from ${business}`,
-          text: message,
-        });
-        return;
-      } catch (err) {
-        if ((err as DOMException)?.name === "AbortError") return; // user dismissed the sheet
-      }
-    }
     try {
       window.location.href = link;
       // If the app launch was blocked the page never unloads; offer clipboard as backup.
