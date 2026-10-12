@@ -1559,7 +1559,7 @@ function InstaQuote() {
                   `sms:${customer.phone.replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(message)}`,
                 )
               }
-              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-cream px-2 text-[13px] font-semibold ring-1 ring-line active:translate-y-0.5"
+              className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-cream px-2 py-2 text-center text-[13px] font-semibold leading-snug ring-1 ring-line active:translate-y-0.5"
             >
               <MessageSquare className="size-4 shrink-0" aria-hidden="true" />
               <span className="whitespace-nowrap">Send Text (SMS)</span>
@@ -1578,7 +1578,7 @@ function InstaQuote() {
                   "Summary copied! Ready to paste into your email or messaging app.",
                 )
               }
-              className="clay-shadow flex min-h-12 items-center justify-center gap-2 rounded-xl bg-clay px-2 py-2 text-center text-[13px] font-semibold leading-snug text-cream active:translate-y-0.5"
+              className="clay-shadow flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-clay px-2 py-2 text-center text-[13px] font-semibold leading-snug text-cream active:translate-y-0.5"
             >
               <Mail className="size-4 shrink-0" aria-hidden="true" />
               <span>Copy Summary for Email</span>
