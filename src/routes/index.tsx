@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Copy, FileText, FolderOpen, Loader2, LogOut, Mail, Mic, Plus, Save, Send, Settings, Trash2, Undo2, Upload } from "lucide-react";
+import { Copy, FileText, FolderOpen, Loader2, LogOut, Mail, MessageSquare, Mic, Plus, Save, Settings, Trash2, Undo2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -608,7 +608,7 @@ function InstaQuote() {
       window.setTimeout(() => {
         if (!document.hidden) {
           toast(`No ${kind === "text" ? "messaging" : "mail"} app opened`, {
-            description: "Tap Copy message below to paste it anywhere.",
+            description: "Tap Copy Text below to paste it anywhere.",
           });
         }
       }, 1500);
@@ -1477,11 +1477,11 @@ function InstaQuote() {
             </button>
             <button
               onClick={openSend}
-              aria-label="Send quote by text or email"
-              className="clay-shadow flex min-h-16 min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl bg-clay px-1 text-[11px] leading-none font-semibold text-cream active:translate-y-0.5 max-[360px]:text-[10px]"
+              aria-label="Text or share this quote"
+              className="clay-shadow flex min-h-16 min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl bg-clay px-0.5 text-[11px] leading-none font-semibold text-cream active:translate-y-0.5 max-[360px]:text-[10px]"
             >
-              <Send className="size-4 shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap">Send</span>
+              <MessageSquare className="size-4 shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">Text / Share</span>
             </button>
           </div>
         </div>
@@ -1545,10 +1545,10 @@ function InstaQuote() {
       {/* Send modal */}
       <Dialog open={sendOpen} onOpenChange={setSendOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Send this quote</DialogTitle>
+          <DialogHeader className="pr-10">
+            <DialogTitle>Send SMS or Copy Summary</DialogTitle>
             <DialogDescription>
-              Edit the message, then send it by text or email.
+              Send a quick text message or copy the quote summary to send from your own apps.
             </DialogDescription>
           </DialogHeader>
           <textarea
@@ -1566,9 +1566,10 @@ function InstaQuote() {
                   `sms:${customer.phone.replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(message)}`,
                 )
               }
-              className="flex min-h-12 items-center justify-center rounded-xl bg-cream text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-cream px-2 text-[13px] font-semibold ring-1 ring-line active:translate-y-0.5"
             >
-              Text it
+              <MessageSquare className="size-4 shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">Send Text (SMS)</span>
             </button>
             <button
               type="button"
@@ -1578,16 +1579,18 @@ function InstaQuote() {
                   `mailto:${customer.email}?subject=${encodeURIComponent(`Quote ${quoteNo} from ${business}`)}&body=${encodeURIComponent(message)}`,
                 )
               }
-              className="clay-shadow flex min-h-12 items-center justify-center rounded-xl bg-clay text-sm font-semibold text-cream active:translate-y-0.5"
+              className="clay-shadow flex min-h-12 items-center justify-center gap-2 rounded-xl bg-clay px-2 text-[13px] font-semibold text-cream active:translate-y-0.5"
             >
-              Email it
+              <Mail className="size-4 shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">Email Link</span>
             </button>
           </div>
           <button
             onClick={() => void copyMessage()}
-            className="min-h-12 w-full rounded-xl text-sm font-semibold text-inksoft underline underline-offset-4"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-inksoft underline underline-offset-4"
           >
-            Copy message
+            <Copy className="size-4 shrink-0" aria-hidden="true" />
+            Copy Text
           </button>
         </DialogContent>
       </Dialog>
