@@ -563,6 +563,60 @@ function InstaQuote() {
 
   const message = quoteMessage({ business, customer, total, quoteNo });
 
+  const copyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(message);
+      toast.success("Message copied to clipboard — ready to paste!");
+      return true;
+    } catch {
+      // Clipboard blocked (e.g. private browsing) — fall back to a hidden textarea copy.
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = message;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        toast.success("Message copied to clipboard — ready to paste!");
+        return true;
+      } catch {
+        toast.error("Couldn't copy the message — long-press the text to copy it.");
+        return false;
+      }
+    }
+  };
+
+  // Share via the native sheet when available, else open the sms:/mailto: link,
+  // else copy to clipboard so nothing is lost in privacy modes.
+  const sendVia = async (kind: "text" | "email", link: string) => {
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: `Quote ${quoteNo} from ${business}`,
+          text: message,
+        });
+        return;
+      } catch (err) {
+        if ((err as DOMException)?.name === "AbortError") return; // user dismissed the sheet
+      }
+    }
+    try {
+      window.location.href = link;
+      // If the app launch was blocked the page never unloads; offer clipboard as backup.
+      window.setTimeout(() => {
+        if (!document.hidden) {
+          toast(`No ${kind === "text" ? "messaging" : "mail"} app opened`, {
+            description: "Tap Copy message below to paste it anywhere.",
+          });
+        }
+      }, 1500);
+    } catch {
+      await copyMessage();
+    }
+  };
+
   const openEmail = () => {
     if (items.length === 0) {
       toast.info("Nothing to send yet", {
