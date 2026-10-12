@@ -1556,7 +1556,6 @@ function InstaQuote() {
               aria-describedby="share-sms-help"
               onClick={() =>
                 void sendVia(
-                  "text",
                   `sms:${customer.phone.replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(message)}`,
                 )
               }
