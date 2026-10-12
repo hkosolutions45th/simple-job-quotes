@@ -1558,8 +1558,11 @@ function InstaQuote() {
             className="w-full resize-none rounded-xl bg-cream p-3 text-sm leading-relaxed ring-1 ring-line outline-none"
           />
           <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
             <button
               type="button"
+              title="Opens SMS/Messages with the quote text."
+              aria-describedby="share-sms-help"
               onClick={() =>
                 void sendVia(
                   "text",
@@ -1571,8 +1574,15 @@ function InstaQuote() {
               <MessageSquare className="size-4 shrink-0" aria-hidden="true" />
               <span className="whitespace-nowrap">Send Text (SMS)</span>
             </button>
+            <p id="share-sms-help" className="text-center text-[11px] leading-snug text-inksoft">
+              Opens SMS/Messages with the quote text.
+            </p>
+            </div>
+            <div className="flex flex-col gap-1">
             <button
               type="button"
+              title="Opens your phone's default email client with the text summary pre-filled."
+              aria-describedby="share-email-help"
               onClick={() =>
                 void sendVia(
                   "email",
@@ -1582,16 +1592,25 @@ function InstaQuote() {
               className="clay-shadow flex min-h-12 items-center justify-center gap-2 rounded-xl bg-clay px-2 text-[13px] font-semibold text-cream active:translate-y-0.5"
             >
               <Mail className="size-4 shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap">Email Link</span>
+              <span className="whitespace-nowrap">Email Summary</span>
             </button>
+            <p id="share-email-help" className="text-center text-[11px] leading-snug text-inksoft">
+              Opens your phone's default email client with the text summary pre-filled.
+            </p>
+            </div>
           </div>
           <button
             onClick={() => void copyMessage()}
+            title="Copies the text summary to your clipboard."
+            aria-describedby="share-copy-help"
             className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-inksoft underline underline-offset-4"
           >
             <Copy className="size-4 shrink-0" aria-hidden="true" />
             Copy Text
           </button>
+          <p id="share-copy-help" className="-mt-2 text-center text-[11px] leading-snug text-inksoft">
+            Copies the text summary to your clipboard.
+          </p>
         </DialogContent>
       </Dialog>
 
