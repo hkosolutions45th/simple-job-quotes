@@ -1548,44 +1548,44 @@ function InstaQuote() {
             value={message}
             className="w-full resize-none rounded-xl bg-cream p-3 text-sm leading-relaxed ring-1 ring-line outline-none"
           />
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-            <button
-              type="button"
-              title="Opens SMS/Messages with the quote text."
-              aria-describedby="share-sms-help"
-              onClick={() =>
-                void sendVia(
-                  `sms:${customer.phone.replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(message)}`,
-                )
-              }
-              className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-cream px-2 py-2 text-center text-[13px] font-semibold leading-snug ring-1 ring-line active:translate-y-0.5"
-            >
-              <MessageSquare className="size-4 shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap">Send Text (SMS)</span>
-            </button>
-            <p id="share-sms-help" className="text-center text-[11px] leading-snug text-inksoft">
-              Opens SMS/Messages with the quote text.
-            </p>
+          <div className="flex flex-col gap-1">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                title="Opens SMS/Messages with the quote text."
+                aria-describedby="share-sms-help"
+                onClick={() =>
+                  void sendVia(
+                    `sms:${customer.phone.replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(message)}`,
+                  )
+                }
+                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-cream px-2 py-2 text-center text-[13px] font-semibold leading-snug ring-1 ring-line active:translate-y-0.5"
+              >
+                <MessageSquare className="size-4 shrink-0" aria-hidden="true" />
+                <span>Send Text (SMS)</span>
+              </button>
+              <button
+                type="button"
+                title="Copies the summary so you can paste it into your email."
+                aria-describedby="share-email-help"
+                onClick={() =>
+                  void copyMessage(
+                    "Summary copied! Ready to paste into your email or messaging app.",
+                  )
+                }
+                className="clay-shadow flex min-h-12 items-center justify-center gap-2 rounded-xl bg-clay px-2 py-2 text-center text-[13px] font-semibold leading-snug text-cream active:translate-y-0.5"
+              >
+                <Mail className="size-4 shrink-0" aria-hidden="true" />
+                <span>Copy Summary for Email</span>
+              </button>
             </div>
-            <div className="flex flex-col gap-1">
-            <button
-              type="button"
-              title="Copies the summary so you can paste it into your email."
-              aria-describedby="share-email-help"
-              onClick={() =>
-                void copyMessage(
-                  "Summary copied! Ready to paste into your email or messaging app.",
-                )
-              }
-              className="clay-shadow flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-clay px-2 py-2 text-center text-[13px] font-semibold leading-snug text-cream active:translate-y-0.5"
-            >
-              <Mail className="size-4 shrink-0" aria-hidden="true" />
-              <span>Copy Summary for Email</span>
-            </button>
-            <p id="share-email-help" className="text-center text-[11px] leading-snug text-inksoft">
-              Copies the summary so you can paste it into your email.
-            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <p id="share-sms-help" className="text-center text-[11px] leading-snug text-inksoft">
+                Opens SMS/Messages with the quote text.
+              </p>
+              <p id="share-email-help" className="text-center text-[11px] leading-snug text-inksoft">
+                Copies the summary so you can paste it into your email.
+              </p>
             </div>
           </div>
           <button
