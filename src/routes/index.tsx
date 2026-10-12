@@ -1504,18 +1504,30 @@ function InstaQuote() {
             className="w-full resize-none rounded-xl bg-cream p-3 text-sm leading-relaxed ring-1 ring-line outline-none"
           />
           <div className="grid grid-cols-2 gap-3">
-            <a
-              href={`sms:${customer.phone.replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(message)}`}
+            <button
+              type="button"
+              onClick={() =>
+                void sendVia(
+                  "text",
+                  `sms:${customer.phone.replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(message)}`,
+                )
+              }
               className="flex min-h-12 items-center justify-center rounded-xl bg-cream text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
             >
               Text it
-            </a>
-            <a
-              href={`mailto:${customer.email}?subject=${encodeURIComponent(`Quote ${quoteNo} from ${business}`)}&body=${encodeURIComponent(message)}`}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                void sendVia(
+                  "email",
+                  `mailto:${customer.email}?subject=${encodeURIComponent(`Quote ${quoteNo} from ${business}`)}&body=${encodeURIComponent(message)}`,
+                )
+              }
               className="clay-shadow flex min-h-12 items-center justify-center rounded-xl bg-clay text-sm font-semibold text-cream active:translate-y-0.5"
             >
               Email it
-            </a>
+            </button>
           </div>
           <button
             onClick={() => {
