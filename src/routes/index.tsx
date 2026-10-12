@@ -1584,10 +1584,7 @@ function InstaQuote() {
             </button>
           </div>
           <button
-            onClick={() => {
-              navigator.clipboard?.writeText(message);
-              toast.success("Message copied");
-            }}
+            onClick={() => void copyMessage()}
             className="min-h-12 w-full rounded-xl text-sm font-semibold text-inksoft underline underline-offset-4"
           >
             Copy message
