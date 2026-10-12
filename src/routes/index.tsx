@@ -1545,7 +1545,7 @@ function InstaQuote() {
       {/* Send modal */}
       <Dialog open={sendOpen} onOpenChange={setSendOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+          <DialogHeader className="pr-10">
             <DialogTitle>Send SMS or Copy Summary</DialogTitle>
             <DialogDescription>
               Send a quick text message or copy the quote summary to send from your own apps.
