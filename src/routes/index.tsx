@@ -563,10 +563,12 @@ function InstaQuote() {
 
   const message = quoteMessage({ business, customer, total, quoteNo });
 
-  const copyMessage = async () => {
+  const copyMessage = async (
+    copiedToast = "Message copied to clipboard — ready to paste!",
+  ) => {
     try {
       await navigator.clipboard.writeText(message);
-      toast.success("Message copied to clipboard — ready to paste!");
+      toast.success(copiedToast);
       return true;
     } catch {
       // Clipboard blocked (e.g. private browsing) — fall back to a hidden textarea copy.
@@ -579,7 +581,7 @@ function InstaQuote() {
         ta.select();
         document.execCommand("copy");
         ta.remove();
-        toast.success("Message copied to clipboard — ready to paste!");
+        toast.success(copiedToast);
         return true;
       } catch {
         toast.error("Couldn't copy the message — long-press the text to copy it.");
@@ -588,15 +590,15 @@ function InstaQuote() {
     }
   };
 
-  // Open the native SMS/mail app directly with the encoded summary.
+  // Open the native SMS app directly with the encoded summary.
   // If nothing launches, copy to clipboard so nothing is lost in privacy modes.
-  const sendVia = async (kind: "text" | "email", link: string) => {
+  const sendVia = async (link: string) => {
     try {
       window.location.href = link;
       // If the app launch was blocked the page never unloads; offer clipboard as backup.
       window.setTimeout(() => {
         if (!document.hidden) {
-          toast(`No ${kind === "text" ? "messaging" : "mail"} app opened`, {
+          toast("No messaging app opened", {
             description: "Tap Copy Text below to paste it anywhere.",
           });
         }
@@ -1570,21 +1572,20 @@ function InstaQuote() {
             <div className="flex flex-col gap-1">
             <button
               type="button"
-              title="Opens your phone's default email client with the text summary pre-filled."
+              title="Copies the summary so you can paste it into your email."
               aria-describedby="share-email-help"
               onClick={() =>
-                void sendVia(
-                  "email",
-                  `mailto:${customer.email}?subject=${encodeURIComponent(`Quote ${quoteNo} from ${business}`)}&body=${encodeURIComponent(message)}`,
+                void copyMessage(
+                  "Summary copied! Ready to paste into your email or messaging app.",
                 )
               }
-              className="clay-shadow flex min-h-12 items-center justify-center gap-2 rounded-xl bg-clay px-2 text-[13px] font-semibold text-cream active:translate-y-0.5"
+              className="clay-shadow flex min-h-12 items-center justify-center gap-2 rounded-xl bg-clay px-2 py-2 text-center text-[13px] font-semibold leading-snug text-cream active:translate-y-0.5"
             >
               <Mail className="size-4 shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap">Email Summary</span>
+              <span>Copy Summary for Email</span>
             </button>
             <p id="share-email-help" className="text-center text-[11px] leading-snug text-inksoft">
-              Opens your phone's default email client with the text summary pre-filled.
+              Copies the summary so you can paste it into your email.
             </p>
             </div>
           </div>
