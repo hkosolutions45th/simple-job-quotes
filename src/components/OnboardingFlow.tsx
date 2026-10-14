@@ -94,7 +94,7 @@ export function OnboardingFlow({
       </div>
 
       {/* Slide content */}
-      <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col overflow-y-auto px-6 pb-5 pt-2">
+      <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col overflow-y-auto px-6 pb-4 pt-2">
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
             <div className="clay-shadow grid size-28 place-items-center rounded-3xl bg-clay text-cream">

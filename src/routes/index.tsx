@@ -1066,13 +1066,15 @@ function InstaQuote() {
     return (
       <OnboardingFlow
         onDone={() => setShowOnboarding(false)}
-        onTrade={(tradeId) => {
+        onTrade={async (tradeId) => {
           // Slide 2's pick lands in Business Settings straight away (device + account).
           setBusinessProfile((p) => ({ ...p, trade: tradeId }));
-          if (user)
-            void supabase
-              .from("user_profiles")
-              .upsert({ user_id: user.id, trade: tradeId }, { onConflict: "user_id" });
+          if (!user) return;
+          const { error } = await supabase
+            .from("user_profiles")
+            .upsert({ user_id: user.id, trade: tradeId }, { onConflict: "user_id" });
+          if (error)
+            toast.error("Couldn't save your trade to your account", { description: error.message });
         }}
       />
     );
