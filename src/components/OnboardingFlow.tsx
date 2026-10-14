@@ -20,7 +20,7 @@ import {
 import { writeDeviceText } from "@/lib/device-storage";
 import { cn } from "@/lib/utils";
 
-const TRADES = [
+export const TRADES = [
   { id: "painter", label: "Painting", icon: Paintbrush },
   { id: "landscaper", label: "Landscaping", icon: Leaf },
   { id: "roofer", label: "Roofing", icon: Home },
@@ -38,10 +38,24 @@ const BENEFITS = [
 
 type Plan = "monthly" | "annual";
 
-export function OnboardingFlow({ onDone }: { onDone: () => void }) {
+export function OnboardingFlow({
+  onDone,
+  onTrade,
+}: {
+  onDone: () => void;
+  /** Fired the instant a trade is tapped so it lands in Business Settings right away. */
+  onTrade?: (tradeId: string) => void;
+}) {
   const [step, setStep] = useState(0);
   const [trade, setTrade] = useState<string | null>(null);
+  // The annual plan is the default choice when the paywall appears.
   const [plan, setPlan] = useState<Plan>("annual");
+
+  const pickTrade = (id: string) => {
+    setTrade(id);
+    writeDeviceText("instaquote:trade", id);
+    onTrade?.(id);
+  };
 
   const finish = () => {
     writeDeviceText("instaquote:onboardingDone", "1");
@@ -80,7 +94,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
       </div>
 
       {/* Slide content */}
-      <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col overflow-y-auto px-6 pb-6 pt-3">
+      <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col overflow-y-auto px-6 pb-4 pt-2">
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
             <div className="clay-shadow grid size-28 place-items-center rounded-3xl bg-clay text-cream">
@@ -117,7 +131,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setTrade(id)}
+                  onClick={() => pickTrade(id)}
                   aria-pressed={trade === id}
                   className={cn(
                     "flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border-2 px-3 text-base font-bold transition-colors",
@@ -157,9 +171,9 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
               Full access to everything. Cancel anytime — no charge until day 8.
             </p>
 
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-2 space-y-1.5">
               {BENEFITS.map(({ icon: Icon, title, text }) => (
-                <li key={title} className="flex items-start gap-3 rounded-2xl bg-paper p-2.5">
+                <li key={title} className="flex items-start gap-3 rounded-2xl bg-paper p-2">
                   <span className="clay-shadow-leaf grid size-10 shrink-0 place-items-center rounded-xl bg-leaf text-cream">
                     <Icon className="size-5" aria-hidden="true" />
                   </span>
@@ -171,16 +185,16 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
               ))}
             </ul>
 
-            <div className="mt-4 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Choose a plan">
+            <div className="mt-3 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Choose a plan">
               <button
                 type="button"
                 role="radio"
                 aria-checked={plan === "monthly"}
                 onClick={() => setPlan("monthly")}
                 className={cn(
-                  "relative flex min-h-24 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
+                  "relative flex min-h-20 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
                   plan === "monthly"
-                    ? "clay-shadow border-clay bg-paper"
+                    ? "clay-shadow border-clay bg-paper ring-2 ring-clay/25"
                     : "border-ink/10 bg-paper hover:border-clay/40",
                 )}
               >
@@ -198,9 +212,9 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
                 aria-checked={plan === "annual"}
                 onClick={() => setPlan("annual")}
                 className={cn(
-                  "relative flex min-h-24 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
+                  "relative flex min-h-20 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
                   plan === "annual"
-                    ? "clay-shadow border-clay bg-paper"
+                    ? "clay-shadow border-clay bg-paper ring-2 ring-clay/25"
                     : "border-ink/10 bg-paper hover:border-clay/40",
                 )}
               >
@@ -212,7 +226,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
               </button>
             </div>
 
-            <div className="mt-auto pt-4">
+            <div className="mt-auto pt-3">
               <button
                 type="button"
                 onClick={finish}
@@ -220,14 +234,18 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
               >
                 Start Free Trial
               </button>
+              <p className="mt-2 text-center text-xs leading-snug text-muted-foreground">
+                7 days free, then {plan === "annual" ? "$89.00/year" : "$9.99/month"}. Cancel anytime in App Store
+                settings.
+              </p>
               <button
                 type="button"
                 onClick={finish}
-                className="mt-1 flex min-h-9 w-full items-center justify-center text-sm font-semibold text-muted-foreground underline-offset-4 hover:underline"
+                className="mt-1 flex min-h-8 w-full items-center justify-center text-sm font-semibold text-muted-foreground underline-offset-4 hover:underline"
               >
                 Maybe later
               </button>
-              <p className="mt-3 text-center text-xs text-muted-foreground">
+              <p className="mt-2 text-center text-xs text-muted-foreground">
                 By continuing you agree to our{" "}
                 <Link to="/terms" className="font-semibold text-clay underline underline-offset-2">
                   Terms of Service

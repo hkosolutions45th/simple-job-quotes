@@ -16,7 +16,7 @@ import { duplicateQuoteRecord } from "@/lib/duplicate-quote";
 import { clearDeviceText, nextQuoteNumber, readDeviceJSON, readDeviceText, writeDeviceText } from "@/lib/device-storage";
 import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
-import { OnboardingFlow } from "@/components/OnboardingFlow";
+import { OnboardingFlow, TRADES } from "@/components/OnboardingFlow";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { generateQuoteItems } from "@/lib/ai-quote.functions";
@@ -73,6 +73,7 @@ type BusinessProfile = {
   postalCode: string;
   taxRate: number;
   defaultTerms: string;
+  trade: string;
 };
 
 const PROFILE_KEY = "instaquote:businessProfile";
@@ -85,6 +86,7 @@ const EMPTY_PROFILE: BusinessProfile = {
   postalCode: "",
   taxRate: 13,
   defaultTerms: "",
+  trade: "",
 };
 
 function InstaQuote() {
@@ -99,7 +101,7 @@ function InstaQuote() {
       if (raw) {
         const value = JSON.parse(raw);
         const p = { ...EMPTY_PROFILE };
-        for (const key of ["companyName", "phone", "email", "address", "city", "postalCode", "defaultTerms"] as const) {
+        for (const key of ["companyName", "phone", "email", "address", "city", "postalCode", "defaultTerms", "trade"] as const) {
           if (typeof value?.[key] === "string") p[key] = value[key];
         }
         if (Number.isFinite(value?.taxRate) && value.taxRate >= 0) p.taxRate = value.taxRate;
@@ -110,6 +112,9 @@ function InstaQuote() {
     } catch {
       /* ignore corrupt storage */
     }
+    // A trade picked during onboarding belongs in the business profile.
+    const savedTrade = readDeviceText("instaquote:trade");
+    if (savedTrade) setBusinessProfile((p) => (p.trade ? p : { ...p, trade: savedTrade }));
     if (readDeviceText("instaquote:onboardingDone") !== "1") setShowOnboarding(true);
     setDeviceReady(true);
   }, []);
@@ -306,6 +311,7 @@ function InstaQuote() {
     logo_url: "",
     default_terms: "",
     default_currency: "USD",
+    trade: "",
   });
   const [currency, setCurrency] = useState("USD");
   const [defaultCurrency, setDefaultCurrency] = useState("USD");
@@ -732,7 +738,7 @@ function InstaQuote() {
     let active = true;
     supabase
       .from("user_profiles")
-      .select("business_name, logo_url, phone, default_terms, default_currency, business_email, street_address, city, postal_code, tax_rate")
+      .select("business_name, logo_url, phone, default_terms, default_currency, business_email, street_address, city, postal_code, tax_rate, trade")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -752,6 +758,7 @@ function InstaQuote() {
           postalCode: data.postal_code || p.postalCode,
           taxRate: Number.isFinite(cloudRate) && cloudRate >= 0 ? cloudRate : p.taxRate,
           defaultTerms: data.default_terms || p.defaultTerms,
+          trade: data.trade || p.trade,
         }));
         if (Number.isFinite(cloudRate) && cloudRate >= 0 && !quoteIdRef.current) setTaxRate(cloudRate);
         if (data.logo_url) setLogo(data.logo_url);
@@ -779,6 +786,7 @@ function InstaQuote() {
       tax_rate: String(businessProfile.taxRate),
       logo_url: logo && !logo.startsWith("data:") ? logo : logo ?? "",
       default_terms: defaultTerms,
+      trade: businessProfile.trade,
       default_currency: defaultCurrency,
     });
     setSettingsOpen(true);
@@ -811,6 +819,7 @@ function InstaQuote() {
       postalCode: settings.postal_code.trim(),
       taxRate: Number.isFinite(rate) && rate >= 0 ? rate : 13,
       defaultTerms: settings.default_terms.trim(),
+      trade: settings.trade.trim(),
     };
     const s = {
       business_name: nextProfile.companyName || null,
@@ -823,6 +832,7 @@ function InstaQuote() {
       city: nextProfile.city || null,
       postal_code: nextProfile.postalCode || null,
       tax_rate: nextProfile.taxRate,
+      trade: nextProfile.trade || null,
     };
     if (user) {
       setSavingSettings(true);
@@ -991,6 +1001,7 @@ function InstaQuote() {
     clearDeviceText(PROFILE_KEY);
     clearDeviceText("instaquote:clients");
     clearDeviceText("instaquote:businessExtras");
+    clearDeviceText("instaquote:trade");
     // Guest defaults: blank business profile, no saved clients, and a fresh draft quote.
     setBusinessProfile(EMPTY_PROFILE);
     setSavedClients([]);
@@ -1052,7 +1063,21 @@ function InstaQuote() {
   }
 
   if (showOnboarding) {
-    return <OnboardingFlow onDone={() => setShowOnboarding(false)} />;
+    return (
+      <OnboardingFlow
+        onDone={() => setShowOnboarding(false)}
+        onTrade={async (tradeId) => {
+          // Slide 2's pick lands in Business Settings straight away (device + account).
+          setBusinessProfile((p) => ({ ...p, trade: tradeId }));
+          if (!user) return;
+          const { error } = await supabase
+            .from("user_profiles")
+            .upsert({ user_id: user.id, trade: tradeId }, { onConflict: "user_id" });
+          if (error)
+            toast.error("Couldn't save your trade to your account", { description: error.message });
+        }}
+      />
+    );
   }
 
   return (
@@ -1861,6 +1886,19 @@ function InstaQuote() {
                 />
               </label>
             ))}
+            <label className="block">
+              <span className="label-mono">Trade</span>
+              <select
+                value={settings.trade}
+                onChange={(e) => setSettings((s) => ({ ...s, trade: e.target.value }))}
+                className="field mt-1 min-h-12 w-full rounded-xl px-3"
+              >
+                <option value="">Select your trade</option>
+                {TRADES.map((t) => (
+                  <option key={t.id} value={t.id}>{t.label}</option>
+                ))}
+              </select>
+            </label>
             <label className="block">
               <span className="label-mono">Default currency</span>
               <select

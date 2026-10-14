@@ -103,6 +103,7 @@ export type Database = {
           postal_code: string | null
           street_address: string | null
           tax_rate: number | null
+          trade: string | null
           updated_at: string
           user_id: string
         }
@@ -119,6 +120,7 @@ export type Database = {
           postal_code?: string | null
           street_address?: string | null
           tax_rate?: number | null
+          trade?: string | null
           updated_at?: string
           user_id: string
         }
@@ -135,6 +137,7 @@ export type Database = {
           postal_code?: string | null
           street_address?: string | null
           tax_rate?: number | null
+          trade?: string | null
           updated_at?: string
           user_id?: string
         }
