@@ -29,6 +29,13 @@
       "when": 1791674187477,
       "tag": "0003_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791949121177,
+      "tag": "0004_add_trade_to_user_profiles",
+      "breakpoints": true
     }
   ]
 }
