@@ -110,6 +110,7 @@ function InstaQuote() {
     } catch {
       /* ignore corrupt storage */
     }
+    if (readDeviceText("instaquote:onboardingDone") !== "1") setShowOnboarding(true);
     setDeviceReady(true);
   }, []);
   useEffect(() => {
@@ -1048,6 +1049,10 @@ function InstaQuote() {
         </p>
       </div>
     );
+  }
+
+  if (showOnboarding) {
+    return <OnboardingFlow onDone={() => setShowOnboarding(false)} />;
   }
 
   return (
