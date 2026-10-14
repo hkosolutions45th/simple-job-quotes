@@ -212,7 +212,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
               </button>
             </div>
 
-            <div className="mt-auto pt-6">
+            <div className="mt-auto pt-4">
               <button
                 type="button"
                 onClick={finish}
@@ -223,7 +223,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
               <button
                 type="button"
                 onClick={finish}
-                className="mt-2 flex min-h-11 w-full items-center justify-center text-sm font-semibold text-muted-foreground underline-offset-4 hover:underline"
+                className="mt-1 flex min-h-9 w-full items-center justify-center text-sm font-semibold text-muted-foreground underline-offset-4 hover:underline"
               >
                 Maybe later
               </button>
