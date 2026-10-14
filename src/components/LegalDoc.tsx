@@ -28,7 +28,8 @@ export function LegalPage({
         <div className="mx-auto flex w-full max-w-[42rem] items-center gap-3 px-4 py-3">
           <Link
             to="/"
-            search={{ settings: "1" }}
+            search={{ settings: 1 }}
+
             className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-card px-3 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
           >
             <span aria-hidden="true">←</span>
@@ -55,7 +56,8 @@ export function LegalPage({
             </Link>
             <Link
               to="/"
-              search={{ settings: "1" }}
+              search={{ settings: 1 }}
+
               className="min-h-11 rounded-xl px-4 text-sm font-semibold underline underline-offset-4 inline-flex items-center"
             >
               Back to settings
