@@ -16,6 +16,7 @@ import { duplicateQuoteRecord } from "@/lib/duplicate-quote";
 import { clearDeviceText, nextQuoteNumber, readDeviceJSON, readDeviceText, writeDeviceText } from "@/lib/device-storage";
 import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
+import { OnboardingFlow } from "@/components/OnboardingFlow";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { generateQuoteItems } from "@/lib/ai-quote.functions";
@@ -90,6 +91,7 @@ function InstaQuote() {
   const { user, loading: authLoading } = useAuth();
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(EMPTY_PROFILE);
   const [deviceReady, setDeviceReady] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   // Load the device-saved profile after hydration, then keep it in sync.
   useEffect(() => {
     try {
