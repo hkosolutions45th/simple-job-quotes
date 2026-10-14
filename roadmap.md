@@ -14,3 +14,4 @@
 - [x] Add structured city and postal/ZIP fields throughout quote creation and delivery
 - [x] Keep line-item descriptions currency-neutral; scope summaries removed as requested
 - [x] Relabel and restyle bottom action bar: Save Quote, View PDF, Email PDF, Send
+- [x] Add Privacy Policy and Terms of Service pages with back-to-settings navigation
