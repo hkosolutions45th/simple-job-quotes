@@ -20,7 +20,7 @@ import {
 import { writeDeviceText } from "@/lib/device-storage";
 import { cn } from "@/lib/utils";
 
-const TRADES = [
+export const TRADES = [
   { id: "painter", label: "Painting", icon: Paintbrush },
   { id: "landscaper", label: "Landscaping", icon: Leaf },
   { id: "roofer", label: "Roofing", icon: Home },
@@ -38,10 +38,24 @@ const BENEFITS = [
 
 type Plan = "monthly" | "annual";
 
-export function OnboardingFlow({ onDone }: { onDone: () => void }) {
+export function OnboardingFlow({
+  onDone,
+  onTrade,
+}: {
+  onDone: () => void;
+  /** Fired the instant a trade is tapped so it lands in Business Settings right away. */
+  onTrade?: (tradeId: string) => void;
+}) {
   const [step, setStep] = useState(0);
   const [trade, setTrade] = useState<string | null>(null);
+  // The annual plan is the default choice when the paywall appears.
   const [plan, setPlan] = useState<Plan>("annual");
+
+  const pickTrade = (id: string) => {
+    setTrade(id);
+    writeDeviceText("instaquote:trade", id);
+    onTrade?.(id);
+  };
 
   const finish = () => {
     writeDeviceText("instaquote:onboardingDone", "1");
@@ -117,7 +131,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setTrade(id)}
+                  onClick={() => pickTrade(id)}
                   aria-pressed={trade === id}
                   className={cn(
                     "flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border-2 px-3 text-base font-bold transition-colors",
@@ -180,7 +194,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
                 className={cn(
                   "relative flex min-h-24 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
                   plan === "monthly"
-                    ? "clay-shadow border-clay bg-paper"
+                    ? "clay-shadow border-clay bg-paper ring-2 ring-clay/25"
                     : "border-ink/10 bg-paper hover:border-clay/40",
                 )}
               >
@@ -200,7 +214,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
                 className={cn(
                   "relative flex min-h-24 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
                   plan === "annual"
-                    ? "clay-shadow border-clay bg-paper"
+                    ? "clay-shadow border-clay bg-paper ring-2 ring-clay/25"
                     : "border-ink/10 bg-paper hover:border-clay/40",
                 )}
               >
@@ -212,7 +226,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
               </button>
             </div>
 
-            <div className="mt-auto pt-4">
+            <div className="mt-auto pt-3">
               <button
                 type="button"
                 onClick={finish}
@@ -220,14 +234,18 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
               >
                 Start Free Trial
               </button>
+              <p className="mt-2 text-center text-xs leading-snug text-muted-foreground">
+                7 days free, then {plan === "annual" ? "$89.00/year" : "$9.99/month"}. Cancel anytime in App Store
+                settings.
+              </p>
               <button
                 type="button"
                 onClick={finish}
-                className="mt-1 flex min-h-9 w-full items-center justify-center text-sm font-semibold text-muted-foreground underline-offset-4 hover:underline"
+                className="mt-1 flex min-h-8 w-full items-center justify-center text-sm font-semibold text-muted-foreground underline-offset-4 hover:underline"
               >
                 Maybe later
               </button>
-              <p className="mt-3 text-center text-xs text-muted-foreground">
+              <p className="mt-2 text-center text-xs text-muted-foreground">
                 By continuing you agree to our{" "}
                 <Link to="/terms" className="font-semibold text-clay underline underline-offset-2">
                   Terms of Service
