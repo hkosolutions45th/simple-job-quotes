@@ -152,12 +152,12 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
 
         {step === 2 && (
           <div className="flex flex-1 flex-col">
-            <h2 className="text-3xl font-bold leading-tight">Start Your 7-Day Free Trial</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <h2 className="text-3xl font-bold leading-tight max-[380px]:text-2xl">Start Your 7-Day Free Trial</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               Full access to everything. Cancel anytime — no charge until day 8.
             </p>
 
-            <ul className="mt-6 space-y-3">
+            <ul className="mt-4 space-y-2.5">
               {BENEFITS.map(({ icon: Icon, title, text }) => (
                 <li key={title} className="flex items-start gap-3 rounded-2xl bg-paper p-4">
                   <span className="clay-shadow-leaf grid size-10 shrink-0 place-items-center rounded-xl bg-leaf text-cream">
