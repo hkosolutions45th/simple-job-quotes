@@ -15,3 +15,5 @@
 - [x] Keep line-item descriptions currency-neutral; scope summaries removed as requested
 - [x] Relabel and restyle bottom action bar: Save Quote, View PDF, Email PDF, Send
 - [x] Add Privacy Policy and Terms of Service pages with back-to-settings navigation
+
+- [x] Pre-select annual plan, add trial subtext, and save onboarding trade into Business Settings
