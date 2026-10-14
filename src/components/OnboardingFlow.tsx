@@ -157,9 +157,9 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
               Full access to everything. Cancel anytime — no charge until day 8.
             </p>
 
-            <ul className="mt-4 space-y-2.5">
+            <ul className="mt-3 space-y-2">
               {BENEFITS.map(({ icon: Icon, title, text }) => (
-                <li key={title} className="flex items-start gap-3 rounded-2xl bg-paper p-3">
+                <li key={title} className="flex items-start gap-3 rounded-2xl bg-paper p-2.5">
                   <span className="clay-shadow-leaf grid size-10 shrink-0 place-items-center rounded-xl bg-leaf text-cream">
                     <Icon className="size-5" aria-hidden="true" />
                   </span>
@@ -171,7 +171,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
               ))}
             </ul>
 
-            <div className="mt-5 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Choose a plan">
+            <div className="mt-4 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Choose a plan">
               <button
                 type="button"
                 role="radio"
