@@ -54,8 +54,13 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { settings?: number } =>
+    Number(search["settings"]) === 1 ? { settings: 1 } : {},
+
+
   component: InstaQuote,
 });
+
 
 
 type BusinessProfile = {
@@ -712,9 +717,15 @@ function InstaQuote() {
     toast.success("Blank quote ready");
   };
 
+  const [profileReady, setProfileReady] = useState(false);
+
   // Load the signed-in contractor's saved business details.
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setProfileReady(true);
+      return;
+    }
+
     let active = true;
     supabase
       .from("user_profiles")
@@ -722,7 +733,10 @@ function InstaQuote() {
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (!active || !data) return;
+        if (!active) return;
+        setProfileReady(true);
+        if (!data) return;
+
         // Account data is authoritative; device values fill any gaps (offline cache).
         const cloudRate = data.tax_rate == null ? NaN : Number(data.tax_rate);
         setBusinessProfile((p) => ({
@@ -766,6 +780,22 @@ function InstaQuote() {
     });
     setSettingsOpen(true);
   };
+
+  // A legal document's "Back to settings" button arrives with ?settings=1, so the
+  // dialog reopens once the account profile has finished loading.
+  const search = Route.useSearch();
+  const [settingsRequested, setSettingsRequested] = useState(false);
+  useEffect(() => {
+    if (search.settings) setSettingsRequested(true);
+  }, [search.settings]);
+  useEffect(() => {
+    if (!settingsRequested || !deviceReady || authLoading || !profileReady) return;
+    setSettingsRequested(false);
+    openSettings();
+    navigate({ to: "/", search: {}, replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsRequested, deviceReady, authLoading, profileReady]);
+
 
   const saveSettings = async () => {
     const rate = Number(settings.tax_rate);
@@ -1837,8 +1867,18 @@ function InstaQuote() {
               </select>
             </label>
           </div>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-4">
+            <span className="label-mono">Legal</span>
+            <Link to="/privacy" className="text-sm font-semibold underline underline-offset-4">
+              Privacy Policy
+            </Link>
+            <Link to="/terms" className="text-sm font-semibold underline underline-offset-4">
+              Terms of Service
+            </Link>
+          </div>
           <button
             onClick={saveSettings}
+
             disabled={savingSettings}
             aria-busy={savingSettings}
             className="clay-shadow-leaf flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-leaf font-semibold text-cream disabled:opacity-70"
