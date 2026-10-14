@@ -80,7 +80,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
       </div>
 
       {/* Slide content */}
-      <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col overflow-y-auto px-6 pb-8 pt-6">
+      <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col overflow-y-auto px-6 pb-6 pt-3">
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
             <div className="clay-shadow grid size-28 place-items-center rounded-3xl bg-clay text-cream">
@@ -152,14 +152,14 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
 
         {step === 2 && (
           <div className="flex flex-1 flex-col">
-            <h2 className="text-3xl font-bold leading-tight max-[380px]:text-2xl">Start Your 7-Day Free Trial</h2>
+            <h2 className="text-2xl font-bold leading-tight">Start Your 7-Day Free Trial</h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
               Full access to everything. Cancel anytime — no charge until day 8.
             </p>
 
             <ul className="mt-4 space-y-2.5">
               {BENEFITS.map(({ icon: Icon, title, text }) => (
-                <li key={title} className="flex items-start gap-3 rounded-2xl bg-paper p-3.5">
+                <li key={title} className="flex items-start gap-3 rounded-2xl bg-paper p-3">
                   <span className="clay-shadow-leaf grid size-10 shrink-0 place-items-center rounded-xl bg-leaf text-cream">
                     <Icon className="size-5" aria-hidden="true" />
                   </span>
@@ -178,7 +178,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
                 aria-checked={plan === "monthly"}
                 onClick={() => setPlan("monthly")}
                 className={cn(
-                  "relative flex min-h-28 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
+                  "relative flex min-h-24 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
                   plan === "monthly"
                     ? "clay-shadow border-clay bg-paper"
                     : "border-ink/10 bg-paper hover:border-clay/40",
@@ -198,7 +198,7 @@ export function OnboardingFlow({ onDone }: { onDone: () => void }) {
                 aria-checked={plan === "annual"}
                 onClick={() => setPlan("annual")}
                 className={cn(
-                  "relative flex min-h-28 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
+                  "relative flex min-h-24 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
                   plan === "annual"
                     ? "clay-shadow border-clay bg-paper"
                     : "border-ink/10 bg-paper hover:border-clay/40",
