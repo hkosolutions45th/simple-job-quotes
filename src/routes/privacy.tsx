@@ -251,7 +251,7 @@ function PrivacyPage() {
       <LegalSection id="contact" heading="Contact">
         <p>
           Questions, corrections, or a deletion request: email{" "}
-          <a href="mailto:support@instaquote.app">support@instaquote.app</a>. Include the email address on
+          <a href="mailto:instaquotesupport@hkosolutions.ca">instaquotesupport@hkosolutions.ca</a>. Include the email address on
           your account so we can find the right record.
         </p>
       </LegalSection>

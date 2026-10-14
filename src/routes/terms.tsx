@@ -213,7 +213,7 @@ function TermsPage() {
       <LegalSection id="contact" heading="Contact">
         <p>
           Questions about these terms, or to report misuse:{" "}
-          <a href="mailto:support@instaquote.app">support@instaquote.app</a>.
+          <a href="mailto:instaquotesupport@hkosolutions.ca">instaquotesupport@hkosolutions.ca</a>.
         </p>
       </LegalSection>
     </LegalPage>
