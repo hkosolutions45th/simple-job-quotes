@@ -54,9 +54,9 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>): { settings?: string } => ({
-    settings: typeof search.settings === "string" ? search.settings : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { settings?: string } =>
+    typeof search["settings"] === "string" ? { settings: search["settings"] } : {},
+
   component: InstaQuote,
 });
 
