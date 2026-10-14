@@ -94,7 +94,7 @@ export function OnboardingFlow({
       </div>
 
       {/* Slide content */}
-      <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col overflow-y-auto px-6 pb-6 pt-3">
+      <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col overflow-y-auto px-6 pb-5 pt-2">
         {step === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
             <div className="clay-shadow grid size-28 place-items-center rounded-3xl bg-clay text-cream">
@@ -171,9 +171,9 @@ export function OnboardingFlow({
               Full access to everything. Cancel anytime — no charge until day 8.
             </p>
 
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-2 space-y-1.5">
               {BENEFITS.map(({ icon: Icon, title, text }) => (
-                <li key={title} className="flex items-start gap-3 rounded-2xl bg-paper p-2.5">
+                <li key={title} className="flex items-start gap-3 rounded-2xl bg-paper p-2">
                   <span className="clay-shadow-leaf grid size-10 shrink-0 place-items-center rounded-xl bg-leaf text-cream">
                     <Icon className="size-5" aria-hidden="true" />
                   </span>
@@ -185,14 +185,14 @@ export function OnboardingFlow({
               ))}
             </ul>
 
-            <div className="mt-4 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Choose a plan">
+            <div className="mt-3 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Choose a plan">
               <button
                 type="button"
                 role="radio"
                 aria-checked={plan === "monthly"}
                 onClick={() => setPlan("monthly")}
                 className={cn(
-                  "relative flex min-h-24 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
+                  "relative flex min-h-20 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
                   plan === "monthly"
                     ? "clay-shadow border-clay bg-paper ring-2 ring-clay/25"
                     : "border-ink/10 bg-paper hover:border-clay/40",
@@ -212,7 +212,7 @@ export function OnboardingFlow({
                 aria-checked={plan === "annual"}
                 onClick={() => setPlan("annual")}
                 className={cn(
-                  "relative flex min-h-24 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
+                  "relative flex min-h-20 flex-col items-center justify-center rounded-2xl border-2 px-3 transition-colors",
                   plan === "annual"
                     ? "clay-shadow border-clay bg-paper ring-2 ring-clay/25"
                     : "border-ink/10 bg-paper hover:border-clay/40",
