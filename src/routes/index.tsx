@@ -115,9 +115,18 @@ function InstaQuote() {
     // A trade picked during onboarding belongs in the business profile.
     const savedTrade = readDeviceText("instaquote:trade");
     if (savedTrade) setBusinessProfile((p) => (p.trade ? p : { ...p, trade: savedTrade }));
-    if (readDeviceText("instaquote:onboardingDone") !== "1") setShowOnboarding(true);
     setDeviceReady(true);
   }, []);
+  // The trial/paywall step is required per account: a brand-new account always
+  // sees onboarding, even on a device where another account already finished it.
+  useEffect(() => {
+    if (!deviceReady) return;
+    if (!user) {
+      setShowOnboarding(false);
+      return;
+    }
+    setShowOnboarding(readDeviceText(`instaquote:onboardingDone:${user.id}`) !== "1");
+  }, [user, deviceReady]);
   useEffect(() => {
     if (deviceReady) writeDeviceText(PROFILE_KEY, JSON.stringify(businessProfile));
   }, [businessProfile, deviceReady]);
@@ -1065,7 +1074,10 @@ function InstaQuote() {
   if (showOnboarding) {
     return (
       <OnboardingFlow
-        onDone={() => setShowOnboarding(false)}
+        onDone={() => {
+          if (user) writeDeviceText(`instaquote:onboardingDone:${user.id}`, "1");
+          setShowOnboarding(false);
+        }}
         onTrade={async (tradeId) => {
           // Slide 2's pick lands in Business Settings straight away (device + account).
           setBusinessProfile((p) => ({ ...p, trade: tradeId }));

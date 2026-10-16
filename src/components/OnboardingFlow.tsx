@@ -57,7 +57,8 @@ export function OnboardingFlow({
   };
 
   const finish = () => {
-    writeDeviceText("instaquote:onboardingDone", "1");
+    // The parent marks the trial step complete for this account — there is no
+    // other way past this screen (no close, no skip).
     if (trade) writeDeviceText("instaquote:trade", trade);
     onDone();
   };
