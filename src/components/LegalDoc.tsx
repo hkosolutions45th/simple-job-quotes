@@ -23,7 +23,7 @@ export function LegalPage({
   children,
 }: LegalPageProps) {
   return (
-    <div className="min-h-screen bg-cream text-ink">
+    <div className="app-safe-actions min-h-screen bg-cream text-ink">
       <header className="app-safe-header sticky top-0 z-10 border-b border-line bg-cream/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-[42rem] items-center gap-3 px-4 py-3">
           <Link
