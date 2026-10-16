@@ -141,12 +141,22 @@ export const sendQuoteEmail = createServerFn({ method: "POST" })
       }),
     });
 
+    const raw = await response.text();
+    let parsed: { id?: string; message?: string; error?: string | { message?: string } } = {};
+    try {
+      parsed = JSON.parse(raw);
+    } catch {}
     if (!response.ok) {
-      const errorBody = await response.text();
-      console.error(`Resend request failed [${response.status}]: ${errorBody}`);
-      throw new Error(`Email send failed [${response.status}]: ${errorBody}`);
+      console.error(`Resend request failed [${response.status}]: ${raw}`);
+      const msg =
+        parsed.message ||
+        (typeof parsed.error === "string" ? parsed.error : parsed.error?.message) ||
+        raw ||
+        "Unknown error";
+      throw new Error(`Email could not be sent (${response.status}): ${msg}`);
     }
-
-    const result = (await response.json()) as { id?: string };
-    return { id: result.id ?? null };
+    if (!parsed.id) {
+      throw new Error("Email service did not confirm the send. Please try again.");
+    }
+    return { id: parsed.id };
   });
