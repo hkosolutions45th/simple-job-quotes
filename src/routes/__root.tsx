@@ -125,7 +125,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      <Toaster position="top-center" />
+      <Toaster position="top-center" offset={{ top: "calc(env(safe-area-inset-top, 0px) + 16px)" }} mobileOffset={{ top: "calc(env(safe-area-inset-top, 0px) + 16px)" }} />
     </QueryClientProvider>
   );
 }

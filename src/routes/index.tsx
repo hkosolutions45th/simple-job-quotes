@@ -1598,7 +1598,32 @@ function InstaQuote() {
           />
           <div className="no-print sticky bottom-0 flex gap-3 border-t border-line bg-white p-3">
             <button
-              onClick={() => window.print()}
+              onClick={async () => {
+                const w = window as unknown as { Capacitor?: { isNativePlatform?: () => boolean }; webkit?: { messageHandlers?: unknown } };
+                const isNative = !!w.Capacitor?.isNativePlatform?.() || (!!w.webkit?.messageHandlers && !/Safari\//.test(navigator.userAgent));
+                if (!isNative) return window.print();
+                try {
+                  const { buildQuotePdfBase64 } = await import("@/lib/quote-pdf");
+                  const b64 = await buildQuotePdfBase64({
+                    business, businessContact, quoteNo, customer,
+                    items: items.map(({ description, quantity, rate }) => ({ description, quantity, rate })),
+                    taxRate, taxEnabled, currency,
+                  });
+                  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+                  const name = `Quote_${quoteNo.replace(/[^A-Za-z0-9_-]/g, "_")}.pdf`;
+                  const file = new File([bytes], name, { type: "application/pdf" });
+                  if (navigator.canShare?.({ files: [file] })) {
+                    await navigator.share({ files: [file], title: `Quote ${quoteNo}` });
+                  } else {
+                    const url = URL.createObjectURL(file);
+                    window.open(url, "_blank") ?? (window.location.href = url);
+                    setTimeout(() => URL.revokeObjectURL(url), 60000);
+                  }
+                } catch (err) {
+                  if (err instanceof Error && err.name === "AbortError") return;
+                  toast.error("Couldn't create the PDF", { description: err instanceof Error ? err.message : "Please try again." });
+                }
+              }}
               className="clay-shadow min-h-12 flex-1 rounded-xl bg-clay text-sm font-semibold text-cream active:translate-y-0.5"
             >
               Print / Save as PDF
