@@ -69,7 +69,7 @@ export function OnboardingFlow({
       aria-label="Welcome to InstaQuote"
       className="app-safe-layout fixed inset-0 z-50 flex flex-col bg-cream text-ink"
     >
-      {/* Top bar: progress + close */}
+      {/* Top bar: progress only — the trial step is required, so there is no close */}
       <div className="app-safe-header mx-auto flex w-full max-w-[430px] items-center justify-between px-5 pt-4">
         <div className="flex items-center gap-2" aria-hidden="true">
           {[0, 1, 2].map((i) => (
