@@ -5,7 +5,6 @@ import {
   FileText,
   Users,
   Hash,
-  X,
   Check,
   Paintbrush,
   Leaf,
@@ -70,7 +69,7 @@ export function OnboardingFlow({
       aria-label="Welcome to InstaQuote"
       className="app-safe-layout fixed inset-0 z-50 flex flex-col bg-cream text-ink"
     >
-      {/* Top bar: progress + close */}
+      {/* Top bar: progress only — the trial step is required, so there is no close */}
       <div className="app-safe-header mx-auto flex w-full max-w-[430px] items-center justify-between px-5 pt-4">
         <div className="flex items-center gap-2" aria-hidden="true">
           {[0, 1, 2].map((i) => (
@@ -83,14 +82,6 @@ export function OnboardingFlow({
             />
           ))}
         </div>
-        <button
-          type="button"
-          onClick={finish}
-          aria-label="Close onboarding"
-          className="grid size-11 place-items-center rounded-full bg-ink/5 text-ink transition-colors hover:bg-ink/10"
-        >
-          <X className="size-5" aria-hidden="true" />
-        </button>
       </div>
 
       {/* Slide content */}
@@ -238,13 +229,6 @@ export function OnboardingFlow({
                 7 days free, then {plan === "annual" ? "$89.00/year" : "$9.99/month"}. Cancel anytime in App Store
                 settings.
               </p>
-              <button
-                type="button"
-                onClick={finish}
-                className="mt-1 flex min-h-8 w-full items-center justify-center text-sm font-semibold text-muted-foreground underline-offset-4 hover:underline"
-              >
-                Maybe later
-              </button>
               <p className="mt-2 text-center text-xs text-muted-foreground">
                 By continuing you agree to our{" "}
                 <Link to="/terms" className="font-semibold text-clay underline underline-offset-2">
