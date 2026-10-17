@@ -28,7 +28,7 @@ function TermsPage() {
   return (
     <LegalPage
       title="Terms of Service"
-      updated="October 14, 2026"
+      updated="October 17, 2026"
       relatedTo="/privacy"
       relatedLabel="Privacy Policy"
       intro={
@@ -153,9 +153,33 @@ function TermsPage() {
         <p>
           We aim to keep the app running, but it is provided "as is" and "as available". Features may be
           added, changed or removed; the AI model behind generation may be replaced; and the app may be
-          unavailable for maintenance, incidents, or reasons outside our control. While InstaQuote is free to
-          use, we do not promise it will always be free, and any paid plan would be announced before it
-          applied to you.
+          unavailable for maintenance, incidents, or reasons outside our control. Subscription pricing
+          and the free trial are described in the "Subscriptions and free trials" section below.
+        </p>
+      </LegalSection>
+
+      <LegalSection id="subscriptions" heading="Subscriptions and free trials">
+        <p>
+          InstaQuote offers a 7-day free trial when you first subscribe. The trial starts when you confirm
+          it, and if you do not cancel before it ends, it converts automatically into the plan you picked
+          — monthly ($9.99/month) or annual ($89/year) — and you are charged for the first period.
+        </p>
+        <p>
+          If you subscribe on an iPhone or iPad, your subscription is billed through your Apple ID using
+          Apple's in-app purchase system. Your Apple ID is charged when you confirm the purchase, and the
+          plan renews automatically each month or each year unless you cancel at least 24 hours before the
+          current period ends. Your Apple ID is charged for the renewal within 24 hours before that date,
+          at the price you agreed to when you subscribed.
+        </p>
+        <p>
+          You can cancel at any time in App Store Account Settings on your device (Settings → your name →
+          Subscriptions, then choose InstaQuote). Cancelling stops future renewals; you keep access to the
+          subscription until the end of the period you already paid for. Deleting the app or closing your
+          account does not by itself cancel a subscription managed by Apple.
+        </p>
+        <p>
+          Prices are set in your local currency by Apple, with applicable taxes added where required.
+          Refunds for a purchase made through Apple are handled under Apple's media services terms.
         </p>
       </LegalSection>
 
