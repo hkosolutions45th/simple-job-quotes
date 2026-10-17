@@ -679,6 +679,27 @@ function InstaQuote() {
         taxEnabled,
         currency,
       });
+      const w = window as unknown as { Capacitor?: { isNativePlatform?: () => boolean }; webkit?: { messageHandlers?: unknown } };
+      const isNative = !!w.Capacitor?.isNativePlatform?.() || (!!w.webkit?.messageHandlers && !/Safari\//.test(navigator.userAgent));
+      if (isNative && typeof navigator.share === "function") {
+        const bytes = Uint8Array.from(atob(pdfBase64), (c) => c.charCodeAt(0));
+        const file = new File([bytes], `Quote_${quoteNo.replace(/[^A-Za-z0-9_-]/g, "_")}.pdf`, { type: "application/pdf" });
+        if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title: `Quote ${quoteNo} from ${business}`, text: emailNote });
+            await markSent(quoteId);
+            toast.success("Quote PDF ready — pick Mail to send it.");
+            setEmailOpen(false);
+            return;
+          } catch (e) {
+            if (e instanceof Error && e.name === "AbortError") {
+              toast("Sharing cancelled — the quote wasn't sent.");
+              return;
+            }
+            // Fall through to server email.
+          }
+        }
+      }
       await sendQuoteEmail({
         data: {
           to,
