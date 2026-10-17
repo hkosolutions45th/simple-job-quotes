@@ -923,6 +923,13 @@ function InstaQuote() {
     toast.success(`Marked as ${status}`);
   };
 
+  const markSent = async (id: string | null) => {
+    if (!id) return;
+    setSaved((rows) => rows.map((r) => (r.id === id ? { ...r, status: "sent" } : r)));
+    const { error } = await supabase.from("quotes").update({ status: "sent" }).eq("id", id);
+    if (error) console.error("Couldn't mark quote as sent:", error.message);
+  };
+
   const duplicateQuote = async (row: any) => {
     if (!user || duplicating) return;
     setDuplicating(row.id);
@@ -1825,19 +1832,20 @@ function InstaQuote() {
                       {money(Number(row.total_amount) || 0, row.currency ?? "USD")}
                     </span>
                   </button>
-                  <div className="mt-1 flex items-center gap-2 px-1">
+                  <div className="mt-1 flex items-center gap-1.5 px-1">
                     <select
                       value={row.status}
                       onChange={(e) => updateStatus(row.id, e.target.value)}
                       aria-label="Quote status"
-                      className="min-h-10 min-w-0 flex-1 rounded-lg bg-cream px-2 text-sm font-semibold ring-1 ring-line"
+                      className="min-h-10 w-28 shrink-0 rounded-lg bg-cream px-1.5 text-sm font-semibold ring-1 ring-line"
                     >
                       <option value="draft">Draft</option>
                       <option value="sent">Sent</option>
                       <option value="accepted">Accepted</option>
                     </select>
-                    <Button type="button" variant="outline" size="icon" title="Duplicate as New Quote (for new client)" aria-label="Duplicate as New Quote (for new client)" aria-busy={duplicating === row.id} disabled={duplicating !== null} onClick={() => void duplicateQuote(row)} className="size-10 shrink-0 bg-cream text-ink">
-                      {duplicating === row.id ? <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Copy aria-hidden="true" />}
+                    <Button type="button" variant="outline" size="sm" title="Duplicate as New Quote (for new client)" aria-label="Duplicate as New Quote (for new client)" aria-busy={duplicating === row.id} disabled={duplicating !== null} onClick={() => void duplicateQuote(row)} className="h-10 min-w-0 shrink-0 gap-1 rounded-lg bg-cream px-2 text-sm font-semibold text-ink">
+                      {duplicating === row.id ? <Loader2 className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Copy className="size-4 shrink-0" aria-hidden="true" />}
+                      <span className="truncate">Duplicate</span>
                     </Button>
                     <button
                       type="button"
