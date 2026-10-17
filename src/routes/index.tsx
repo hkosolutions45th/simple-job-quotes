@@ -1836,29 +1836,31 @@ function InstaQuote() {
                       {money(Number(row.total_amount) || 0, row.currency ?? "USD")}
                     </span>
                   </button>
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5 px-1">
-                    <select
-                      value={row.status}
-                      onChange={(e) => updateStatus(row.id, e.target.value)}
-                      aria-label="Quote status"
-                      className="min-h-10 w-28 shrink-0 rounded-lg bg-cream px-1.5 text-sm font-semibold ring-1 ring-line"
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="sent">Sent</option>
-                      <option value="accepted">Accepted</option>
-                    </select>
-                    <Button type="button" variant="outline" size="sm" title="Duplicate as New Quote (for new client)" aria-label="Duplicate as New Quote (for new client)" aria-haspopup="dialog" disabled={duplicating !== null} onClick={() => setDupConfirm(row)} className="h-10 min-w-0 shrink-0 grow gap-1 rounded-lg bg-cream px-2 text-sm font-semibold text-ink">
+                  <div className="mt-1 space-y-1.5 px-1">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <select
+                        value={row.status}
+                        onChange={(e) => updateStatus(row.id, e.target.value)}
+                        aria-label="Quote status"
+                        className="min-h-10 w-28 shrink-0 rounded-lg bg-cream px-1.5 text-sm font-semibold ring-1 ring-line"
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="sent">Sent</option>
+                        <option value="accepted">Accepted</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => deleteQuote(row.id)}
+                        aria-label="Delete quote"
+                        className="grid size-10 shrink-0 place-items-center rounded-lg bg-cream text-destructive ring-1 ring-line active:translate-y-0.5"
+                      >
+                        <Trash2 className="size-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" title="Duplicate as New Quote (for new client)" aria-label="Duplicate as New Quote (for new client)" aria-haspopup="dialog" disabled={duplicating !== null} onClick={() => setDupConfirm(row)} className="h-10 w-full min-w-0 gap-1 rounded-lg bg-cream px-2 text-sm font-semibold text-ink">
                       {duplicating === row.id ? <Loader2 className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Copy className="size-4 shrink-0" aria-hidden="true" />}
                       <span className="truncate">Duplicate Quote</span>
                     </Button>
-                    <button
-                      type="button"
-                      onClick={() => deleteQuote(row.id)}
-                      aria-label="Delete quote"
-                      className="grid size-10 place-items-center rounded-lg bg-cream text-destructive ring-1 ring-line active:translate-y-0.5"
-                    >
-                      <Trash2 className="size-4" aria-hidden="true" />
-                    </button>
                   </div>
                 </li>
               ))}
