@@ -1803,7 +1803,7 @@ function InstaQuote() {
       {/* Saved quotes */}
       <Dialog open={savedOpen} onOpenChange={setSavedOpen}>
         <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-md">
-          <DialogHeader>
+          <DialogHeader className="pr-10">
             <DialogTitle>Your saved quotes</DialogTitle>
             <DialogDescription>
               Tap a quote to load it back into the editor.
