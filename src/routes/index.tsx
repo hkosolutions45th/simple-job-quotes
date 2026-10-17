@@ -407,6 +407,7 @@ function InstaQuote() {
 
   const [cacheOwner, setCacheOwner] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [dupConfirm, setDupConfirm] = useState<any | null>(null);
   useEffect(() => {
     if (!user) { setCacheOwner(null); return; }
     setSaved(readDeviceJSON<any[]>(`instaquote:savedQuotes:${user.id}`, [], (v): v is any[] =>
@@ -941,7 +942,8 @@ function InstaQuote() {
       if (error) throw error;
       if (!data) throw new Error("No duplicated quote returned");
       setSaved((rows) => [data, ...rows]);
-      toast.success(`${number} duplicated — ready for a new client`);
+      setDupConfirm(null);
+      loadQuote(data, `${number} duplicated — ready for a new client`);
     } catch (error) {
       toast.error("Couldn't duplicate quote", { description: error instanceof Error ? error.message : "Try again." });
     } finally { setDuplicating(null); }
@@ -977,7 +979,7 @@ function InstaQuote() {
     setSaved(data ?? []);
   };
 
-  const loadQuote = (row: any) => {
+  const loadQuote = (row: any, loadedMessage = "Quote loaded — saving will update it") => {
     const payload = (row.line_items ?? {}) as any;
     setQuoteId(row.id);
     setCurrency(row.currency ?? "USD");
@@ -1007,7 +1009,7 @@ function InstaQuote() {
     if (typeof payload.taxRate === "number") setTaxRate(payload.taxRate);
     if (typeof payload.taxEnabled === "boolean") setTaxEnabled(payload.taxEnabled);
     setSavedOpen(false);
-    toast.success("Quote loaded — saving will update it");
+    if (loadedMessage) toast.success(loadedMessage);
   };
 
   const signOut = async () => {
@@ -1845,7 +1847,7 @@ function InstaQuote() {
                       <option value="sent">Sent</option>
                       <option value="accepted">Accepted</option>
                     </select>
-                    <Button type="button" variant="outline" size="sm" title="Duplicate as New Quote (for new client)" aria-label="Duplicate as New Quote (for new client)" aria-busy={duplicating === row.id} disabled={duplicating !== null} onClick={() => void duplicateQuote(row)} className="h-10 min-w-0 shrink-0 gap-1 rounded-lg bg-cream px-2 text-sm font-semibold text-ink">
+                    <Button type="button" variant="outline" size="sm" title="Duplicate as New Quote (for new client)" aria-label="Duplicate as New Quote (for new client)" aria-haspopup="dialog" disabled={duplicating !== null} onClick={() => setDupConfirm(row)} className="h-10 min-w-0 shrink-0 gap-1 rounded-lg bg-cream px-2 text-sm font-semibold text-ink">
                       {duplicating === row.id ? <Loader2 className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Copy className="size-4 shrink-0" aria-hidden="true" />}
                       <span className="truncate">Duplicate</span>
                     </Button>
