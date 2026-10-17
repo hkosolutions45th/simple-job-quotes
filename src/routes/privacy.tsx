@@ -28,7 +28,7 @@ function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy Policy"
-      updated="October 14, 2026"
+      updated="October 17, 2026"
       relatedTo="/terms"
       relatedLabel="Terms of Service"
       intro={
@@ -180,6 +180,12 @@ function PrivacyPage() {
             <strong>Currency rate service</strong> — when you change currency, the app requests live
             exchange rates. That service sees your IP address and the request; no client or quote details
             are included.
+          </li>
+          <li>
+            <strong>Apple</strong> — if you subscribe on an iPhone or iPad, your subscription is billed
+            through Apple's in-app purchase system. Apple manages that payment securely, and your payment
+            card details are handled entirely by Apple — we never see them. Apple's own privacy notice
+            covers how it handles payment information.
           </li>
         </ul>
         <p>
