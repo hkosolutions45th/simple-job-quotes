@@ -694,6 +694,7 @@ function InstaQuote() {
           pdfBase64,
         },
       });
+      await markSent(quoteId);
       toast.success(`Quote emailed to ${to}`);
       setEmailOpen(false);
     } catch (err) {
@@ -1660,11 +1661,12 @@ function InstaQuote() {
                 type="button"
                 title="Opens SMS/Messages with the quote text."
                 aria-describedby="share-sms-help"
-                onClick={() =>
+                onClick={() => {
+                  void markSent(quoteId);
                   void sendVia(
                     `sms:${customer.phone.replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(message)}`,
-                  )
-                }
+                  );
+                }}
                 className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-cream px-2 py-2 text-center text-[13px] font-semibold leading-snug ring-1 ring-line active:translate-y-0.5"
               >
                 <MessageSquare className="size-4 shrink-0" aria-hidden="true" />
