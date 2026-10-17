@@ -1867,6 +1867,49 @@ function InstaQuote() {
         </DialogContent>
       </Dialog>
 
+      {/* Duplicate confirmation */}
+      <Dialog
+        open={dupConfirm !== null}
+        onOpenChange={(open) => {
+          if (!open && duplicating === null) setDupConfirm(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <DialogHeader className="pr-12">
+            <DialogTitle>Duplicate as New Quote?</DialogTitle>
+            <DialogDescription>
+              This creates a fresh copy of all line items, quantities, and pricing for a new
+              client. Client name and contact details will be left blank for you to fill in.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={duplicating !== null}
+              onClick={() => setDupConfirm(null)}
+              className="min-h-12 rounded-xl bg-cream px-4 text-sm font-semibold text-ink ring-1 ring-line"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              aria-busy={duplicating !== null}
+              disabled={duplicating !== null}
+              onClick={() => dupConfirm && void duplicateQuote(dupConfirm)}
+              className="clay-shadow min-h-12 rounded-xl bg-clay px-4 text-sm font-semibold text-cream active:translate-y-0.5 disabled:opacity-70"
+            >
+              {duplicating !== null ? (
+                <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              ) : (
+                <Copy className="size-4" aria-hidden="true" />
+              )}
+              Duplicate Quote
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Business settings */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
