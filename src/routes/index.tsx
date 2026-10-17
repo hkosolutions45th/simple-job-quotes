@@ -1836,7 +1836,7 @@ function InstaQuote() {
                       <option value="sent">Sent</option>
                       <option value="accepted">Accepted</option>
                     </select>
-                    <Button type="button" variant="outline" size="icon" title="Duplicate quote" aria-label="Duplicate quote" aria-busy={duplicating === row.id} disabled={duplicating !== null} onClick={() => void duplicateQuote(row)} className="size-10 shrink-0 bg-cream text-ink">
+                    <Button type="button" variant="outline" size="icon" title="Duplicate as New Quote (for new client)" aria-label="Duplicate as New Quote (for new client)" aria-busy={duplicating === row.id} disabled={duplicating !== null} onClick={() => void duplicateQuote(row)} className="size-10 shrink-0 bg-cream text-ink">
                       {duplicating === row.id ? <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Copy aria-hidden="true" />}
                     </Button>
                     <button
@@ -1857,7 +1857,7 @@ function InstaQuote() {
 
       {/* Business settings */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader className="pr-12">
             <DialogTitle>Business Settings</DialogTitle>
             <DialogDescription>These details pre-fill every new quote.</DialogDescription>
@@ -1930,7 +1930,6 @@ function InstaQuote() {
                 onChange={(e) => setSettings((s) => ({ ...s, trade: e.target.value }))}
                 className="field mt-1 min-h-12 w-full rounded-xl px-3"
               >
-                <option value="">Select your trade</option>
                 {TRADES.map((t) => (
                   <option key={t.id} value={t.id}>{t.label}</option>
                 ))}
