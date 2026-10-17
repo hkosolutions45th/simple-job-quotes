@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { generateQuoteItems } from "@/lib/ai-quote.functions";
 import { sendQuoteEmail } from "@/lib/send-quote.functions";
+import { initRevenueCat } from "@/lib/revenuecat";
 import {
   cleanLineItemDescription,
   generateLineItems,
@@ -91,6 +92,10 @@ const EMPTY_PROFILE: BusinessProfile = {
 
 function InstaQuote() {
   const { user, loading: authLoading } = useAuth();
+  // Configure RevenueCat once per app launch (native iOS only; no-op on web).
+  useEffect(() => {
+    void initRevenueCat();
+  }, []);
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(EMPTY_PROFILE);
   const [deviceReady, setDeviceReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
