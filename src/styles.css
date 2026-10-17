@@ -194,6 +194,16 @@
   }
 }
 
+/* iOS zooms on focus below 16px; unlayered so it beats text-sm utilities. */
+input,
+textarea,
+select {
+  font-size: max(16px, 1em) !important;
+}
+
+@layer base {
+}
+
 .quote-sheet {
   container-type: inline-size;
 }
