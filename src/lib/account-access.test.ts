@@ -1,8 +1,20 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { hasProAccess, shouldShowOnboarding } from "./account-access";
+import { hasProAccess, markOnboardingSeen, ONBOARDING_SEEN_KEY, shouldShowOnboarding } from "./account-access";
 import { removeOwnAccount } from "./delete-account";
 import { clearAllDeviceStorage, readDeviceText, writeDeviceText } from "./device-storage";
+
+test("completing onboarding saves the device flag as the literal true string", () => {
+  const values = new Map<string, string>();
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    clear: () => values.clear(),
+  } });
+  assert.equal(markOnboardingSeen(), true);
+  assert.equal(values.get(ONBOARDING_SEEN_KEY), "true");
+  assert.equal(readDeviceText(ONBOARDING_SEEN_KEY), "true");
+});
 
 test("completed onboarding skips onboarding without a subscription", () => {
   assert.equal(shouldShowOnboarding(true, false), false);

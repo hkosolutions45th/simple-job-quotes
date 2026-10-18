@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { checkRevenueCatAccess, subscribeRevenueCatAccess } from "@/lib/revenuecat";
-import { shouldShowOnboarding } from "@/lib/account-access";
+import { markOnboardingSeen, shouldShowOnboarding } from "@/lib/account-access";
 
 type Access = { owner: string | null; completed: boolean; pro: boolean; error: string | null };
 
