@@ -1077,6 +1077,8 @@ function InstaQuote() {
       queryClient.clear();
       await clearRevenueCatIdentity().catch(() => undefined);
       await supabase.auth.signOut({ scope: "local" });
+      // Stop persistence effects before resetting state, or blank caches are recreated.
+      setDeviceReady(false);
       clearAllDeviceStorage();
       setBusinessProfile(EMPTY_PROFILE);
       setSavedClients([]);
@@ -1090,6 +1092,7 @@ function InstaQuote() {
       setDeleteConfirm(false);
       toast.success("Your account has been deleted.");
       await navigate({ to: "/auth", replace: true });
+      clearAllDeviceStorage();
     } catch {
       toast.error("Couldn't delete your account. Please try again.");
     } finally { setDeletingAccount(false); }
