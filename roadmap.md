@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Finalize branded direct quote email, contractor reply routing, and verify provider responses
+- [x] Finalize branded direct quote email, contractor reply routing, and verify provider responses (real signed-in email send accepted with 200; 12 tests pass)
 
 - [x] Add mobile safe-area spacing and branded startup loading
 - [x] Duplicate saved quotes with fresh numbers and blank client details
