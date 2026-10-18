@@ -44,6 +44,7 @@ export function useAccountAccess(userId: string | undefined) {
     if (!userId) throw new Error("Sign in before continuing.");
     const { error } = await supabase.from("user_profiles").upsert({ user_id: userId, has_completed_onboarding: true }, { onConflict: "user_id" });
     if (error) throw new Error("Couldn't save your onboarding progress. Please try again.");
+    markOnboardingSeen();
     setState((s) => s.owner === userId ? { ...s, completed: true } : s);
   }, [userId]);
 
