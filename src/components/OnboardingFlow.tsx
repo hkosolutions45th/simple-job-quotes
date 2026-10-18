@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Mic,
   FileText,
@@ -15,6 +16,8 @@ import {
   Briefcase,
   ArrowRight,
   ArrowLeft,
+  Loader2,
+  RotateCcw,
 } from "lucide-react";
 import { writeDeviceText } from "@/lib/device-storage";
 import { cn } from "@/lib/utils";
@@ -40,8 +43,10 @@ type Plan = "monthly" | "annual";
 export function OnboardingFlow({
   onDone,
   onTrade,
+  onRestore,
 }: {
-  onDone: () => void;
+  onDone: () => Promise<void>;
+  onRestore: () => Promise<boolean>;
   /** Fired the instant a trade is tapped so it lands in Business Settings right away. */
   onTrade?: (tradeId: string) => void;
 }) {
@@ -49,6 +54,7 @@ export function OnboardingFlow({
   const [trade, setTrade] = useState<string | null>(null);
   // The annual plan is the default choice when the paywall appears.
   const [plan, setPlan] = useState<Plan>("annual");
+  const [busy, setBusy] = useState<"complete" | "restore" | null>(null);
 
   const pickTrade = (id: string) => {
     setTrade(id);
@@ -56,11 +62,25 @@ export function OnboardingFlow({
     onTrade?.(id);
   };
 
-  const finish = () => {
+  const finish = async () => {
     // The parent marks the trial step complete for this account — there is no
     // other way past this screen (no close, no skip).
     if (trade) writeDeviceText("instaquote:trade", trade);
-    onDone();
+    setBusy("complete");
+    try { await onDone(); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Couldn't save your progress. Please try again."); }
+    finally { setBusy(null); }
+  };
+
+  const restore = async () => {
+    setBusy("restore");
+    try {
+      const active = await onRestore();
+      if (active) toast.success("Purchases restored successfully!");
+      else toast.info("No active subscription found for this Apple ID.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't restore purchases. Please try again.");
+    } finally { setBusy(null); }
   };
 
   return (
@@ -219,26 +239,37 @@ export function OnboardingFlow({
             </div>
 
             <div className="mt-auto pt-3">
-              <button
+              <Button
                 type="button"
-                onClick={finish}
+                onClick={() => void finish()}
+                disabled={busy !== null}
+                aria-busy={busy === "complete"}
                 className="clay-shadow flex min-h-14 w-full items-center justify-center rounded-2xl bg-clay text-lg font-bold text-cream"
               >
-                Start Free Trial
-              </button>
+                {busy === "complete" && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                {busy === "complete" ? "Saving…" : "Start Free Trial"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => void restore()} disabled={busy !== null}
+                aria-busy={busy === "restore"} className="mt-2 min-h-12 w-full text-base font-semibold">
+                {busy === "restore" ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <RotateCcw className="size-4" aria-hidden="true" />}
+                {busy === "restore" ? "Restoring…" : "Restore Purchases"}
+              </Button>
               <p className="mt-2 text-center text-xs leading-snug text-muted-foreground">
                 7 days free, then {plan === "annual" ? "$89.00/year" : "$9.99/month"}. Cancel anytime in App Store
                 settings.
               </p>
+              <p className="mt-2 text-center text-xs leading-snug text-muted-foreground">
+                $9.99/month or $89.00/year (with 7-day free trial). Subscriptions auto-renew unless turned off at least 24 hours before the trial or current period ends.
+              </p>
               <p className="mt-2 text-center text-xs text-muted-foreground">
                 By continuing you agree to our{" "}
-                <Link to="/terms" className="font-semibold text-clay underline underline-offset-2">
+                <a href="https://hkosolutions.ca/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-clay underline underline-offset-2">
                   Terms of Service
-                </Link>{" "}
+                </a>{" "}
                 and{" "}
-                <Link to="/privacy" className="font-semibold text-clay underline underline-offset-2">
+                <a href="https://hkosolutions.ca/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-clay underline underline-offset-2">
                   Privacy Policy
-                </Link>
+                </a>
                 .
               </p>
             </div>

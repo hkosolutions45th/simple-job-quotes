@@ -18,4 +18,6 @@
 - Long-form legal/policy pages render through the shared legal document shell and their back control deep-links to the dashboard with a settings query flag that opens Business Settings once the account profile has loaded; keep that flag's search validation on the index route so the return path works from any entry point.
 
 - RevenueCat: `src/lib/revenuecat.ts` owns Purchases setup; it lazy-imports `@revenuecat/purchases-capacitor` and configures only when `Capacitor.getPlatform() === "ios"`, so the web/SSR bundle never loads the SDK. Call `initRevenueCat()` once at app launch; never statically import the SDK from a route.
+- Account access uses a Cloud profile completion flag and serialized RevenueCat identity checks before rendering onboarding; entitlement state is account-scoped and never inferred from device completion caches, preventing cross-account access and repeat paywalls.
+- Self-account deletion revalidates the authenticated caller before lazily loading the privileged client, clears owned rows through a service-only SQL function, then deletes that caller's auth account; never accept a target user ID from the browser.
 - Quote emails use an authenticated server function and shared payload/response helpers; derive reply routing from verified session claims and return provider failures as data so production error sanitization does not hide them.
