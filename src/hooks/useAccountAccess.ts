@@ -25,6 +25,7 @@ export function useAccountAccess(userId: string | undefined) {
       const completed = results[0].status === "fulfilled" && results[0].value;
       const pro = results[1].status === "fulfilled" && results[1].value;
       const failed = results.find((r) => r.status === "rejected");
+      if (completed) markOnboardingSeen();
       setState({ owner: userId, completed, pro, error: !completed && !pro && failed ? "Couldn't verify your account or subscription. Please try again before continuing." : null });
       try {
         const stop = await subscribeRevenueCatAccess(userId, (active) => {
