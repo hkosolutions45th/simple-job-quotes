@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { checkRevenueCatAccess, subscribeRevenueCatAccess } from "@/lib/revenuecat";
-import { shouldShowOnboarding } from "@/lib/account-access";
+import { markOnboardingSeen, shouldShowOnboarding } from "@/lib/account-access";
 
 type Access = { owner: string | null; completed: boolean; pro: boolean; error: string | null };
 
@@ -25,6 +25,7 @@ export function useAccountAccess(userId: string | undefined) {
       const completed = results[0].status === "fulfilled" && results[0].value;
       const pro = results[1].status === "fulfilled" && results[1].value;
       const failed = results.find((r) => r.status === "rejected");
+      if (completed) markOnboardingSeen();
       setState({ owner: userId, completed, pro, error: !completed && !pro && failed ? "Couldn't verify your account or subscription. Please try again before continuing." : null });
       try {
         const stop = await subscribeRevenueCatAccess(userId, (active) => {
@@ -44,6 +45,7 @@ export function useAccountAccess(userId: string | undefined) {
     if (!userId) throw new Error("Sign in before continuing.");
     const { error } = await supabase.from("user_profiles").upsert({ user_id: userId, has_completed_onboarding: true }, { onConflict: "user_id" });
     if (error) throw new Error("Couldn't save your onboarding progress. Please try again.");
+    markOnboardingSeen();
     setState((s) => s.owner === userId ? { ...s, completed: true } : s);
   }, [userId]);
 
