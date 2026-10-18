@@ -19,6 +19,7 @@ import { QuoteSheet } from "@/components/QuoteSheet";
 import { OnboardingFlow, TRADES } from "@/components/OnboardingFlow";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useServerFn } from "@tanstack/react-start";
 import { generateQuoteItems } from "@/lib/ai-quote.functions";
 import { sendQuoteEmail } from "@/lib/send-quote.functions";
 import { initRevenueCat } from "@/lib/revenuecat";
@@ -92,6 +93,7 @@ const EMPTY_PROFILE: BusinessProfile = {
 
 function InstaQuote() {
   const { user, loading: authLoading } = useAuth();
+  const dispatchQuoteEmail = useServerFn(sendQuoteEmail);
   // Configure RevenueCat once per app launch (native iOS only; no-op on web).
   useEffect(() => {
     void initRevenueCat();
@@ -660,6 +662,7 @@ function InstaQuote() {
   };
 
   const sendEmail = async () => {
+    if (sending) return;
     const to = emailTo.trim();
     if (!to) {
       toast.error("Add the client's email address first.");
@@ -679,7 +682,7 @@ function InstaQuote() {
         taxEnabled,
         currency,
       });
-      await sendQuoteEmail({
+      const result = await dispatchQuoteEmail({
         data: {
           to,
           message: emailNote,
@@ -700,14 +703,16 @@ function InstaQuote() {
           pdfBase64,
         },
       });
-      await markSent(quoteId);
+      if (!result.sent) {
+        toast.error(result.error);
+        return;
+      }
       toast.success("Email sent successfully!", { description: `Quote sent to ${to}` });
       setEmailOpen(false);
+      await markSent(quoteId);
     } catch (err) {
       console.error(err);
-      toast.error("Couldn't send the email", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      toast.error(err instanceof Error ? err.message : "Couldn't send the email. Please try again.");
     } finally {
       setSending(false);
     }
@@ -1747,7 +1752,7 @@ function InstaQuote() {
               className="field mt-1 resize-none leading-relaxed"
             />
           </label>
-          <button
+          <Button
             onClick={sendEmail}
             disabled={sending}
             aria-busy={sending}
@@ -1762,7 +1767,7 @@ function InstaQuote() {
                 <Mail className="size-4" aria-hidden="true" /> Send email
               </>
             )}
-          </button>
+          </Button>
         </DialogContent>
       </Dialog>
 
