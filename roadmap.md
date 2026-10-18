@@ -1,4 +1,9 @@
 # Roadmap
+- [x] Persist account onboarding and check native pro_access before showing paywalls
+- [x] Add restore purchases, subscription disclosures, and requested external legal links
+- [x] Add confirmed self-account deletion and clear device data
+- [x] Verify real temporary-account onboarding, fresh-device completion, deletion, and simulated native entitlement/restore flows (18 tests pass)
+- [ ] Verify actual Apple purchase restoration on a packaged iPhone app — requires native iOS device and configured App Store/RevenueCat products
 - [x] Finalize branded direct quote email, contractor reply routing, and verify provider responses (real signed-in email send accepted with 200; 12 tests pass)
 
 - [x] Add mobile safe-area spacing and branded startup loading

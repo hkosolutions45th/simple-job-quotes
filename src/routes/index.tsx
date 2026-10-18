@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { Copy, FileText, FolderOpen, Loader2, LogOut, Mail, MessageSquare, Mic, Plus, Save, Settings, Trash2, Undo2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -13,16 +14,18 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { duplicateQuoteRecord } from "@/lib/duplicate-quote";
-import { clearDeviceText, nextQuoteNumber, readDeviceJSON, readDeviceText, writeDeviceText } from "@/lib/device-storage";
+import { clearAllDeviceStorage, clearDeviceText, nextQuoteNumber, readDeviceJSON, readDeviceText, writeDeviceText } from "@/lib/device-storage";
 import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
 import { OnboardingFlow, TRADES } from "@/components/OnboardingFlow";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccountAccess } from "@/hooks/useAccountAccess";
+import { deleteOwnAccount } from "@/lib/account.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { generateQuoteItems } from "@/lib/ai-quote.functions";
 import { sendQuoteEmail } from "@/lib/send-quote.functions";
-import { initRevenueCat } from "@/lib/revenuecat";
+import { clearRevenueCatIdentity, initRevenueCat } from "@/lib/revenuecat";
 import {
   cleanLineItemDescription,
   generateLineItems,
@@ -93,14 +96,19 @@ const EMPTY_PROFILE: BusinessProfile = {
 
 function InstaQuote() {
   const { user, loading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const access = useAccountAccess(user?.id);
+  const dispatchDeleteAccount = useServerFn(deleteOwnAccount);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [restoringPurchases, setRestoringPurchases] = useState(false);
   const dispatchQuoteEmail = useServerFn(sendQuoteEmail);
   // Configure RevenueCat once per app launch (native iOS only; no-op on web).
   useEffect(() => {
-    void initRevenueCat();
+    void initRevenueCat().catch(() => { /* Access checks surface retry feedback. */ });
   }, []);
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(EMPTY_PROFILE);
   const [deviceReady, setDeviceReady] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   // Load the device-saved profile after hydration, then keep it in sync.
   useEffect(() => {
     try {
@@ -124,16 +132,6 @@ function InstaQuote() {
     if (savedTrade) setBusinessProfile((p) => (p.trade ? p : { ...p, trade: savedTrade }));
     setDeviceReady(true);
   }, []);
-  // The trial/paywall step is required per account: a brand-new account always
-  // sees onboarding, even on a device where another account already finished it.
-  useEffect(() => {
-    if (!deviceReady) return;
-    if (!user) {
-      setShowOnboarding(false);
-      return;
-    }
-    setShowOnboarding(readDeviceText(`instaquote:onboardingDone:${user.id}`) !== "1");
-  }, [user, deviceReady]);
   useEffect(() => {
     if (deviceReady) writeDeviceText(PROFILE_KEY, JSON.stringify(businessProfile));
   }, [businessProfile, deviceReady]);
@@ -1024,6 +1022,9 @@ function InstaQuote() {
 
   const signOut = async () => {
     const uid = user?.id;
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await clearRevenueCatIdentity().catch(() => undefined);
     await supabase.auth.signOut();
     // Clear user-specific device data: saved quotes, saved clients, business profile (+ extras).
     if (uid) clearDeviceText(`instaquote:savedQuotes:${uid}`);
@@ -1055,8 +1056,50 @@ function InstaQuote() {
     navigate({ to: "/auth", replace: true });
   };
 
+  const restorePurchases = async () => {
+    setRestoringPurchases(true);
+    try {
+      const active = await access.restore();
+      if (active) toast.success("Purchases restored successfully!");
+      else toast.info("No active subscription found for this Apple ID.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't restore purchases. Please try again.");
+    } finally { setRestoringPurchases(false); }
+  };
 
-  if (!deviceReady || authLoading) return (
+  const deleteAccount = async () => {
+    if (deletingAccount) return;
+    setDeletingAccount(true);
+    try {
+      const result = await dispatchDeleteAccount();
+      if (!result.deleted) { toast.error(result.error ?? "Couldn't delete your account. Please try again."); return; }
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      await clearRevenueCatIdentity().catch(() => undefined);
+      await supabase.auth.signOut({ scope: "local" });
+      // Stop persistence effects before resetting state, or blank caches are recreated.
+      setDeviceReady(false);
+      clearAllDeviceStorage();
+      setBusinessProfile(EMPTY_PROFILE);
+      setSavedClients([]);
+      setSaved([]);
+      setItems([]);
+      setNotes("");
+      setCustomer({ name: "", email: "", phone: "", address: "", city: "", postalCode: "", terms: "" });
+      setLogo(null);
+      setQuoteId(null);
+      setSettingsOpen(false);
+      setDeleteConfirm(false);
+      toast.success("Your account has been deleted.");
+      await navigate({ to: "/auth", replace: true });
+      clearAllDeviceStorage();
+    } catch {
+      toast.error("Couldn't delete your account. Please try again.");
+    } finally { setDeletingAccount(false); }
+  };
+
+
+  if (!deviceReady || authLoading || access.loading || deletingAccount) return (
     <div role="status" aria-label="Loading InstaQuote" className="startup-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background text-foreground">
       <div className="clay-shadow grid size-20 place-items-center rounded-xl bg-primary text-primary-foreground"><Mic className="size-9" aria-hidden="true" /></div>
       <div className="text-center"><h1 className="text-3xl font-bold">InstaQuote</h1><p className="mt-1 font-mono text-xs text-muted-foreground">PRO</p></div>
@@ -1091,13 +1134,20 @@ function InstaQuote() {
     );
   }
 
-  if (showOnboarding) {
+  if (access.error) return (
+    <div className="app-safe-layout flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-6 text-center text-foreground">
+      <h1 className="text-2xl font-bold">Check your account</h1>
+      <p className="max-w-sm text-muted-foreground">{access.error}</p>
+      <Button onClick={access.retry} className="min-h-12">Try again</Button>
+      <Button variant="outline" onClick={() => void signOut()} className="min-h-12">Sign out</Button>
+    </div>
+  );
+
+  if (access.showOnboarding) {
     return (
       <OnboardingFlow
-        onDone={() => {
-          if (user) writeDeviceText(`instaquote:onboardingDone:${user.id}`, "1");
-          setShowOnboarding(false);
-        }}
+        onDone={access.complete}
+        onRestore={access.restore}
         onTrade={async (tradeId) => {
           // Slide 2's pick lands in Business Settings straight away (device + account).
           setBusinessProfile((p) => ({ ...p, trade: tradeId }));
@@ -2034,6 +2084,35 @@ function InstaQuote() {
             {savingSettings && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
             {savingSettings ? "Saving…" : "Save settings"}
           </button>
+          <div className="space-y-3 border-t border-line pt-4">
+            {access.proAccess && <p className="text-sm font-semibold text-leaf">Pro subscription active</p>}
+            <Button variant="outline" className="min-h-12 w-full" disabled={restoringPurchases}
+              onClick={() => void restorePurchases()} aria-busy={restoringPurchases}>
+              {restoringPurchases && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+              {restoringPurchases ? "Restoring…" : "Restore Purchases"}
+            </Button>
+            <Button variant="destructive" className="min-h-12 w-full" onClick={() => setDeleteConfirm(true)}>
+              <Trash2 className="size-4" aria-hidden="true" /> Delete Account
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={deleteConfirm} onOpenChange={(open) => { if (!deletingAccount) setDeleteConfirm(open); }}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md" onOpenAutoFocus={(event) => event.preventDefault()}>
+          <DialogHeader className="pr-10">
+            <DialogTitle>Delete your account?</DialogTitle>
+            <DialogDescription>
+              This permanently deletes your account, saved quotes, clients, and business profile, and clears this device's saved data. This cannot be undone.
+              Deleting your account does not cancel an Apple subscription. Cancel it separately in App Store Account Settings before deleting.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="outline" className="min-h-12" disabled={deletingAccount} onClick={() => setDeleteConfirm(false)}>Cancel</Button>
+            <Button variant="destructive" className="min-h-12" disabled={deletingAccount} onClick={() => void deleteAccount()} aria-busy={deletingAccount}>
+              {deletingAccount && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+              {deletingAccount ? "Deleting…" : "Delete Account"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
