@@ -18,3 +18,4 @@
 - Long-form legal/policy pages render through the shared legal document shell and their back control deep-links to the dashboard with a settings query flag that opens Business Settings once the account profile has loaded; keep that flag's search validation on the index route so the return path works from any entry point.
 
 - RevenueCat: `src/lib/revenuecat.ts` owns Purchases setup; it lazy-imports `@revenuecat/purchases-capacitor` and configures only when `Capacitor.getPlatform() === "ios"`, so the web/SSR bundle never loads the SDK. Call `initRevenueCat()` once at app launch; never statically import the SDK from a route.
+- Quote emails use an authenticated server function and shared payload/response helpers; derive reply routing from verified session claims and return provider failures as data so production error sanitization does not hide them.
