@@ -1,4 +1,8 @@
 # Roadmap
+- [ ] Persist account onboarding and check native pro_access before showing paywalls
+- [ ] Add restore purchases, subscription disclosures, and requested external legal links
+- [ ] Add confirmed self-account deletion and clear device data
+- [ ] Verify account and subscription flows; native device checks require iOS
 - [x] Finalize branded direct quote email, contractor reply routing, and verify provider responses (real signed-in email send accepted with 200; 12 tests pass)
 
 - [x] Add mobile safe-area spacing and branded startup loading
