@@ -27,6 +27,17 @@ export function clearDeviceText(key: string): boolean {
     return false;
   }
 }
+/** Account deletion clears persisted device data and the blocked-storage fallback. */
+export function clearAllDeviceStorage(): boolean {
+  fallback.clear();
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+    return true;
+  } catch {
+    return false;
+  }
+}
 export function readDeviceJSON<T>(key: string, initial: T, validate: (value: unknown) => value is T): T {
   try {
     const raw = readDeviceText(key);
