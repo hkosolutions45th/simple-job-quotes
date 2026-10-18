@@ -97,6 +97,7 @@ export type Database = {
           created_at: string
           default_currency: string
           default_terms: string | null
+          has_completed_onboarding: boolean
           id: string
           logo_url: string | null
           phone: string | null
@@ -114,6 +115,7 @@ export type Database = {
           created_at?: string
           default_currency?: string
           default_terms?: string | null
+          has_completed_onboarding?: boolean
           id?: string
           logo_url?: string | null
           phone?: string | null
@@ -131,6 +133,7 @@ export type Database = {
           created_at?: string
           default_currency?: string
           default_terms?: string | null
+          has_completed_onboarding?: boolean
           id?: string
           logo_url?: string | null
           phone?: string | null
@@ -148,7 +151,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      delete_account_data: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
