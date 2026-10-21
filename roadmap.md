@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Verify connected Resend sending, clear failure messages, and automatic Mail composer fallback
 - [x] Persist account onboarding and check native pro_access before showing paywalls
 - [x] Add restore purchases, subscription disclosures, and requested external legal links
 - [x] Add confirmed self-account deletion and clear device data
