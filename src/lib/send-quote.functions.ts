@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { buildResendPayload, payloadSchema, readResendResult } from "./quote-email";
+import { buildResendPayload, emailErrorMessage, payloadSchema, readResendResult } from "./quote-email";
 
 export const sendQuoteEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -25,6 +25,6 @@ export const sendQuoteEmail = createServerFn({ method: "POST" })
       // cannot replace the provider's exact explanation.
       return await readResendResult(response);
     } catch (error) {
-      return { sent: false as const, status: 502, error: error instanceof Error ? error.message : "Could not reach the email service. Please try again." };
+      return { sent: false as const, status: 502, error: emailErrorMessage(error) };
     }
   });

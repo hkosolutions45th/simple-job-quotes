@@ -29,6 +29,29 @@ export const payloadSchema = z.object({
 
 export type Payload = z.infer<typeof payloadSchema>;
 
+export function emailErrorMessage(error: unknown): string {
+  if (typeof error === "string" && error.trim()) return error.trim();
+  if (error && typeof error === "object" && "message" in error &&
+      typeof error.message === "string" && error.message.trim()) return error.message.trim();
+  return "Email service not configured";
+}
+
+export function buildQuoteMailto(p: Pick<Payload, "to" | "business" | "quoteNo" | "message" | "clientName" | "jobAddress" | "city" | "postalCode" | "items" | "currency" | "taxRate" | "taxEnabled" | "terms">) {
+  const money = (value: number) => formatMoney(value, p.currency);
+  const subtotal = p.items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
+  const tax = p.taxEnabled ? subtotal * p.taxRate / 100 : 0;
+  const subject = `Quote ${p.quoteNo} from ${p.business}`;
+  const body = [
+    p.message.trim(), "", subject,
+    p.clientName ? `Prepared for: ${p.clientName}` : "",
+    [p.jobAddress, p.city, p.postalCode].filter(Boolean).join(", "), "",
+    ...p.items.map((item) => `${item.description} — ${item.quantity} × ${money(item.rate)} = ${money(item.quantity * item.rate)}`),
+    "", `Subtotal: ${money(subtotal)}`, `Tax: ${money(tax)}`, `Total: ${money(subtotal + tax)}`,
+    p.terms ? `Payment terms: ${p.terms}` : "",
+  ].join("\n").trim();
+  return `mailto:${encodeURIComponent(p.to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -119,15 +142,18 @@ export function buildResendPayload(data: Payload, contractorEmail: unknown) {
 
 export async function readResendResult(response: Response) {
   const raw = await response.text();
-  let parsed: { id?: string; message?: string; error?: string | { message?: string } } = {};
-  try { parsed = JSON.parse(raw); } catch { /* Preserve a non-JSON provider error. */ }
-  if (response.status !== 200 || parsed.error || !parsed.id) {
-    const error = parsed.message ||
-      (typeof parsed.error === "string" ? parsed.error : parsed.error?.message) ||
-      (response.status !== 200 ? raw : "") ||
-      "Email service did not confirm the send. Please try again.";
+  let parsed: Record<string, unknown> = {};
+  let isJson = false;
+  try {
+    const value: unknown = JSON.parse(raw);
+    isJson = true;
+    if (value && typeof value === "object" && !Array.isArray(value)) parsed = value as Record<string, unknown>;
+  } catch { /* Preserve a non-JSON provider error. */ }
+  if (response.status !== 200 || parsed["error"] || typeof parsed["id"] !== "string" || !parsed["id"].trim()) {
+    const providerError = typeof parsed["message"] === "string" && parsed["message"].trim() ? parsed["message"] : parsed["error"];
+    const error = emailErrorMessage(providerError || (!isJson ? raw : undefined));
     console.error(`Resend request failed [${response.status}]: ${raw}`);
     return { sent: false as const, status: response.status, error };
   }
-  return { sent: true as const, status: 200 as const, id: parsed.id };
+  return { sent: true as const, status: 200 as const, id: parsed["id"] };
 }

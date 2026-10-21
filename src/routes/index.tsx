@@ -25,6 +25,7 @@ import { deleteOwnAccount } from "@/lib/account.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { generateQuoteItems } from "@/lib/ai-quote.functions";
 import { sendQuoteEmail } from "@/lib/send-quote.functions";
+import { buildQuoteMailto, emailErrorMessage } from "@/lib/quote-email";
 import { clearRevenueCatIdentity, initRevenueCat } from "@/lib/revenuecat";
 import {
   cleanLineItemDescription,
@@ -711,19 +712,22 @@ function InstaQuote() {
       await markSent(quoteId);
     } catch (err) {
       console.error(err);
-      failWithMailFallback(err instanceof Error ? err.message : "");
+      failWithMailFallback(err);
     } finally {
       setSending(false);
     }
 
-    function failWithMailFallback(reason?: string) {
-      const message = reason?.trim() || "Email service not configured";
-      const subject = `Quote ${quoteNo} from ${business}`;
-      const lines = items.map((i) => `• ${i.description} — ${i.quantity} × ${formatMoney(i.rate, currency)}`);
-      const body = [emailNote.trim(), "", ...lines].join("\n").trim();
-      const href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      toast.error(message, { description: "Opening your Mail app with the quote pre-filled instead." });
-      window.location.href = href;
+    function failWithMailFallback(reason: unknown) {
+      toast.error(emailErrorMessage(reason), { description: "Opening Mail with your quote text. PDF attachments must be added manually." });
+      try {
+        window.location.href = buildQuoteMailto({
+          to, business, quoteNo, message: emailNote, clientName: customer.name,
+          jobAddress: customer.address, city: customer.city, postalCode: customer.postalCode,
+          items, currency, taxRate, taxEnabled, terms: customer.terms,
+        });
+      } catch {
+        toast.error("Could not open Mail. Please open your email app manually.");
+      }
     }
   };
 
