@@ -39,6 +39,7 @@ import {
   type Customer,
   type LineItem,
 } from "@/lib/quote";
+import { formatMoney } from "@/lib/quote";
 
 
 export const Route = createFileRoute("/")({
