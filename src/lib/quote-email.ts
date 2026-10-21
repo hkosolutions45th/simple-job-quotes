@@ -149,11 +149,11 @@ export async function readResendResult(response: Response) {
     isJson = true;
     if (value && typeof value === "object" && !Array.isArray(value)) parsed = value as Record<string, unknown>;
   } catch { /* Preserve a non-JSON provider error. */ }
-  if (response.status !== 200 || parsed.error || typeof parsed.id !== "string" || !parsed.id.trim()) {
-    const providerError = typeof parsed.message === "string" && parsed.message.trim() ? parsed.message : parsed.error;
+  if (response.status !== 200 || parsed["error"] || typeof parsed["id"] !== "string" || !parsed["id"].trim()) {
+    const providerError = typeof parsed["message"] === "string" && parsed["message"].trim() ? parsed["message"] : parsed["error"];
     const error = emailErrorMessage(providerError || (!isJson ? raw : undefined));
     console.error(`Resend request failed [${response.status}]: ${raw}`);
     return { sent: false as const, status: response.status, error };
   }
-  return { sent: true as const, status: 200 as const, id: parsed.id };
+  return { sent: true as const, status: 200 as const, id: parsed["id"] };
 }
