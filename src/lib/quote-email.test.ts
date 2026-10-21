@@ -50,8 +50,8 @@ test("Mail fallback encodes the recipient, subject and full quote without an att
   assert.equal(url.searchParams.get("subject"), "Quote IQ-2045 from A & B");
   const body = url.searchParams.get("body") ?? "";
   assert.ok(body.includes("Paint & repair?\nThanks!"));
-  assert.ok(body.includes("Painting — 2 × $100.00 = $200.00"));
-  assert.ok(body.includes("Total: $226.00"));
+  assert.ok(body.includes("Painting — 2 × $100.00 USD = $200.00 USD"));
+  assert.ok(body.includes("Total: $226.00 USD"));
   assert.ok(body.includes("10 Main St, Toronto, M5V 1A1"));
   assert.ok(body.includes("Payment terms: 50% deposit required"));
   assert.equal(url.searchParams.has("attachment"), false);
