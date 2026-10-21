@@ -39,6 +39,7 @@ import {
   type Customer,
   type LineItem,
 } from "@/lib/quote";
+import { formatMoney } from "@/lib/quote";
 
 
 export const Route = createFileRoute("/")({
@@ -702,7 +703,7 @@ function InstaQuote() {
         },
       });
       if (!result.sent) {
-        toast.error(result.error);
+        failWithMailFallback(result.error);
         return;
       }
       toast.success("Email sent successfully!", { description: `Quote sent to ${to}` });
@@ -710,9 +711,19 @@ function InstaQuote() {
       await markSent(quoteId);
     } catch (err) {
       console.error(err);
-      toast.error(err instanceof Error ? err.message : "Couldn't send the email. Please try again.");
+      failWithMailFallback(err instanceof Error ? err.message : "");
     } finally {
       setSending(false);
+    }
+
+    function failWithMailFallback(reason?: string) {
+      const message = reason?.trim() || "Email service not configured";
+      const subject = `Quote ${quoteNo} from ${business}`;
+      const lines = items.map((i) => `• ${i.description} — ${i.quantity} × ${formatMoney(i.rate, currency)}`);
+      const body = [emailNote.trim(), "", ...lines].join("\n").trim();
+      const href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      toast.error(message, { description: "Opening your Mail app with the quote pre-filled instead." });
+      window.location.href = href;
     }
   };
 
