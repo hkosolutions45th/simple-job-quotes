@@ -24,7 +24,7 @@ import { useAccountAccess } from "@/hooks/useAccountAccess";
 import { deleteOwnAccount } from "@/lib/account.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { generateQuoteItems } from "@/lib/ai-quote.functions";
-import { sendQuoteEmailRequest } from "@/lib/send-quote-email.client";
+import { sendQuoteEmailRequest } from "@/lib/send-quote-email";
 import { buildQuoteMailto, emailErrorMessage } from "@/lib/quote-email";
 import { clearRevenueCatIdentity, initRevenueCat } from "@/lib/revenuecat";
 import {
