@@ -24,7 +24,7 @@ import { useAccountAccess } from "@/hooks/useAccountAccess";
 import { deleteOwnAccount } from "@/lib/account.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { generateQuoteItems } from "@/lib/ai-quote.functions";
-import { sendQuoteEmail } from "@/lib/send-quote.functions";
+import { sendQuoteEmailRequest } from "@/lib/send-quote-email";
 import { buildQuoteMailto, emailErrorMessage } from "@/lib/quote-email";
 import { clearRevenueCatIdentity, initRevenueCat } from "@/lib/revenuecat";
 import {
@@ -104,7 +104,6 @@ function InstaQuote() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [restoringPurchases, setRestoringPurchases] = useState(false);
-  const dispatchQuoteEmail = useServerFn(sendQuoteEmail);
   // Configure RevenueCat once per app launch (native iOS only; no-op on web).
   useEffect(() => {
     void initRevenueCat().catch(() => { /* Access checks surface retry feedback. */ });
@@ -682,29 +681,27 @@ function InstaQuote() {
         taxEnabled,
         currency,
       });
-      const result = await dispatchQuoteEmail({
-        data: {
-          to,
-          message: emailNote,
-          business,
-          businessPhone: businessProfile.phone,
-          businessEmail: businessProfile.email,
-          businessAddress: businessContact.address,
-          quoteNo,
-          clientName: customer.name,
-          jobAddress: customer.address,
-          city: customer.city,
-          postalCode: customer.postalCode,
-          terms: customer.terms,
-          taxRate,
-          currency,
-          taxEnabled,
-          items: pdfItems,
-          pdfBase64,
-        },
+      const result = await sendQuoteEmailRequest({
+        to,
+        message: emailNote,
+        business,
+        businessPhone: businessProfile.phone,
+        businessEmail: businessProfile.email,
+        businessAddress: businessContact.address,
+        quoteNo,
+        clientName: customer.name,
+        jobAddress: customer.address,
+        city: customer.city,
+        postalCode: customer.postalCode,
+        terms: customer.terms,
+        taxRate,
+        currency,
+        taxEnabled,
+        items: pdfItems,
+        pdfBase64,
       });
       if (!result.sent) {
-        failWithMailFallback(result.error);
+        showEmailError(result.error);
         return;
       }
       toast.success("Email sent successfully!", { description: `Quote sent to ${to}` });
@@ -712,22 +709,28 @@ function InstaQuote() {
       await markSent(quoteId);
     } catch (err) {
       console.error(err);
-      failWithMailFallback(err);
+      showEmailError(`Unexpected error: ${emailErrorMessage(err)}`);
     } finally {
       setSending(false);
     }
 
-    function failWithMailFallback(reason: unknown) {
-      toast.error(emailErrorMessage(reason), { description: "Opening Mail with your quote text. PDF attachments must be added manually." });
-      try {
-        window.location.href = buildQuoteMailto({
-          to, business, quoteNo, message: emailNote, clientName: customer.name,
-          jobAddress: customer.address, city: customer.city, postalCode: customer.postalCode,
-          items, currency, taxRate, taxEnabled, terms: customer.terms,
-        });
-      } catch {
-        toast.error("Could not open Mail. Please open your email app manually.");
-      }
+    // Show the exact failure; Mail is only an opt-in action, never automatic.
+    function showEmailError(reason: string) {
+      console.error("Email send failed:", reason);
+      toast.error("Email not sent", {
+        description: reason,
+        duration: 15000,
+        action: {
+          label: "Open Mail",
+          onClick: () => {
+            window.location.href = buildQuoteMailto({
+              to, business, quoteNo, message: emailNote, clientName: customer.name,
+              jobAddress: customer.address, city: customer.city, postalCode: customer.postalCode,
+              items, currency, taxRate, taxEnabled, terms: customer.terms,
+            });
+          },
+        },
+      });
     }
   };
 

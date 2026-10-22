@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ApiPublicSendQuoteEmailRouteImport } from './routes/api/public/send-quote-email'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSendQuoteEmailRoute = ApiPublicSendQuoteEmailRouteImport.update({
+  id: '/api/public/send-quote-email',
+  path: '/api/public/send-quote-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/api/public/send-quote-email': typeof ApiPublicSendQuoteEmailRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/api/public/send-quote-email': typeof ApiPublicSendQuoteEmailRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,21 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/api/public/send-quote-email': typeof ApiPublicSendQuoteEmailRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/privacy' | '/terms'
+  fullPaths:
+    '/' | '/auth' | '/privacy' | '/terms' | '/api/public/send-quote-email'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/privacy' | '/terms'
-  id: '__root__' | '/' | '/auth' | '/privacy' | '/terms'
+  to: '/' | '/auth' | '/privacy' | '/terms' | '/api/public/send-quote-email'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/privacy'
+    | '/terms'
+    | '/api/public/send-quote-email'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +83,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
+  ApiPublicSendQuoteEmailRoute: typeof ApiPublicSendQuoteEmailRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/send-quote-email': {
+      id: '/api/public/send-quote-email'
+      path: '/api/public/send-quote-email'
+      fullPath: '/api/public/send-quote-email'
+      preLoaderRoute: typeof ApiPublicSendQuoteEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +131,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
+  ApiPublicSendQuoteEmailRoute: ApiPublicSendQuoteEmailRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

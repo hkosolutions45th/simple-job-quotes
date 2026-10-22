@@ -6,6 +6,7 @@
 - [x] Verify real temporary-account onboarding, fresh-device completion, deletion, and simulated native entitlement/restore flows (18 tests pass)
 - [ ] Verify actual Apple purchase restoration on a packaged iPhone app — requires native iOS device and configured App Store/RevenueCat products
 - [x] Finalize branded direct quote email, contractor reply routing, and verify provider responses (real signed-in email send accepted with 200; 12 tests pass)
+- [x] Email always attempts real send via direct endpoint (reachable from iOS app), exact error toasts, no auto Mail fallback, restyled HTML email
 
 - [x] Add mobile safe-area spacing and branded startup loading
 - [x] Duplicate saved quotes with fresh numbers and blank client details

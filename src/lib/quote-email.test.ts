@@ -26,18 +26,25 @@ test("only a confirmed 200 response counts as email success", async () => {
   assert.equal((await readResendResult(Response.json({ id: "id" }, { status: 202 }))).sent, false);
   assert.equal((await readResendResult(Response.json({}))).sent, false);
 });
-test("provider setup failures retain their exact message", async () => {
+test("provider setup failures retain their exact message and status", async () => {
   const message = "The hkosolutions.ca domain is not verified.";
-  assert.deepEqual(await readResendResult(Response.json({ message }, { status: 403 })), { sent: false, status: 403, error: message });
+  assert.deepEqual(await readResendResult(Response.json({ message }, { status: 403 })), { sent: false, status: 403, error: `Resend rejected the email (HTTP 403): ${message}` });
 });
-test("empty or malformed provider failures always have a clear fallback", async () => {
+test("empty provider failures still report the HTTP status, never 'not configured'", async () => {
   for (const body of ["", "{}", "null", '{"message":"  "}', '{"error":{}}']) {
-    assert.deepEqual(await readResendResult(new Response(body, { status: 403 })), {
-      sent: false, status: 403, error: "Email service not configured",
-    });
+    const result = await readResendResult(new Response(body, { status: 403 }));
+    assert.equal(result.sent, false);
+    assert.ok(!result.sent && result.error.includes("HTTP 403"));
+    assert.ok(!result.sent && !/not configured/i.test(result.error));
   }
-  assert.equal(emailErrorMessage(new Error("")), "Email service not configured");
+  assert.equal(emailErrorMessage(new Error("")), "No error details were returned");
   assert.equal(emailErrorMessage({ message: "Domain is not verified" }), "Domain is not verified");
+});
+test("the email HTML has bold table headers and a total row", () => {
+  const html = buildResendPayload(quote, "c@example.com").html;
+  assert.ok(html.includes("<th"));
+  assert.ok(html.includes("Total due"));
+  assert.ok(html.includes("$226.00"));
 });
 test("a blank confirmation ID cannot count as a successful send", async () => {
   assert.equal((await readResendResult(Response.json({ id: " " }))).sent, false);

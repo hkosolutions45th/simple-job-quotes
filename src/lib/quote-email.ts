@@ -33,7 +33,7 @@ export function emailErrorMessage(error: unknown): string {
   if (typeof error === "string" && error.trim()) return error.trim();
   if (error && typeof error === "object" && "message" in error &&
       typeof error.message === "string" && error.message.trim()) return error.message.trim();
-  return "Email service not configured";
+  return "No error details were returned";
 }
 
 export function buildQuoteMailto(p: Pick<Payload, "to" | "business" | "quoteNo" | "message" | "clientName" | "jobAddress" | "city" | "postalCode" | "items" | "currency" | "taxRate" | "taxEnabled" | "terms">) {
@@ -72,57 +72,80 @@ function buildHtml(p: Payload) {
   const rows = p.items
     .map(
       (i, n) => `<tr>
-  <td style="padding:8px 4px;border-bottom:1px solid #e7e0d4;color:#7a7266">${n + 1}</td>
-  <td style="padding:8px 4px;border-bottom:1px solid #e7e0d4;overflow-wrap:anywhere">${esc(cleanLineItemDescription(i.description) || "—")}</td>
-  <td style="padding:8px 4px;border-bottom:1px solid #e7e0d4;text-align:right">${i.quantity}</td>
-  <td style="padding:8px 4px;border-bottom:1px solid #e7e0d4;text-align:right">${money(i.rate)}</td>
-  <td style="padding:8px 4px;border-bottom:1px solid #e7e0d4;text-align:right">${money(i.quantity * i.rate)}</td>
+  <td style="padding:10px 8px;border-bottom:1px solid #e7e0d4;vertical-align:top;color:#7a7266">${n + 1}</td>
+  <td style="padding:10px 8px;border-bottom:1px solid #e7e0d4;vertical-align:top;overflow-wrap:anywhere">${esc(cleanLineItemDescription(i.description) || "—")}</td>
+  <td style="padding:10px 8px;border-bottom:1px solid #e7e0d4;vertical-align:top;text-align:right">${i.quantity}</td>
+  <td style="padding:10px 8px;border-bottom:1px solid #e7e0d4;vertical-align:top;text-align:right">${money(i.rate)}</td>
+  <td style="padding:10px 8px;border-bottom:1px solid #e7e0d4;vertical-align:top;text-align:right">${money(i.quantity * i.rate)}</td>
 </tr>`,
     )
     .join("");
 
   const line = (label: string, value: string, bold = false) =>
-    `<tr><td style="padding:4px 0;color:#7a7266">${label}</td><td style="padding:4px 0;text-align:right;font-weight:${bold ? 700 : 400}">${value}</td></tr>`;
+    `<tr><td style="padding:5px 0;color:#6b6358">${label}</td><td style="padding:5px 0;text-align:right;font-weight:${bold ? 700 : 400}">${value}</td></tr>`;
 
-  return `<!doctype html><html><body style="margin:0;background:#f6efe3;font-family:Helvetica,Arial,sans-serif;color:#2b2722">
-<div style="max-width:640px;margin:0 auto;padding:24px">
-  <div style="background:#ffffff;border-radius:14px;padding:24px">
-    <div style="display:flex;justify-content:space-between;border-bottom:2px solid #2b2722;padding-bottom:12px">
-      <div><div style="font-size:20px;font-weight:700">${esc(p.business)}</div>
-      <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#7a7266">Quotation / Estimate</div>
-      ${[p.businessAddress, p.businessPhone, p.businessEmail].filter(Boolean).map((v) => `<div style="font-size:12px;color:#7a7266">${esc(v)}</div>`).join("")}</div>
-      <div style="text-align:right;font-size:12px;color:#7a7266">Quote ${esc(p.quoteNo)}<br/>Issued ${issued}</div>
-    </div>
-    ${p.message.trim() ? `<p style="white-space:pre-wrap;line-height:1.6;margin:18px 0">${esc(p.message.trim())}</p>` : ""}
-    <div style="font-size:13px;color:#7a7266;margin:16px 0">
-      ${p.clientName ? `<div><strong style="color:#2b2722">Prepared for:</strong> ${esc(p.clientName)}</div>` : ""}
-      ${p.jobAddress ? `<div><strong style="color:#2b2722">Job address:</strong> ${esc(p.jobAddress)}</div>` : ""}
-      ${cityPostal ? `<div>${esc(cityPostal)}</div>` : ""}
-      ${p.terms ? `<div><strong style="color:#2b2722">Payment terms:</strong> ${esc(p.terms)}</div>` : ""}
-    </div>
-    <table style="width:100%;border-collapse:collapse;font-size:13px">
-      <thead><tr style="border-bottom:1px solid #2b2722">
-        <th style="text-align:left;padding:6px 4px">#</th>
-        <th style="text-align:left;padding:6px 4px">Item description</th>
-        <th style="text-align:right;padding:6px 4px">Qty</th>
-        <th style="text-align:right;padding:6px 4px">Unit rate</th>
-        <th style="text-align:right;padding:6px 4px">Amount</th>
-      </tr></thead>
-      <tbody>${rows || `<tr><td colspan="5" style="padding:14px;text-align:center;color:#7a7266">No line items.</td></tr>`}</tbody>
+  const muted = "color:#6b6358";
+  const contact = [p.businessAddress, p.businessPhone, p.businessEmail].filter(Boolean)
+    .map((v) => `<div style="font-size:13px;${muted};line-height:1.5">${esc(v)}</div>`).join("");
+  const detail = (label: string, value: string) => value
+    ? `<tr><td style="padding:3px 12px 3px 0;font-size:13px;font-weight:700;color:#2b2722;white-space:nowrap;vertical-align:top">${label}</td><td style="padding:3px 0;font-size:13px;color:#2b2722">${value}</td></tr>`
+    : "";
+  const address = [esc(p.jobAddress), esc(cityPostal)].filter(Boolean).join("<br/>");
+  const message = p.message.trim()
+    ? `<tr><td style="padding:22px 28px 0;font-size:15px;line-height:1.6;color:#2b2722">${esc(p.message.trim()).replace(/\r?\n/g, "<br/>")}</td></tr>`
+    : "";
+
+  return `<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Quote ${esc(p.quoteNo)}</title></head>
+<body style="margin:0;padding:0;background:#f4efe6;font-family:Helvetica,Arial,sans-serif;color:#2b2722">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4efe6"><tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e7e0d4">
+  <tr><td style="background:#2b2722;padding:22px 28px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="vertical-align:top">
+        <div style="font-size:22px;font-weight:700;color:#ffffff">${esc(p.business)}</div>
+        <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#e9b48f;margin-top:4px;font-weight:700">Quotation / Estimate</div>
+      </td>
+      <td style="vertical-align:top;text-align:right;font-size:13px;color:#f4efe6;line-height:1.6">
+        <strong style="font-size:15px;color:#ffffff">${esc(p.quoteNo)}</strong><br/>Issued ${issued}
+      </td>
+    </tr></table>
+  </td></tr>
+  ${contact ? `<tr><td style="padding:16px 28px 0">${contact}</td></tr>` : ""}
+  ${message}
+  <tr><td style="padding:20px 28px 0">
+    <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;${muted};margin-bottom:6px">Prepared for</div>
+    <table role="presentation" cellpadding="0" cellspacing="0">
+      ${detail("Client", esc(p.clientName))}
+      ${detail("Job site", address)}
+      ${detail("Payment terms", esc(p.terms))}
     </table>
-    <table style="margin-left:auto;margin-top:14px;width:260px;font-size:13px">
+  </td></tr>
+  <tr><td style="padding:20px 28px 0">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px">
+      <thead><tr style="background:#f4efe6">
+        <th align="left" style="padding:10px 8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #2b2722">#</th>
+        <th align="left" style="padding:10px 8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #2b2722">Description</th>
+        <th align="right" style="padding:10px 8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #2b2722">Qty</th>
+        <th align="right" style="padding:10px 8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #2b2722">Rate</th>
+        <th align="right" style="padding:10px 8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #2b2722">Amount</th>
+      </tr></thead>
+      <tbody>${rows || `<tr><td colspan="5" style="padding:16px;text-align:center;${muted}">No line items.</td></tr>`}</tbody>
+    </table>
+  </td></tr>
+  <tr><td style="padding:16px 28px 0">
+    <table role="presentation" cellpadding="0" cellspacing="0" align="right" style="width:280px;max-width:100%;font-size:14px">
       ${line("Subtotal", money(subtotal))}
-      ${line(`Sales tax ${p.taxEnabled ? `(${p.taxRate}%)` : "(exempt)"}`, money(tax))}
-      ${line("Total due", money(total), true)}
+      ${line(`Tax ${p.taxEnabled ? `(${p.taxRate}%)` : "(exempt)"}`, money(tax))}
+      <tr><td style="padding:12px 0 4px;border-top:2px solid #2b2722;font-size:16px;font-weight:700">Total due</td><td style="padding:12px 0 4px;border-top:2px solid #2b2722;text-align:right;font-size:18px;font-weight:700;color:#b5532a">${money(total)}</td></tr>
       ${deposit !== null ? line(`Deposit to book (${depositPct}%)`, money(deposit), true) : ""}
     </table>
-    <p style="margin-top:22px;font-size:11px;line-height:1.6;color:#7a7266">
-      Quote valid for 30 days from the issue date. Prices assume standard site access and may be
-      revised if hidden conditions are found. Thank you for the opportunity to quote — ${esc(p.business)}.
-    </p>
-  </div>
-  <p style="text-align:center;font-size:11px;color:#7a7266;margin-top:14px">To save a copy, print this email and choose "Save as PDF".</p>
-</div></body></html>`;
+  </td></tr>
+  <tr><td style="padding:24px 28px 26px;font-size:12px;line-height:1.6;${muted}">
+    Quote valid for 30 days from the issue date. Prices assume standard site access and may be revised if hidden conditions are found.${p.pdfBase64 ? " The full quote is attached as a PDF." : ""}<br/><br/>
+    Thank you for the opportunity — <strong style="color:#2b2722">${esc(p.business)}</strong>. Simply reply to this email with any questions.
+  </td></tr>
+</table>
+</td></tr></table></body></html>`;
 }
 
 export function buildResendPayload(data: Payload, contractorEmail: unknown) {
@@ -151,7 +174,8 @@ export async function readResendResult(response: Response) {
   } catch { /* Preserve a non-JSON provider error. */ }
   if (response.status !== 200 || parsed["error"] || typeof parsed["id"] !== "string" || !parsed["id"].trim()) {
     const providerError = typeof parsed["message"] === "string" && parsed["message"].trim() ? parsed["message"] : parsed["error"];
-    const error = emailErrorMessage(providerError || (!isJson ? raw : undefined));
+    const detail = emailErrorMessage(providerError || (!isJson ? raw : undefined));
+    const error = `Resend rejected the email (HTTP ${response.status}): ${detail}`;
     console.error(`Resend request failed [${response.status}]: ${raw}`);
     return { sent: false as const, status: response.status, error };
   }
