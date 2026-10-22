@@ -104,7 +104,6 @@ function InstaQuote() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [restoringPurchases, setRestoringPurchases] = useState(false);
-  const dispatchQuoteEmail = useServerFn(sendQuoteEmail);
   // Configure RevenueCat once per app launch (native iOS only; no-op on web).
   useEffect(() => {
     void initRevenueCat().catch(() => { /* Access checks surface retry feedback. */ });
