@@ -1181,6 +1181,7 @@ function InstaQuote() {
   if (access.showOnboarding) {
     return (
       <OnboardingFlow
+        initialStep={introSeen ? 2 : 0}
         onDone={access.complete}
         onRestore={access.restore}
         onTrade={async (tradeId) => {
