@@ -1254,9 +1254,9 @@ function InstaQuote() {
               </span>
               <button
                 onClick={openSaved}
-                className="flex min-h-10 items-center gap-1.5 rounded-lg bg-cream px-3 text-xs font-semibold ring-1 ring-line active:translate-y-0.5"
+                className="flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-cream px-3 text-xs font-semibold ring-1 ring-line active:translate-y-0.5"
               >
-                <FolderOpen className="size-4" aria-hidden="true" /> Saved
+                <FolderOpen className="size-4" aria-hidden="true" /> Saved Quotes
               </button>
               <button
                 onClick={openSettings}
