@@ -29,6 +29,8 @@ import { buildQuoteMailto, emailErrorMessage } from "@/lib/quote-email";
 import { clearRevenueCatIdentity, initRevenueCat } from "@/lib/revenuecat";
 import {
   cleanLineItemDescription,
+  formatPostalCode,
+  rateFromAmount,
   generateLineItems,
   lineTotal,
   money,
@@ -110,6 +112,7 @@ function InstaQuote() {
   }, []);
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(EMPTY_PROFILE);
   const [deviceReady, setDeviceReady] = useState(false);
+  const [introSeen, setIntroSeen] = useState(true);
   // Load the device-saved profile after hydration, then keep it in sync.
   useEffect(() => {
     try {
@@ -131,6 +134,7 @@ function InstaQuote() {
     // A trade picked during onboarding belongs in the business profile.
     const savedTrade = readDeviceText("instaquote:trade");
     if (savedTrade) setBusinessProfile((p) => (p.trade ? p : { ...p, trade: savedTrade }));
+    setIntroSeen(readDeviceText("has_seen_onboarding") === "true");
     setDeviceReady(true);
   }, []);
   useEffect(() => {
@@ -163,7 +167,7 @@ function InstaQuote() {
   }, [quoteNo, deviceReady]);
 
   // Saved clients directory (this device).
-  type SavedClient = { id: string; name: string; email: string; phone: string; address: string; city: string; postalCode: string };
+  type SavedClient = { id: string; name: string; email: string; phone: string; address: string; city: string; province?: string; postalCode: string };
   const [savedClients, setSavedClients] = useState<SavedClient[]>([]);
   useEffect(() => {
     try {
@@ -191,6 +195,7 @@ function InstaQuote() {
     phone: "",
     address: "",
     city: "",
+    province: "",
     postalCode: "",
     terms: "50% deposit required",
   });
@@ -204,6 +209,7 @@ function InstaQuote() {
         clientMatch.phone !== customer.phone ||
         clientMatch.address !== customer.address ||
         clientMatch.city !== customer.city ||
+        (clientMatch.province ?? "") !== (customer.province ?? "") ||
         clientMatch.postalCode !== customer.postalCode ||
         clientMatch.name !== customer.name.trim()),
   );
@@ -216,13 +222,14 @@ function InstaQuote() {
       phone: customer.phone,
       address: customer.address,
       city: customer.city,
+      province: customer.province ?? "",
       postalCode: customer.postalCode,
     };
     storeClients(savedClients.map((c) => (c.id === clientMatch.id ? updated : c)).sort((a, b) => a.name.localeCompare(b.name)));
     if (user) {
       const { error } = await supabase
         .from("saved_clients")
-        .update({ name: updated.name, email: updated.email, phone: updated.phone, address: updated.address, city: updated.city, postal_code: updated.postalCode })
+        .update({ name: updated.name, email: updated.email, phone: updated.phone, address: updated.address, city: updated.city, province: updated.province ?? "", postal_code: updated.postalCode })
         .eq("id", clientMatch.id)
         .eq("user_id", user.id);
       if (error) toast.warning("Updated on this device only", { description: "We'll sync it to your account next time you're online." });
@@ -239,6 +246,7 @@ function InstaQuote() {
       phone: saved.phone,
       address: saved.address,
       city: saved.city,
+      province: saved.province ?? "",
       postalCode: saved.postalCode,
     }));
     toast.info("Changes discarded", { description: `${saved.name}'s saved details are back.` });
@@ -252,12 +260,13 @@ function InstaQuote() {
         phone: customer.phone,
         address: customer.address,
         city: customer.city,
+      province: customer.province ?? "",
         postalCode: customer.postalCode,
       };
       if (user) {
         const { data, error } = await supabase
           .from("saved_clients")
-          .insert({ user_id: user.id, name: entry.name, email: entry.email, phone: entry.phone, address: entry.address, city: entry.city, postal_code: entry.postalCode })
+          .insert({ user_id: user.id, name: entry.name, email: entry.email, phone: entry.phone, address: entry.address, city: entry.city, province: entry.province ?? "", postal_code: entry.postalCode })
           .select("id")
           .single();
         if (data) entry = { ...entry, id: data.id };
@@ -278,19 +287,19 @@ function InstaQuote() {
     (async () => {
       const { data, error } = await supabase
         .from("saved_clients")
-        .select("id, name, email, phone, address, city, postal_code")
+        .select("id, name, email, phone, address, city, province, postal_code")
         .eq("user_id", user.id);
       if (!active || error || !data) return;
-      const cloud: SavedClient[] = data.map((r) => ({ id: r.id, name: r.name, email: r.email, phone: r.phone, address: r.address, city: r.city, postalCode: r.postal_code }));
+      const cloud: SavedClient[] = data.map((r) => ({ id: r.id, name: r.name, email: r.email, phone: r.phone, address: r.address, city: r.city, province: r.province, postalCode: formatPostalCode(r.postal_code) }));
       const names = new Set(cloud.map((c) => c.name.trim().toLowerCase()));
       const local = readDeviceJSON<SavedClient[]>("instaquote:clients", [], (v): v is SavedClient[] => Array.isArray(v));
       const missing = local.filter((c) => c?.name && !names.has(c.name.trim().toLowerCase()));
       if (missing.length) {
         const { data: added } = await supabase
           .from("saved_clients")
-          .insert(missing.map((c) => ({ user_id: user.id, name: c.name, email: c.email ?? "", phone: c.phone ?? "", address: c.address ?? "", city: c.city ?? "", postal_code: c.postalCode ?? "" })))
-          .select("id, name, email, phone, address, city, postal_code");
-        added?.forEach((r) => cloud.push({ id: r.id, name: r.name, email: r.email, phone: r.phone, address: r.address, city: r.city, postalCode: r.postal_code }));
+          .insert(missing.map((c) => ({ user_id: user.id, name: c.name, email: c.email ?? "", phone: c.phone ?? "", address: c.address ?? "", city: c.city ?? "", province: c.province ?? "", postal_code: c.postalCode ?? "" })))
+          .select("id, name, email, phone, address, city, province, postal_code");
+        added?.forEach((r) => cloud.push({ id: r.id, name: r.name, email: r.email, phone: r.phone, address: r.address, city: r.city, province: r.province, postalCode: formatPostalCode(r.postal_code) }));
       }
       if (!active) return;
       storeClients(cloud.sort((a, b) => a.name.localeCompare(b.name)));
@@ -535,7 +544,7 @@ function InstaQuote() {
     setGenerating(true);
     try {
       const { items: aiItems, client } = await generateQuoteItems({ data: { notes } });
-      if (client && (client.name || client.email || client.phone || client.address || client.city || client.postalCode)) {
+      if (client && (client.name || client.email || client.phone || client.address || client.city || client.province || client.postalCode)) {
         setCustomer((c) => ({
           ...c,
           name: client.name || c.name,
@@ -543,7 +552,8 @@ function InstaQuote() {
           phone: client.phone || c.phone,
           address: client.address || c.address,
           city: client.city || c.city,
-          postalCode: client.postalCode || c.postalCode,
+          province: client.province || c.province,
+          postalCode: formatPostalCode(client.postalCode || c.postalCode),
         }));
       }
       const rows: BaseItem[] = aiItems.map((i) => ({
@@ -674,6 +684,7 @@ function InstaQuote() {
       const pdfBase64 = await buildQuotePdfBase64({
         business,
         businessContact,
+        logo,
         quoteNo,
         customer,
         items: pdfItems,
@@ -692,6 +703,7 @@ function InstaQuote() {
         clientName: customer.name,
         jobAddress: customer.address,
         city: customer.city,
+      province: customer.province ?? "",
         postalCode: customer.postalCode,
         terms: customer.terms,
         taxRate,
@@ -725,7 +737,8 @@ function InstaQuote() {
           onClick: () => {
             window.location.href = buildQuoteMailto({
               to, business, quoteNo, message: emailNote, clientName: customer.name,
-              jobAddress: customer.address, city: customer.city, postalCode: customer.postalCode,
+              jobAddress: customer.address, city: customer.city,
+      province: customer.province ?? "", postalCode: customer.postalCode,
               items, currency, taxRate, taxEnabled, terms: customer.terms,
             });
           },
@@ -755,6 +768,7 @@ function InstaQuote() {
       phone: "",
       address: "",
       city: "",
+      province: "",
       postalCode: "",
       terms: defaultTerms || "50% deposit required",
     });
@@ -1027,7 +1041,8 @@ function InstaQuote() {
         phone: payload.customer.phone ?? "",
         address: payload.customer.address ?? "",
         city: payload.customer.city ?? "",
-        postalCode: payload.customer.postalCode ?? payload.customer.zipCode ?? "",
+        province: payload.customer.province ?? "",
+        postalCode: formatPostalCode(payload.customer.postalCode ?? payload.customer.zipCode ?? ""),
         terms: payload.customer.terms ?? (defaultTerms || "50% deposit required"),
       });
     }
@@ -1067,6 +1082,7 @@ function InstaQuote() {
       phone: "",
       address: "",
       city: "",
+      province: "",
       postalCode: "",
       terms: "50% deposit required",
     });
@@ -1103,7 +1119,7 @@ function InstaQuote() {
       setSaved([]);
       setItems([]);
       setNotes("");
-      setCustomer({ name: "", email: "", phone: "", address: "", city: "", postalCode: "", terms: "" });
+      setCustomer({ name: "", email: "", phone: "", address: "", city: "", province: "", postalCode: "", terms: "" });
       setLogo(null);
       setQuoteId(null);
       setSettingsOpen(false);
@@ -1127,6 +1143,7 @@ function InstaQuote() {
 
   // Auth guard: signed-out users see a clean sign-in landing, never the estimator or cached drafts.
   if (!user) {
+    if (!introSeen) return <OnboardingFlow beforeAccount onDone={async () => { writeDeviceText("has_seen_onboarding", "true"); setIntroSeen(true); await navigate({ to: "/auth", search: { signup: true } }); }} onRestore={async () => false} />;
     return (
       <div className="app-safe-layout flex min-h-screen flex-col items-center justify-center gap-8 bg-cream px-6 text-center text-ink">
         <div className="clay-shadow grid size-24 place-items-center rounded-2xl bg-clay text-cream">
@@ -1184,7 +1201,7 @@ function InstaQuote() {
     <div className="min-h-screen bg-cream text-ink">
       <div className="app-safe-layout mx-auto max-w-[430px] px-4 pt-5 pb-36 max-[360px]:pb-40">
         {/* Header */}
-        <header className="app-safe-header grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+        <header className="app-safe-header grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3">
           <label className="clay-shadow relative grid size-12 shrink-0 cursor-pointer place-items-center rounded-xl bg-clay font-mono text-lg font-bold text-cream">
             {logo ? (
               <img src={logo} alt="Business logo" className="size-12 rounded-xl object-cover" />
@@ -1200,15 +1217,15 @@ function InstaQuote() {
             />
           </label>
           <div className="min-w-0">
-            <p className="label-mono flex items-center gap-1 tracking-[0.22em]">
-              <span>InstaQuote ·</span>
+            <div className="flex min-w-0 items-center gap-1 py-1 font-semibold">
+              <span className="shrink-0 text-sm">Quote #</span>
               <input
                 value={quoteNo}
                 onChange={(e) => setQuoteNo(e.target.value.slice(0, 40))}
                 aria-label="Quote number"
-                className="w-24 min-w-0 rounded bg-transparent font-mono outline-none focus:ring-1 focus:ring-clay"
+                className="w-full min-w-0 rounded bg-transparent py-1 font-mono outline-none focus:ring-1 focus:ring-primary"
               />
-            </p>
+            </div>
             <input
               value={businessProfile.companyName}
               placeholder="Your Business Name — tap to edit"
@@ -1217,14 +1234,14 @@ function InstaQuote() {
               className="w-full truncate bg-transparent text-lg font-bold leading-tight outline-none"
             />
           </div>
-          <button
+          <Button
             onClick={newQuote}
-            className="clay-shadow-ink flex min-h-12 shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 text-sm font-semibold text-cream active:translate-y-0.5 max-[340px]:size-12 max-[340px]:justify-center max-[340px]:px-0"
+            className="col-span-2 min-h-11 w-full bg-foreground text-background"
             aria-label="Start a new quote"
           >
             <Plus className="size-4 shrink-0" aria-hidden="true" />
-            <span className="max-[340px]:sr-only">New Quote</span>
-          </button>
+            <span>New Quote</span>
+          </Button>
         </header>
 
         {/* Account */}
@@ -1247,13 +1264,9 @@ function InstaQuote() {
               >
                 <Settings className="size-4" aria-hidden="true" />
               </button>
-              <button
-                onClick={signOut}
-                aria-label="Sign out"
-                className="grid size-10 place-items-center rounded-lg bg-cream text-inksoft ring-1 ring-line active:translate-y-0.5"
-              >
-                <LogOut className="size-4" aria-hidden="true" />
-              </button>
+              <Button variant="outline" onClick={signOut} className="min-h-10 shrink-0 px-2 text-xs">
+                <LogOut className="size-4" aria-hidden="true" /> Sign Out
+              </Button>
             </>
           ) : (
             <>
@@ -1396,9 +1409,11 @@ function InstaQuote() {
                 </label>
                 <label className="block min-w-0 max-[340px]:col-span-2">
                   <span className="label-mono">Total</span>
-                  <div className="field mt-1 flex items-center font-mono">
-                    {money(lineTotal(item))}
-                  </div>
+                  <input type="number" inputMode="decimal" min={0} step="0.01"
+                    aria-label={`Amount for item ${index + 1}`} value={Number(lineTotal(item).toFixed(2))}
+                    disabled={item.quantity <= 0}
+                    onChange={(e) => updateItem(item.id, { rate: rateFromAmount(Number(e.target.value), item.quantity) })}
+                    className="field mt-1 font-mono" />
                 </label>
               </div>
             </div>
@@ -1472,7 +1487,7 @@ function InstaQuote() {
                   onChange={(e) => {
                     const c = savedClients.find((s) => s.id === e.target.value);
                     if (!c) return;
-                    setCustomer((prev) => ({ ...prev, name: c.name, email: c.email, phone: c.phone, address: c.address, city: c.city, postalCode: c.postalCode }));
+                    setCustomer((prev) => ({ ...prev, name: c.name, email: c.email, phone: c.phone, address: c.address, city: c.city, province: c.province ?? "", postalCode: formatPostalCode(c.postalCode) }));
                     toast.success(`${c.name} added to this quote`);
                   }}
                   className="min-h-10 max-w-[55%] rounded-full bg-cream px-3 text-sm font-semibold ring-1 ring-black/10"
@@ -1535,10 +1550,17 @@ function InstaQuote() {
                 />
               </label>
               <label className="block min-w-0">
+                <span className="label-mono">State / Province</span>
+                <input value={customer.province ?? ""} onChange={(e) => setCustomer({ ...customer, province: e.target.value })}
+                  placeholder="e.g. ON" autoComplete="address-level1" className="field mt-1" />
+              </label>
+            </div>
+            <div>
+              <label className="block min-w-0">
                 <span className="label-mono">Postal / ZIP code</span>
                 <input
                   value={customer.postalCode}
-                  onChange={(e) => setCustomer({ ...customer, postalCode: e.target.value })}
+                  onChange={(e) => setCustomer({ ...customer, postalCode: formatPostalCode(e.target.value) })}
                   placeholder="e.g. M5C 2C7"
                   className="field mt-1 font-mono"
                   autoCapitalize="characters"
@@ -1693,7 +1715,7 @@ function InstaQuote() {
                 try {
                   const { buildQuotePdfBase64 } = await import("@/lib/quote-pdf");
                   const b64 = await buildQuotePdfBase64({
-                    business, businessContact, quoteNo, customer,
+                    business, businessContact, logo, quoteNo, customer,
                     items: items.map(({ description, quantity, rate }) => ({ description, quantity, rate })),
                     taxRate, taxEnabled, currency,
                   });
@@ -1793,7 +1815,7 @@ function InstaQuote() {
 
       {/* Send by email */}
       <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
-        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-md">
+        <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-md" onOpenAutoFocus={(event) => event.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Email this quote</DialogTitle>
             <DialogDescription>

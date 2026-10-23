@@ -13,7 +13,7 @@ export function duplicateQuoteRecord(row: any, quoteNo: string, userId: string) 
       quoteNo,
       notes: "",
       customer: {
-        name: "", email: "", phone: "", address: "", city: "", postalCode: "",
+        name: "", email: "", phone: "", address: "", city: "", province: "", postalCode: "",
         terms: payload.customer?.terms ?? "",
       },
     },

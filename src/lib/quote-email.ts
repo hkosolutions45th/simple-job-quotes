@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { cleanLineItemDescription, formatMoney } from "./quote";
+import { cleanLineItemDescription, formatMoney, formatJobAddress } from "./quote";
 
 const itemSchema = z.object({
   description: z.string().default(""),
@@ -18,6 +18,7 @@ export const payloadSchema = z.object({
   clientName: z.string().max(120).default(""),
   jobAddress: z.string().max(240).default(""),
   city: z.string().max(120).default(""),
+  province: z.string().max(120).default(""),
   postalCode: z.string().max(24).default(""),
   terms: z.string().max(240).default(""),
   taxRate: z.number().default(13),
@@ -36,7 +37,7 @@ export function emailErrorMessage(error: unknown): string {
   return "No error details were returned";
 }
 
-export function buildQuoteMailto(p: Pick<Payload, "to" | "business" | "quoteNo" | "message" | "clientName" | "jobAddress" | "city" | "postalCode" | "items" | "currency" | "taxRate" | "taxEnabled" | "terms">) {
+export function buildQuoteMailto(p: { province?: string } & Pick<Payload, "to" | "business" | "quoteNo" | "message" | "clientName" | "jobAddress" | "city" | "postalCode" | "items" | "currency" | "taxRate" | "taxEnabled" | "terms">) {
   const money = (value: number) => formatMoney(value, p.currency);
   const subtotal = p.items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
   const tax = p.taxEnabled ? subtotal * p.taxRate / 100 : 0;
@@ -44,7 +45,7 @@ export function buildQuoteMailto(p: Pick<Payload, "to" | "business" | "quoteNo" 
   const body = [
     p.message.trim(), "", subject,
     p.clientName ? `Prepared for: ${p.clientName}` : "",
-    [p.jobAddress, p.city, p.postalCode].filter(Boolean).join(", "), "",
+    formatJobAddress({ address: p.jobAddress, city: p.city, province: p.province, postalCode: p.postalCode }), "",
     ...p.items.map((item) => `${item.description} — ${item.quantity} × ${money(item.rate)} = ${money(item.quantity * item.rate)}`),
     "", `Subtotal: ${money(subtotal)}`, `Tax: ${money(tax)}`, `Total: ${money(subtotal + tax)}`,
     p.terms ? `Payment terms: ${p.terms}` : "",
@@ -57,7 +58,7 @@ const esc = (s: string) =>
 
 function buildHtml(p: Payload) {
   const money = (n: number) => formatMoney(n, p.currency);
-  const cityPostal = [p.city, p.postalCode].filter(Boolean).join(" ");
+
   const subtotal = p.items.reduce((sum, i) => sum + i.quantity * i.rate, 0);
   const tax = p.taxEnabled ? (subtotal * p.taxRate) / 100 : 0;
   const total = subtotal + tax;
@@ -90,7 +91,7 @@ function buildHtml(p: Payload) {
   const detail = (label: string, value: string) => value
     ? `<tr><td style="padding:3px 12px 3px 0;font-size:13px;font-weight:700;color:#2b2722;white-space:nowrap;vertical-align:top">${label}</td><td style="padding:3px 0;font-size:13px;color:#2b2722">${value}</td></tr>`
     : "";
-  const address = [esc(p.jobAddress), esc(cityPostal)].filter(Boolean).join("<br/>");
+  const address = esc(formatJobAddress({ address: p.jobAddress, city: p.city, province: p.province, postalCode: p.postalCode }));
   const message = p.message.trim()
     ? `<tr><td style="padding:22px 28px 0;font-size:15px;line-height:1.6;color:#2b2722">${esc(p.message.trim()).replace(/\r?\n/g, "<br/>")}</td></tr>`
     : "";
