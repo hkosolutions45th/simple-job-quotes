@@ -146,6 +146,7 @@ export function OnboardingFlow({
               {TRADES.map(({ id, label, icon: Icon }) => (
                 <Button
                   key={id}
+                  variant="outline"
                   type="button"
                   onClick={() => pickTrade(id)}
                   aria-pressed={trade === id}
@@ -164,6 +165,7 @@ export function OnboardingFlow({
             <div className="onboarding-actions sticky bottom-0 mt-auto flex gap-3 bg-background pt-3">
               <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setStep(0)}
                 className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-ink/5 px-5 text-base font-bold text-ink"
               >
@@ -205,6 +207,7 @@ export function OnboardingFlow({
             <div className="mt-3 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Choose a plan">
               <Button
                 type="button"
+                variant="outline"
                 role="radio"
                 aria-checked={plan === "monthly"}
                 onClick={() => setPlan("monthly")}
@@ -225,6 +228,7 @@ export function OnboardingFlow({
               </Button>
               <Button
                 type="button"
+                variant="outline"
                 role="radio"
                 aria-checked={plan === "annual"}
                 onClick={() => setPlan("annual")}

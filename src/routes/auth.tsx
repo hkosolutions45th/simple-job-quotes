@@ -118,7 +118,7 @@ function AuthPage() {
           </div>
         ) : (
           <>
-            <Button
+            <Button variant="outline"
               onClick={() => void social("google")}
               className="clay-shadow mt-6 min-h-14 w-full rounded-xl bg-card px-4 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
             >
@@ -172,7 +172,7 @@ function AuthPage() {
               </Button>
             </form>
 
-            <Button
+            <Button variant="ghost"
               onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
               className="mt-4 w-full text-sm font-semibold underline underline-offset-4"
             >
