@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { checkRevenueCatAccess, purchaseRevenueCatAccess, subscribeRevenueCatAccess } from "@/lib/revenuecat";
 import { markOnboardingSeen, shouldShowOnboarding } from "@/lib/account-access";
+import { readDeviceText } from "@/lib/device-storage";
 
 type Access = { owner: string | null; completed: boolean; pro: boolean; error: string | null };
 
@@ -45,7 +46,8 @@ export function useAccountAccess(userId: string | undefined) {
     if (!userId) throw new Error("Sign in before continuing.");
     const active = await purchaseRevenueCatAccess(userId, plan);
     if (!active) throw new Error("An active subscription is required to continue.");
-    const { error } = await supabase.from("user_profiles").upsert({ user_id: userId, has_completed_onboarding: true }, { onConflict: "user_id" });
+    const trade = readDeviceText("instaquote:trade");
+    const { error } = await supabase.from("user_profiles").upsert({ user_id: userId, has_completed_onboarding: true, ...(trade ? { trade } : {}) }, { onConflict: "user_id" });
     if (error) throw new Error("Couldn't save your onboarding progress. Please try again.");
     markOnboardingSeen();
     setState((s) => s.owner === userId ? { ...s, completed: true } : s);

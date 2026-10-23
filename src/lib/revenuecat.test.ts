@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 import { test, mock } from "bun:test";
 import assert from "node:assert/strict";
 
