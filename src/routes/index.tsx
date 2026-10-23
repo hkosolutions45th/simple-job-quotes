@@ -1246,17 +1246,17 @@ function InstaQuote() {
         </header>
 
         {/* Account */}
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-card p-2 ring-1 ring-black/5">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 rounded-xl bg-card p-2 ring-1 ring-black/5 sm:flex-nowrap">
           {user ? (
             <>
-              <span className="min-w-0 flex-1 truncate px-2 text-xs text-inksoft">
+              <span className="min-w-0 flex-1 basis-full truncate px-2 text-xs text-inksoft sm:basis-0">
                 Signed in as {user.email}
               </span>
               <button
                 onClick={openSaved}
-                className="flex min-h-10 items-center gap-1.5 rounded-lg bg-cream px-3 text-xs font-semibold ring-1 ring-line active:translate-y-0.5"
+                className="flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-cream px-3 text-xs font-semibold ring-1 ring-line active:translate-y-0.5"
               >
-                <FolderOpen className="size-4" aria-hidden="true" /> Saved
+                <FolderOpen className="size-4" aria-hidden="true" /> Saved Quotes
               </button>
               <button
                 onClick={openSettings}
