@@ -2029,7 +2029,7 @@ function InstaQuote() {
           </DialogHeader>
           <div className="space-y-3">
             {([
-              ["business_name", "Business name", "text", "Your Business Name"],
+              ["business_name", "Business name", "text", "e.g. Copperline Roofing"],
               ["phone", "Phone number", "tel", "e.g. (416) 555-0100"],
               ["email", "Business email", "email", "e.g. you@yourbusiness.com"],
               ["address", "Street address", "text", "e.g. 100 Yonge Street"],
