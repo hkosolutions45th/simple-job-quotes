@@ -2030,9 +2030,9 @@ function InstaQuote() {
           <div className="space-y-3">
             {([
               ["business_name", "Business name", "text", "Your Business Name"],
-              ["phone", "Phone number", "tel", "(416) 555-0100"],
-              ["email", "Business email", "email", "you@yourbusiness.com"],
-              ["address", "Street address", "text", "100 Yonge Street"],
+              ["phone", "Phone number", "tel", "e.g. (416) 555-0100"],
+              ["email", "Business email", "email", "e.g. you@yourbusiness.com"],
+              ["address", "Street address", "text", "e.g. 100 Yonge Street"],
             ] as const).map(([key, label, type, ph]) => (
               <label key={key} className="block">
                 <span className="label-mono">{label}</span>
@@ -2047,20 +2047,30 @@ function InstaQuote() {
             ))}
             <div className="grid grid-cols-2 gap-3">
               {([
-                ["city", "City", "Toronto"],
-                ["postal_code", "Postal / ZIP", "M5C 2C7"],
+                ["city", "City", "e.g. Toronto"],
+                ["province", "State / Province", "e.g. ON"],
               ] as const).map(([key, label, ph]) => (
                 <label key={key} className="block min-w-0">
                   <span className="label-mono">{label}</span>
                   <input
                     value={settings[key]}
                     placeholder={ph}
+                    autoComplete={key === "province" ? "address-level1" : undefined}
                     onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.value }))}
                     className="field mt-1 min-h-12 w-full rounded-xl px-3"
                   />
                 </label>
               ))}
             </div>
+            <label className="block">
+              <span className="label-mono">Postal / ZIP code</span>
+              <input
+                value={settings.postal_code}
+                placeholder="e.g. M5C 2C7"
+                onChange={(e) => setSettings((s) => ({ ...s, postal_code: e.target.value }))}
+                className="field mt-1 min-h-12 w-full rounded-xl px-3"
+              />
+            </label>
             <label className="block">
               <span className="label-mono">Default tax rate (%)</span>
               <input
@@ -2074,8 +2084,8 @@ function InstaQuote() {
               />
             </label>
             {([
-              ["default_terms", "Default payment terms", "text", "50% deposit required"],
-              ["logo_url", "Logo URL", "url", "https://…"],
+              ["default_terms", "Default payment terms", "text", "e.g. 50% deposit required"],
+              ["logo_url", "Logo URL", "url", "e.g. https://…"],
             ] as const).map(([key, label, type, ph]) => (
               <label key={key} className="block">
                 <span className="label-mono">{label}</span>
