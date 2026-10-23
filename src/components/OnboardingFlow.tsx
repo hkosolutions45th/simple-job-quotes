@@ -184,7 +184,7 @@ export function OnboardingFlow({
         )}
 
         {step === 2 && (
-          <div className="flex flex-1 flex-col">
+          <div className="paywall-content flex flex-1 flex-col">
             <h2 className="text-2xl font-bold leading-tight">Start Your 7-Day Free Trial</h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
               For eligible Apple accounts. Cancel anytime in App Store settings.
