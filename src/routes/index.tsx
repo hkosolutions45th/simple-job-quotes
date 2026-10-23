@@ -79,6 +79,7 @@ type BusinessProfile = {
   email: string;
   address: string;
   city: string;
+  province: string;
   postalCode: string;
   taxRate: number;
   defaultTerms: string;
@@ -92,6 +93,7 @@ const EMPTY_PROFILE: BusinessProfile = {
   email: "",
   address: "",
   city: "",
+  province: "",
   postalCode: "",
   taxRate: 13,
   defaultTerms: "",
@@ -120,7 +122,7 @@ function InstaQuote() {
       if (raw) {
         const value = JSON.parse(raw);
         const p = { ...EMPTY_PROFILE };
-        for (const key of ["companyName", "phone", "email", "address", "city", "postalCode", "defaultTerms", "trade"] as const) {
+        for (const key of ["companyName", "phone", "email", "address", "city", "province", "postalCode", "defaultTerms", "trade"] as const) {
           if (typeof value?.[key] === "string") p[key] = value[key];
         }
         if (Number.isFinite(value?.taxRate) && value.taxRate >= 0) p.taxRate = value.taxRate;
@@ -145,7 +147,7 @@ function InstaQuote() {
   const businessContact = {
     phone: businessProfile.phone,
     email: businessProfile.email,
-    address: [businessProfile.address, [businessProfile.city, businessProfile.postalCode].filter(Boolean).join(" ")]
+    address: [businessProfile.address, [businessProfile.city, businessProfile.province, businessProfile.postalCode].filter(Boolean).join(" ")]
       .filter(Boolean)
       .join(", "),
   };
@@ -330,6 +332,7 @@ function InstaQuote() {
     email: "",
     address: "",
     city: "",
+    province: "",
     postal_code: "",
     tax_rate: "13",
     logo_url: "",
@@ -789,7 +792,7 @@ function InstaQuote() {
     let active = true;
     supabase
       .from("user_profiles")
-      .select("business_name, logo_url, phone, default_terms, default_currency, business_email, street_address, city, postal_code, tax_rate, trade")
+      .select("business_name, logo_url, phone, default_terms, default_currency, business_email, street_address, city, province, postal_code, tax_rate, trade")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -806,6 +809,7 @@ function InstaQuote() {
           email: data.business_email || p.email,
           address: data.street_address || p.address,
           city: data.city || p.city,
+          province: data.province || p.province,
           postalCode: data.postal_code || p.postalCode,
           taxRate: Number.isFinite(cloudRate) && cloudRate >= 0 ? cloudRate : p.taxRate,
           defaultTerms: data.default_terms || p.defaultTerms,
@@ -833,6 +837,7 @@ function InstaQuote() {
       email: businessProfile.email,
       address: businessProfile.address,
       city: businessProfile.city,
+      province: businessProfile.province,
       postal_code: businessProfile.postalCode,
       tax_rate: String(businessProfile.taxRate),
       logo_url: logo && !logo.startsWith("data:") ? logo : logo ?? "",
@@ -867,6 +872,7 @@ function InstaQuote() {
       email: settings.email.trim(),
       address: settings.address.trim(),
       city: settings.city.trim(),
+      province: settings.province.trim(),
       postalCode: settings.postal_code.trim(),
       taxRate: Number.isFinite(rate) && rate >= 0 ? rate : 13,
       defaultTerms: settings.default_terms.trim(),
@@ -881,6 +887,7 @@ function InstaQuote() {
       business_email: nextProfile.email || null,
       street_address: nextProfile.address || null,
       city: nextProfile.city || null,
+      province: nextProfile.province || null,
       postal_code: nextProfile.postalCode || null,
       tax_rate: nextProfile.taxRate,
       trade: nextProfile.trade || null,
@@ -2023,9 +2030,9 @@ function InstaQuote() {
           <div className="space-y-3">
             {([
               ["business_name", "Business name", "text", "Your Business Name"],
-              ["phone", "Phone number", "tel", "(416) 555-0100"],
-              ["email", "Business email", "email", "you@yourbusiness.com"],
-              ["address", "Street address", "text", "100 Yonge Street"],
+              ["phone", "Phone number", "tel", "e.g. (416) 555-0100"],
+              ["email", "Business email", "email", "e.g. you@yourbusiness.com"],
+              ["address", "Street address", "text", "e.g. 100 Yonge Street"],
             ] as const).map(([key, label, type, ph]) => (
               <label key={key} className="block">
                 <span className="label-mono">{label}</span>
@@ -2040,20 +2047,30 @@ function InstaQuote() {
             ))}
             <div className="grid grid-cols-2 gap-3">
               {([
-                ["city", "City", "Toronto"],
-                ["postal_code", "Postal / ZIP", "M5C 2C7"],
+                ["city", "City", "e.g. Toronto"],
+                ["province", "State / Province", "e.g. ON"],
               ] as const).map(([key, label, ph]) => (
                 <label key={key} className="block min-w-0">
                   <span className="label-mono">{label}</span>
                   <input
                     value={settings[key]}
                     placeholder={ph}
+                    autoComplete={key === "province" ? "address-level1" : undefined}
                     onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.value }))}
                     className="field mt-1 min-h-12 w-full rounded-xl px-3"
                   />
                 </label>
               ))}
             </div>
+            <label className="block">
+              <span className="label-mono">Postal / ZIP code</span>
+              <input
+                value={settings.postal_code}
+                placeholder="e.g. M5C 2C7"
+                onChange={(e) => setSettings((s) => ({ ...s, postal_code: e.target.value }))}
+                className="field mt-1 min-h-12 w-full rounded-xl px-3"
+              />
+            </label>
             <label className="block">
               <span className="label-mono">Default tax rate (%)</span>
               <input
@@ -2067,8 +2084,8 @@ function InstaQuote() {
               />
             </label>
             {([
-              ["default_terms", "Default payment terms", "text", "50% deposit required"],
-              ["logo_url", "Logo URL", "url", "https://…"],
+              ["default_terms", "Default payment terms", "text", "e.g. 50% deposit required"],
+              ["logo_url", "Logo URL", "url", "e.g. https://…"],
             ] as const).map(([key, label, type, ph]) => (
               <label key={key} className="block">
                 <span className="label-mono">{label}</span>

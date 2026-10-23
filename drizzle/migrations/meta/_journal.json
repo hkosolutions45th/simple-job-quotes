@@ -50,6 +50,13 @@
       "when": 1792717204841,
       "tag": "0006_add_client_province",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792718383956,
+      "tag": "0007_add_profile_province",
+      "breakpoints": true
     }
   ]
 }

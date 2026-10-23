@@ -105,6 +105,7 @@ export type Database = {
           logo_url: string | null
           phone: string | null
           postal_code: string | null
+          province: string | null
           street_address: string | null
           tax_rate: number | null
           trade: string | null
@@ -123,6 +124,7 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           postal_code?: string | null
+          province?: string | null
           street_address?: string | null
           tax_rate?: number | null
           trade?: string | null
@@ -141,6 +143,7 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           postal_code?: string | null
+          province?: string | null
           street_address?: string | null
           tax_rate?: number | null
           trade?: string | null
