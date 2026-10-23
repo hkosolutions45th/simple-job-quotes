@@ -1,0 +1,1 @@
+ALTER TABLE public.saved_clients ADD COLUMN province text NOT NULL DEFAULT '';

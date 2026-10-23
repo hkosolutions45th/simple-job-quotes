@@ -1,4 +1,9 @@
 # Roadmap
+- [ ] Polish header, confirm-password signup, Apple sign-in, and signup return behavior
+- [ ] Show first-visit onboarding before signup and fit sticky iPhone actions
+- [ ] Activate native RevenueCat purchases without payment bypass
+- [ ] Add editable amounts, province, postal formatting, and synchronized document addresses
+- [ ] Prevent email autofocus and embed PDF logos; verify flows
 - [x] Verify connected Resend sending (real 200 response), clear failure messages, and automatic Mail composer fallback (browser launch verified; native Mail requires iPhone testing)
 - [x] Persist account onboarding and check native pro_access before showing paywalls
 - [x] Add restore purchases, subscription disclosures, and requested external legal links

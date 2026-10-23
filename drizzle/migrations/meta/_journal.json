@@ -43,6 +43,13 @@
       "when": 1792286540505,
       "tag": "0005_persist_onboarding_and_account_cleanup",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792717204841,
+      "tag": "0006_add_client_province",
+      "breakpoints": true
     }
   ]
 }
