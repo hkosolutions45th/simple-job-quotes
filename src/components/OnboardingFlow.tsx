@@ -44,13 +44,17 @@ export function OnboardingFlow({
   onDone,
   onTrade,
   onRestore,
+  beforeAccount = false,
+  initialStep = 0,
 }: {
-  onDone: () => Promise<void>;
+  beforeAccount?: boolean;
+  initialStep?: number;
+  onDone: (plan: Plan) => Promise<void>;
   onRestore: () => Promise<boolean>;
   /** Fired the instant a trade is tapped so it lands in Business Settings right away. */
   onTrade?: (tradeId: string) => void;
 }) {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(initialStep);
   const [trade, setTrade] = useState<string | null>(null);
   // The annual plan is the default choice when the paywall appears.
   const [plan, setPlan] = useState<Plan>("annual");
@@ -67,7 +71,7 @@ export function OnboardingFlow({
     // other way past this screen (no close, no skip).
     if (trade) writeDeviceText("instaquote:trade", trade);
     setBusy("complete");
-    try { await onDone(); }
+    try { await onDone(plan); }
     catch (error) { toast.error(error instanceof Error ? error.message : "Couldn't save your progress. Please try again."); }
     finally { setBusy(null); }
   };
@@ -88,10 +92,10 @@ export function OnboardingFlow({
       role="dialog"
       aria-modal="true"
       aria-label="Welcome to InstaQuote"
-      className="app-safe-layout fixed inset-0 z-50 flex flex-col bg-cream text-ink"
+      className="onboarding-screen fixed inset-0 z-50 flex flex-col bg-background text-foreground"
     >
       {/* Top bar: progress only — the trial step is required, so there is no close */}
-      <div className="app-safe-header mx-auto flex w-full max-w-[430px] items-center justify-between px-5 pt-4">
+      <div className="app-safe-header mx-auto flex w-full max-w-[430px] items-center justify-between px-5 py-3">
         <div className="flex items-center gap-2" aria-hidden="true">
           {[0, 1, 2].map((i) => (
             <span
@@ -106,28 +110,28 @@ export function OnboardingFlow({
       </div>
 
       {/* Slide content */}
-      <div className="mx-auto flex w-full max-w-[430px] flex-1 flex-col overflow-y-auto px-6 pb-4 pt-2">
+      <div className="mx-auto flex w-full max-w-[430px] min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-3 pt-2">
         {step === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
-            <div className="clay-shadow grid size-28 place-items-center rounded-3xl bg-clay text-cream">
+          <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+            <div className="clay-shadow grid size-20 place-items-center rounded-3xl bg-clay text-cream">
               <Mic className="size-12" aria-hidden="true" />
             </div>
             <div>
               <p className="label-mono tracking-[0.22em] text-muted-foreground">Welcome to InstaQuote</p>
-              <h1 className="mt-3 text-4xl font-bold leading-tight">
+              <h1 className="mt-3 text-3xl font-bold leading-tight">
                 Send professional PDF quotes in under 60 seconds.
               </h1>
               <p className="mx-auto mt-4 max-w-xs text-base text-muted-foreground">
                 Dictate the job, get a priced quote, and text or email it before you leave the driveway.
               </p>
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => setStep(1)}
               className="clay-shadow flex min-h-14 w-full max-w-xs items-center justify-center gap-2 rounded-2xl bg-clay text-lg font-bold text-cream"
             >
               Get started <ArrowRight className="size-5" aria-hidden="true" />
-            </button>
+            </Button>
           </div>
         )}
 
@@ -138,15 +142,15 @@ export function OnboardingFlow({
             <p className="mt-2 text-sm text-muted-foreground">
               We'll tune your quote templates and sample rates to match.
             </p>
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="mt-3 grid grid-cols-2 gap-2">
               {TRADES.map(({ id, label, icon: Icon }) => (
-                <button
+                <Button
                   key={id}
                   type="button"
                   onClick={() => pickTrade(id)}
                   aria-pressed={trade === id}
                   className={cn(
-                    "flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border-2 px-3 text-base font-bold transition-colors",
+                    "flex min-h-16 flex-row items-center justify-center gap-2 rounded-2xl border-2 px-3 text-base font-bold transition-colors",
                     trade === id
                       ? "clay-shadow border-clay bg-clay text-cream"
                       : "border-ink/10 bg-paper text-ink hover:border-clay/40",
@@ -154,24 +158,25 @@ export function OnboardingFlow({
                 >
                   <Icon className="size-6" aria-hidden="true" />
                   {label}
-                </button>
+                </Button>
               ))}
             </div>
-            <div className="mt-auto flex gap-3 pt-8">
-              <button
+            <div className="onboarding-actions sticky bottom-0 mt-auto flex gap-3 bg-background pt-3">
+              <Button
                 type="button"
                 onClick={() => setStep(0)}
                 className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-ink/5 px-5 text-base font-bold text-ink"
               >
                 <ArrowLeft className="size-5" aria-hidden="true" /> Back
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                onClick={() => setStep(2)}
+                disabled={!trade || busy !== null}
+                onClick={() => beforeAccount ? void finish() : setStep(2)}
                 className="clay-shadow flex min-h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-clay text-lg font-bold text-cream"
               >
-                {trade ? "Continue" : "Skip"} <ArrowRight className="size-5" aria-hidden="true" />
-              </button>
+                {busy ? "Continuing…" : "Continue"} <ArrowRight className="size-5" aria-hidden="true" />
+              </Button>
             </div>
           </div>
         )}
@@ -180,7 +185,7 @@ export function OnboardingFlow({
           <div className="flex flex-1 flex-col">
             <h2 className="text-2xl font-bold leading-tight">Start Your 7-Day Free Trial</h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Full access to everything. Cancel anytime — no charge until day 8.
+              For eligible Apple accounts. Cancel anytime in App Store settings.
             </p>
 
             <ul className="mt-2 space-y-1.5">
@@ -191,14 +196,14 @@ export function OnboardingFlow({
                   </span>
                   <span>
                     <span className="block text-base font-bold">{title}</span>
-                    <span className="block text-sm text-muted-foreground">{text}</span>
+                    <span className="hidden text-sm text-muted-foreground min-[700px]:block">{text}</span>
                   </span>
                 </li>
               ))}
             </ul>
 
             <div className="mt-3 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Choose a plan">
-              <button
+              <Button
                 type="button"
                 role="radio"
                 aria-checked={plan === "monthly"}
@@ -217,8 +222,8 @@ export function OnboardingFlow({
                 )}
                 <span className="text-2xl font-bold">$9.99</span>
                 <span className="text-sm text-muted-foreground">per month</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 role="radio"
                 aria-checked={plan === "annual"}
@@ -235,10 +240,10 @@ export function OnboardingFlow({
                 </span>
                 <span className="text-2xl font-bold">$89</span>
                 <span className="text-sm text-muted-foreground">per year</span>
-              </button>
+              </Button>
             </div>
 
-            <div className="mt-auto pt-3">
+            <div className="onboarding-actions sticky bottom-0 mt-auto bg-background pt-3">
               <Button
                 type="button"
                 onClick={() => void finish()}
@@ -247,7 +252,7 @@ export function OnboardingFlow({
                 className="clay-shadow flex min-h-14 w-full items-center justify-center rounded-2xl bg-clay text-lg font-bold text-cream"
               >
                 {busy === "complete" && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                {busy === "complete" ? "Saving…" : "Start Free Trial"}
+                {busy === "complete" ? "Opening App Store…" : "Start Free Trial"}
               </Button>
               <Button type="button" variant="outline" onClick={() => void restore()} disabled={busy !== null}
                 aria-busy={busy === "restore"} className="mt-2 min-h-12 w-full text-base font-semibold">

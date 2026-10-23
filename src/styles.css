@@ -226,6 +226,16 @@ select {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.onboarding-screen {
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
+}
+.onboarding-actions {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  flex-shrink: 0;
+}
+
 @container (min-width: 34rem) {
   .quote-sheet .quote-money {
     flex-direction: row;
