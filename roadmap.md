@@ -1,4 +1,10 @@
 # Roadmap
+- [x] Polish header, confirm-password signup, Apple sign-in, and same-origin signup return behavior
+- [ ] Enable immediate email signup access — owner must turn off email confirmation in More → Users → Auth settings → Email; existing unrelated settings cannot be safely read/preserved by the available tool
+- [x] Show first-visit onboarding before signup and fit sticky iPhone actions (320×568 and 390×844 checked)
+- [x] Activate native RevenueCat purchases without payment bypass (purchase, cancellation, and repeat purchase logic tested)
+- [x] Add editable amounts, province, postal formatting, and synchronized document addresses (signed-in editor checked)
+- [x] Prevent email autofocus and embed PDF logos (generated PDF inspected)
 - [x] Verify connected Resend sending (real 200 response), clear failure messages, and automatic Mail composer fallback (browser launch verified; native Mail requires iPhone testing)
 - [x] Persist account onboarding and check native pro_access before showing paywalls
 - [x] Add restore purchases, subscription disclosures, and requested external legal links

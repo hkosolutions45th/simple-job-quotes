@@ -63,6 +63,7 @@ export type Database = {
           name: string
           phone: string
           postal_code: string
+          province: string
           user_id: string
         }
         Insert: {
@@ -74,6 +75,7 @@ export type Database = {
           name: string
           phone?: string
           postal_code?: string
+          province?: string
           user_id: string
         }
         Update: {
@@ -85,6 +87,7 @@ export type Database = {
           name?: string
           phone?: string
           postal_code?: string
+          province?: string
           user_id?: string
         }
         Relationships: []

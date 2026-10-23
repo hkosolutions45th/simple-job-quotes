@@ -1,15 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { formatPostalCode } from "./quote";
 
 const Input = z.object({ notes: z.string().min(1).max(8000) });
 
 const SYSTEM_PROMPT = `You are an expert estimator for trade services. Read the job notes and return strictly a JSON object matching:
 
-{ "items": [{ "description": string, "quantity": number, "unitRate": number, "total": number }], "client": { "name": string, "email": string, "phone": string, "address": string, "city": string, "postalCode": string } }
+{ "items": [{ "description": string, "quantity": number, "unitRate": number, "total": number }], "client": { "name": string, "email": string, "phone": string, "address": string, "city": string, "province": string, "postalCode": string } }
 
 If unit rates or quantities are implied or missing, make a realistic industry-standard estimation based on the trade context.
 
-Also extract any client details mentioned in the notes into the "client" object: client name, email, phone, street address, city, and postal/ZIP code. Put only the street line in "address", the city in "city", and either a postal code or ZIP code in "postalCode". Use an empty string for every detail that is not mentioned.
+Also extract any client details mentioned in the notes into the "client" object: client name, email, phone, street address, city, state/province, and postal/ZIP code. Put only the street line in "address", the city in "city", state/province in "province", and either a postal code or ZIP code in "postalCode". Use an empty string for every detail that is not mentioned.
 
 Line-item descriptions must be short titles describing only the work or material. Put quantity and pricing only in their dedicated numeric fields. Never append parenthetical or bracketed currency, measurement, unit, quantity, pricing, estimation, supply-only, or rate notes to a description. For example, return "Supply and install composite deck railing", never "Supply and install composite deck railing (linear feet; estimated CAD)".`;
 
@@ -26,6 +27,7 @@ export type AiClient = {
   phone: string;
   address: string;
   city: string;
+  province: string;
   postalCode: string;
 };
 
@@ -92,9 +94,10 @@ export const generateQuoteItems = createServerFn({ method: "POST" })
                     phone: { type: "string" },
                     address: { type: "string" },
                     city: { type: "string" },
+                    province: { type: "string" },
                     postalCode: { type: "string" },
                   },
-                  required: ["name", "email", "phone", "address", "city", "postalCode"],
+                  required: ["name", "email", "phone", "address", "city", "province", "postalCode"],
                 },
               },
               required: ["items", "client"],
@@ -180,7 +183,7 @@ function cleanDescription(value: string): string {
 }
 
 function parseClient(text: string): AiClient {
-  const empty: AiClient = { name: "", email: "", phone: "", address: "", city: "", postalCode: "" };
+  const empty: AiClient = { name: "", email: "", phone: "", address: "", city: "", province: "", postalCode: "" };
   const trimmed = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
   try {
     const raw = JSON.parse(trimmed) as { client?: unknown };
@@ -194,7 +197,8 @@ function parseClient(text: string): AiClient {
       phone: str(r["phone"]),
       address: str(r["address"]),
       city: str(r["city"]),
-      postalCode: str(r["postalCode"]) || str(r["zipCode"]),
+      province: str(r["province"]),
+      postalCode: formatPostalCode(str(r["postalCode"]) || str(r["zipCode"])),
     };
   } catch {
     return empty;

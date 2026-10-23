@@ -1,6 +1,10 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { OnboardingFlow } from "@/components/OnboardingFlow";
+import { readDeviceText, writeDeviceText } from "@/lib/device-storage";
+import { Loader2, Mic } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -23,19 +27,26 @@ export const Route = createFileRoute("/auth")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { signup?: boolean } => search["signup"] === true || search["signup"] === "true" ? { signup: true } : {},
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const search = Route.useSearch();
+  const [mode, setMode] = useState<"signin" | "signup">(search.signup ? "signup" : "signin");
+  const [ready, setReady] = useState(false);
+  const [introSeen, setIntroSeen] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
 
   useEffect(() => {
+    setIntroSeen(readDeviceText("has_seen_onboarding") === "true");
     supabase.auth.getSession().then(({ data: { session } }) => {
+      setReady(true);
       if (session) navigate({ to: "/", replace: true });
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
@@ -48,16 +59,18 @@ function AuthPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === "signup" && password !== confirmPassword) { toast.error("Passwords do not match."); return; }
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo: window.location.origin, data: { trade: readDeviceText("instaquote:trade") ?? "" } },
         });
         if (error) throw error;
-        setCheckEmail(true);
+        if (data.session) await navigate({ to: "/", replace: true });
+        else setCheckEmail(true);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -69,21 +82,26 @@ function AuthPage() {
     }
   };
 
-  const google = async () => {
+  const social = async (provider: "google" | "apple") => {
     try {
-      await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
+      if (result.error) throw result.error;
     } catch (err: any) {
-      toast.error(err?.message ?? "Google sign-in failed");
+      toast.error(err?.message ?? "Sign-in failed");
     }
   };
 
+  if (!ready) return <div role="status" className="startup-screen flex min-h-dvh items-center justify-center bg-background"><Loader2 className="size-6 animate-spin" /></div>;
+  if (!introSeen) return <OnboardingFlow beforeAccount onDone={async () => { writeDeviceText("has_seen_onboarding", "true"); setIntroSeen(true); setMode("signup"); }} onRestore={async () => false} />;
+
   return (
-    <div className="min-h-screen bg-cream text-ink">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-[430px] px-4 py-10">
         <Link to="/" className="label-mono tracking-[0.22em]">
           ← InstaQuote
         </Link>
-        <h1 className="mt-4 text-2xl font-bold">
+        {mode === "signup" && <div className="mt-5 grid size-14 place-items-center rounded-lg bg-primary text-primary-foreground"><Mic className="size-7" /></div>}
+        <h1 className={mode === "signup" ? "mt-4 text-3xl font-bold text-primary" : "mt-4 text-2xl font-bold"}>
           {mode === "signin" ? "Sign in to save quotes" : "Create your account"}
         </h1>
         <p className="mt-1 text-sm text-inksoft">
@@ -100,12 +118,15 @@ function AuthPage() {
           </div>
         ) : (
           <>
-            <button
-              onClick={google}
+            <Button variant="outline"
+              onClick={() => void social("google")}
               className="clay-shadow mt-6 min-h-14 w-full rounded-xl bg-card px-4 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
             >
               Continue with Google
-            </button>
+            </Button>
+            <Button variant="outline" onClick={() => void social("apple")} className="mt-3 min-h-14 w-full bg-foreground text-background">
+              Continue with Apple
+            </Button>
 
             <div className="my-5 flex items-center gap-3">
               <span className="h-px flex-1 bg-line" />
@@ -137,23 +158,28 @@ function AuthPage() {
                   className="field mt-1"
                 />
               </label>
-              <button
+              {mode === "signup" && <label className="block">
+                <span className="label-mono">Confirm password</span>
+                <input type="password" required minLength={6} autoComplete="new-password" value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)} className="field mt-1" />
+              </label>}
+              <Button
                 type="submit"
                 disabled={busy}
                 className="clay-shadow-leaf mt-2 min-h-14 w-full rounded-xl bg-leaf px-4 text-sm font-semibold text-cream active:translate-y-0.5 disabled:opacity-60"
               >
                 {busy ? "One moment…" : mode === "signin" ? "Sign in" : "Create account"}
-              </button>
+              </Button>
             </form>
 
-            <button
+            <Button variant="ghost"
               onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
               className="mt-4 w-full text-sm font-semibold underline underline-offset-4"
             >
               {mode === "signin"
                 ? "New here? Create an account"
                 : "Already have an account? Sign in"}
-            </button>
+            </Button>
           </>
         )}
       </div>

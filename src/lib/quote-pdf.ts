@@ -1,7 +1,8 @@
-import { cleanLineItemDescription, formatMoney, type Customer } from "@/lib/quote";
+import { cleanLineItemDescription, formatMoney, formatJobAddress, type Customer } from "@/lib/quote";
 
 type PdfInput = {
   business: string;
+  logo?: string | null;
   businessContact: { phone: string; email: string; address: string };
   quoteNo: string;
   customer: Customer;
@@ -21,10 +22,32 @@ export async function buildQuotePdfBase64(p: PdfInput): Promise<string> {
   const L = 40;
   const R = W - 40;
 
-  doc.setFont("helvetica", "bold").setFontSize(18).text(p.business, L, 50);
+  let headerLeft = L;
+  if (p.logo) {
+    try {
+      const response = await fetch(p.logo);
+      if (!response.ok) throw new Error("Logo could not be downloaded");
+      const bitmap = await createImageBitmap(await response.blob());
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Logo could not be prepared");
+      context.drawImage(bitmap, 0, 0);
+      const scale = Math.min(42 / bitmap.width, 42 / bitmap.height);
+      doc.addImage(canvas.toDataURL("image/png"), "PNG", L, 30, bitmap.width * scale, bitmap.height * scale);
+      bitmap.close();
+      headerLeft += 52;
+    } catch {
+      throw new Error("Your business logo could not be added to the PDF. Re-upload the logo in Business Settings and try again.");
+    }
+  }
+  const businessLines = doc.setFont("helvetica", "bold").setFontSize(18).splitTextToSize(p.business, W / 2 - headerLeft);
+  doc.text(businessLines, headerLeft, 50);
+  const headerBottom = 50 + (businessLines.length - 1) * 21;
   doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(120);
-  doc.text("QUOTATION / ESTIMATE", L, 64);
-  let y = 78;
+  doc.text("QUOTATION / ESTIMATE", headerLeft, headerBottom + 14);
+  let y = headerBottom + 28;
   for (const v of [p.businessContact.address, p.businessContact.phone, p.businessContact.email].filter(Boolean)) {
     doc.text(v, L, y);
     y += 12;
@@ -42,7 +65,7 @@ export async function buildQuotePdfBase64(p: PdfInput): Promise<string> {
   y += 20;
   const c = p.customer;
   const left = ["PREPARED FOR", c.name || "—", c.email, c.phone].filter(Boolean);
-  const right = ["JOB ADDRESS", c.address || "—", [c.city, c.postalCode].filter(Boolean).join(" "), "", "PAYMENT TERMS", c.terms || "Due on completion"].filter((v, i) => v || i === 3);
+  const right = ["JOB ADDRESS", ...doc.splitTextToSize(formatJobAddress(c) || "—", W / 2 - 50), "", "PAYMENT TERMS", ...doc.splitTextToSize(c.terms || "Due on completion", W / 2 - 50)];
   doc.setFontSize(10).setTextColor(40);
   left.forEach((v, i) => doc.setFont("helvetica", i === 0 ? "bold" : "normal").text(v, L, y + i * 13));
   right.forEach((v, i) => doc.setFont("helvetica", v === "JOB ADDRESS" || v === "PAYMENT TERMS" ? "bold" : "normal").text(v, W / 2 + 10, y + i * 13));

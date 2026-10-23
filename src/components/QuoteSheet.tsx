@@ -1,5 +1,6 @@
 import {
   cleanLineItemDescription,
+  formatJobAddress,
   money,
   lineTotal,
   type Customer,
@@ -61,7 +62,7 @@ export function QuoteSheet(props: Props) {
   const depositMatch = customer.terms.match(/(\d{1,3})\s*%/);
   const depositPct = depositMatch?.[1] ? Number(depositMatch[1]) : null;
   const deposit = depositPct && depositPct > 0 && depositPct < 100 ? (total * depositPct) / 100 : null;
-  const cityPostal = [customer.city, customer.postalCode].filter(Boolean).join(" ");
+
 
   return (
     <div className="quote-sheet mx-auto w-full min-w-0 overflow-hidden bg-white p-6 text-ink sm:p-8">
@@ -104,8 +105,7 @@ export function QuoteSheet(props: Props) {
           </div>
           <div className="mt-5">
             <p className="label-mono">Job address</p>
-            <p className="text-inksoft">{customer.address || "—"}</p>
-            {cityPostal && <p className="text-inksoft">{cityPostal}</p>}
+            <p className="text-inksoft">{formatJobAddress(customer) || "—"}</p>
             <p className="label-mono mt-3">Payment terms</p>
             <p className="text-inksoft">{customer.terms || "Due on completion"}</p>
           </div>
