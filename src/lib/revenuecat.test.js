@@ -1,8 +1,7 @@
-/// <reference types="bun" />
 import { test, mock } from "bun:test";
 import assert from "node:assert/strict";
 
-const info = (active: boolean) => ({ entitlements: { active: active ? { pro_access: { isActive: true } } : {} } });
+const info = (active) => ({ entitlements: { active: active ? { pro_access: { isActive: true } } : {} } });
 let active = false;
 let cancelled = false;
 let purchases = 0;
@@ -12,13 +11,13 @@ mock.module("@revenuecat/purchases-capacitor", () => ({ Purchases: {
   logIn: async () => undefined,
   getCustomerInfo: async () => ({ customerInfo: info(active) }),
   getOfferings: async () => ({ current: { annual: { identifier: "annual" }, monthly: { identifier: "monthly" } } }),
-  purchasePackage: async ({ aPackage }: { aPackage: { identifier: string } }) => {
+  purchasePackage: async ({ aPackage }) => {
     purchases++; selected = aPackage.identifier;
     if (cancelled) throw { userCancelled: true };
     return { customerInfo: info(true) };
   },
 } }));
-const { purchaseRevenueCatAccess } = await import("./revenuecat");
+const { purchaseRevenueCatAccess } = await import("./revenuecat.ts");
 Object.defineProperty(globalThis, "window", { configurable: true, value: { Capacitor: { getPlatform: () => "ios" } } });
 
 test("annual trial activation purchases the configured annual package", async () => {
