@@ -13,6 +13,7 @@ export type Customer = {
   phone: string;
   address: string;
   city: string;
+  province?: string;
   postalCode: string;
   terms: string;
 };
@@ -43,6 +44,20 @@ export const formatMoney = (n: number, code: string) => {
 export const money = (n: number, code?: string) => formatMoney(n, code ?? activeCurrency);
 
 export const lineTotal = (i: LineItem) => i.quantity * i.rate;
+
+export function formatPostalCode(value: string): string {
+  const compact = value.replace(/\s/g, "").toUpperCase();
+  return /^[A-Z]\d[A-Z]\d[A-Z]\d$/.test(compact) ? `${compact.slice(0, 3)} ${compact.slice(3)}` : value;
+}
+
+export function formatJobAddress(customer: Pick<Customer, "address" | "city" | "province" | "postalCode">): string {
+  return [customer.address, customer.city, customer.province, formatPostalCode(customer.postalCode)]
+    .map((value) => value?.trim()).filter(Boolean).join(", ");
+}
+
+export function rateFromAmount(amount: number, quantity: number): number {
+  return quantity > 0 && Number.isFinite(amount) ? Math.max(0, amount) / quantity : 0;
+}
 
 /** Removes stale currency annotations from descriptions; currency belongs in money columns only. */
 export const cleanLineItemDescription = (value: string) => {
@@ -154,10 +169,7 @@ export function quoteMessage(opts: {
   quoteNo: string;
 }) {
   const first = opts.customer.name.trim().split(" ")[0] || "there";
-  const jobAddress = [opts.customer.address, opts.customer.city, opts.customer.postalCode]
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join(", ");
+  const jobAddress = formatJobAddress(opts.customer);
   return [
     `Hi ${first},`,
     "",

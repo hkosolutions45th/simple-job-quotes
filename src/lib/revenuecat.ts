@@ -65,6 +65,32 @@ export function clearRevenueCatIdentity(): Promise<void> {
   });
 }
 
+/** Select the configured App Store package, purchase, and verify the entitlement. */
+export function purchaseRevenueCatAccess(userId: string, plan: "monthly" | "annual"): Promise<boolean> {
+  return serialized(async () => {
+    if (typeof window === "undefined" || !isNativeIOS()) throw new Error("Subscriptions are available in the InstaQuote iPhone app. Open the iPhone app to start your trial.");
+    await initRevenueCat();
+    const { Purchases } = await import("@revenuecat/purchases-capacitor");
+    if (owner !== userId) {
+      await Purchases.logIn({ appUserID: userId });
+      owner = userId;
+    }
+    const existing = await Purchases.getCustomerInfo();
+    if (hasProAccess(existing.customerInfo)) return true;
+    const offerings = await Purchases.getOfferings();
+    const selected = plan === "annual" ? offerings.current?.annual : offerings.current?.monthly;
+    if (!selected) throw new Error("This subscription plan is not available yet. Check the App Store products and RevenueCat offering.");
+    try {
+      const result = await Purchases.purchasePackage({ aPackage: selected });
+      if (!hasProAccess(result.customerInfo)) throw new Error("Purchase completed but access is not active yet. Tap Restore Purchases.");
+      return true;
+    } catch (error) {
+      if (error && typeof error === "object" && "userCancelled" in error && error.userCancelled) throw new Error("Purchase cancelled. No subscription was activated.");
+      throw error;
+    }
+  });
+}
+
 export async function subscribeRevenueCatAccess(userId: string, update: (active: boolean) => void): Promise<() => void> {
   if (typeof window === "undefined" || !isNativeIOS()) return () => undefined;
   await initRevenueCat();
