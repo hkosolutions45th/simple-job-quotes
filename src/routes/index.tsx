@@ -79,6 +79,7 @@ type BusinessProfile = {
   email: string;
   address: string;
   city: string;
+  province: string;
   postalCode: string;
   taxRate: number;
   defaultTerms: string;
@@ -92,6 +93,7 @@ const EMPTY_PROFILE: BusinessProfile = {
   email: "",
   address: "",
   city: "",
+  province: "",
   postalCode: "",
   taxRate: 13,
   defaultTerms: "",
@@ -120,7 +122,7 @@ function InstaQuote() {
       if (raw) {
         const value = JSON.parse(raw);
         const p = { ...EMPTY_PROFILE };
-        for (const key of ["companyName", "phone", "email", "address", "city", "postalCode", "defaultTerms", "trade"] as const) {
+        for (const key of ["companyName", "phone", "email", "address", "city", "province", "postalCode", "defaultTerms", "trade"] as const) {
           if (typeof value?.[key] === "string") p[key] = value[key];
         }
         if (Number.isFinite(value?.taxRate) && value.taxRate >= 0) p.taxRate = value.taxRate;
@@ -145,7 +147,7 @@ function InstaQuote() {
   const businessContact = {
     phone: businessProfile.phone,
     email: businessProfile.email,
-    address: [businessProfile.address, [businessProfile.city, businessProfile.postalCode].filter(Boolean).join(" ")]
+    address: [businessProfile.address, [businessProfile.city, businessProfile.province, businessProfile.postalCode].filter(Boolean).join(" ")]
       .filter(Boolean)
       .join(", "),
   };
@@ -330,6 +332,7 @@ function InstaQuote() {
     email: "",
     address: "",
     city: "",
+    province: "",
     postal_code: "",
     tax_rate: "13",
     logo_url: "",
@@ -789,7 +792,7 @@ function InstaQuote() {
     let active = true;
     supabase
       .from("user_profiles")
-      .select("business_name, logo_url, phone, default_terms, default_currency, business_email, street_address, city, postal_code, tax_rate, trade")
+      .select("business_name, logo_url, phone, default_terms, default_currency, business_email, street_address, city, province, postal_code, tax_rate, trade")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -806,6 +809,7 @@ function InstaQuote() {
           email: data.business_email || p.email,
           address: data.street_address || p.address,
           city: data.city || p.city,
+          province: data.province || p.province,
           postalCode: data.postal_code || p.postalCode,
           taxRate: Number.isFinite(cloudRate) && cloudRate >= 0 ? cloudRate : p.taxRate,
           defaultTerms: data.default_terms || p.defaultTerms,
@@ -833,6 +837,7 @@ function InstaQuote() {
       email: businessProfile.email,
       address: businessProfile.address,
       city: businessProfile.city,
+      province: businessProfile.province,
       postal_code: businessProfile.postalCode,
       tax_rate: String(businessProfile.taxRate),
       logo_url: logo && !logo.startsWith("data:") ? logo : logo ?? "",
@@ -867,6 +872,7 @@ function InstaQuote() {
       email: settings.email.trim(),
       address: settings.address.trim(),
       city: settings.city.trim(),
+      province: settings.province.trim(),
       postalCode: settings.postal_code.trim(),
       taxRate: Number.isFinite(rate) && rate >= 0 ? rate : 13,
       defaultTerms: settings.default_terms.trim(),
@@ -881,6 +887,7 @@ function InstaQuote() {
       business_email: nextProfile.email || null,
       street_address: nextProfile.address || null,
       city: nextProfile.city || null,
+      province: nextProfile.province || null,
       postal_code: nextProfile.postalCode || null,
       tax_rate: nextProfile.taxRate,
       trade: nextProfile.trade || null,
