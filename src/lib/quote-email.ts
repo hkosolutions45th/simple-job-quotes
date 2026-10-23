@@ -45,7 +45,7 @@ export function buildQuoteMailto(p: { province?: string } & Pick<Payload, "to" |
   const body = [
     p.message.trim(), "", subject,
     p.clientName ? `Prepared for: ${p.clientName}` : "",
-    formatJobAddress({ address: p.jobAddress, city: p.city, province: p.province, postalCode: p.postalCode }), "",
+    formatJobAddress({ address: p.jobAddress, city: p.city, province: p.province ?? "", postalCode: p.postalCode }), "",
     ...p.items.map((item) => `${item.description} — ${item.quantity} × ${money(item.rate)} = ${money(item.quantity * item.rate)}`),
     "", `Subtotal: ${money(subtotal)}`, `Tax: ${money(tax)}`, `Total: ${money(subtotal + tax)}`,
     p.terms ? `Payment terms: ${p.terms}` : "",
@@ -91,7 +91,7 @@ function buildHtml(p: Payload) {
   const detail = (label: string, value: string) => value
     ? `<tr><td style="padding:3px 12px 3px 0;font-size:13px;font-weight:700;color:#2b2722;white-space:nowrap;vertical-align:top">${label}</td><td style="padding:3px 0;font-size:13px;color:#2b2722">${value}</td></tr>`
     : "";
-  const address = esc(formatJobAddress({ address: p.jobAddress, city: p.city, province: p.province, postalCode: p.postalCode }));
+  const address = esc(formatJobAddress({ address: p.jobAddress, city: p.city, province: p.province ?? "", postalCode: p.postalCode }));
   const message = p.message.trim()
     ? `<tr><td style="padding:22px 28px 0;font-size:15px;line-height:1.6;color:#2b2722">${esc(p.message.trim()).replace(/\r?\n/g, "<br/>")}</td></tr>`
     : "";

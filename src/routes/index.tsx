@@ -552,7 +552,7 @@ function InstaQuote() {
           phone: client.phone || c.phone,
           address: client.address || c.address,
           city: client.city || c.city,
-          province: client.province || c.province,
+          province: client.province || c.province || "",
           postalCode: formatPostalCode(client.postalCode || c.postalCode),
         }));
       }
