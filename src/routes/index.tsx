@@ -1246,10 +1246,10 @@ function InstaQuote() {
         </header>
 
         {/* Account */}
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-card p-2 ring-1 ring-black/5">
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-card p-2 ring-1 ring-black/5">
           {user ? (
             <>
-              <span className="min-w-0 flex-1 truncate px-2 text-xs text-inksoft">
+              <span className="min-w-0 flex-1 basis-full truncate px-2 text-xs text-inksoft sm:basis-auto">
                 Signed in as {user.email}
               </span>
               <button
