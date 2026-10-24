@@ -2122,7 +2122,7 @@ function InstaQuote() {
                   event.target.value = "";
                 }}
               />
-              <div className="grid gap-2">
+              <div className={`grid gap-2 ${settings.logo_url ? "grid-cols-2" : "grid-cols-1"}`}>
                 <Button type="button" variant="outline" className="min-h-12 w-full" onClick={() => document.getElementById("settings-company-logo")?.click()}>
                   <Upload className="size-4 shrink-0" aria-hidden="true" />
                   {settings.logo_url ? "Change Logo" : "Upload Company Logo"}
