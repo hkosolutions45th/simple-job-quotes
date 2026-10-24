@@ -65,20 +65,20 @@ export function QuoteSheet(props: Props) {
 
 
   return (
-    <div className="quote-sheet mx-auto w-full min-w-0 overflow-hidden bg-white p-6 text-ink sm:p-8">
+    <div className="quote-sheet mx-auto w-full min-w-0 overflow-hidden bg-white p-4 text-ink sm:p-8">
       {/* Locked two-column document header */}
-      <header className="grid grid-cols-2 gap-x-5 border-b-2 border-ink pb-5">
+      <header className="quote-document-header grid gap-5 border-b-2 border-ink pb-5">
         <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
             {logo ? (
-              <img src={logo} alt={`${business} logo`} className="size-14 shrink-0 rounded-md object-contain" />
+              <img src={logo} alt={`${business} logo`} className="size-10 shrink-0 rounded-md object-contain sm:size-14" />
             ) : (
-              <div className="grid size-14 shrink-0 place-items-center rounded-md bg-clay font-mono text-xl font-bold text-cream">
+              <div className="grid size-10 shrink-0 place-items-center rounded-md bg-clay font-mono text-xl font-bold text-cream sm:size-14">
                 {business.slice(0, 1).toUpperCase()}
               </div>
             )}
             <div className="min-w-0 overflow-hidden">
-              <p className="break-words text-lg leading-tight font-bold sm:text-xl">{business}</p>
+              <p className="quote-business-name text-lg leading-tight font-bold sm:text-xl">{business}</p>
               <p className="label-mono">Quotation / Estimate</p>
               {businessContact && (businessContact.phone || businessContact.email || businessContact.address) && (
                 <div className="mt-2 min-w-0 break-words text-[11px] leading-snug text-inksoft">
@@ -96,14 +96,14 @@ export function QuoteSheet(props: Props) {
           {customer.phone && <p className="font-mono text-inksoft">{customer.phone}</p>}
         </div>
         </div>
-        <div className="min-w-0 break-words text-sm">
-          <div className="text-right">
+        <div className="quote-document-details grid min-w-0 grid-cols-2 gap-4 break-words text-sm">
+          <div className="quote-document-number">
             <p className="label-mono">Quote no.</p>
             <p className="font-mono text-base font-bold">{quoteNo}</p>
             <p className="mt-1 font-mono text-[11px] text-inksoft">Issued {fmt(today)}</p>
             <p className="font-mono text-[11px] text-inksoft">Valid to {fmt(validUntil)}</p>
           </div>
-          <div className="mt-5">
+          <div>
             <p className="label-mono">Job address</p>
             <p className="text-inksoft">{formatJobAddress(customer) || "—"}</p>
             <p className="label-mono mt-3">Payment terms</p>

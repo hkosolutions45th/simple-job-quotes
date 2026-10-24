@@ -207,6 +207,23 @@ select {
 .quote-sheet {
   container-type: inline-size;
 }
+.quote-business-name {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+@container (min-width: 36rem) {
+  .quote-document-header {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+  .quote-document-details {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+  }
+  .quote-document-number {
+    text-align: right;
+  }
+}
 
 .app-safe-header {
   padding-top: env(safe-area-inset-top, 0px);
@@ -279,6 +296,15 @@ select {
   .quote-sheet {
     padding: 0 !important;
     overflow: visible !important;
+  }
+  .quote-document-header {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+  .quote-document-details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .quote-document-number {
+    text-align: right;
   }
   .quote-sheet table {
     page-break-inside: auto;

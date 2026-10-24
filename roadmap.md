@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Add Business Settings upload/change/remove logo controls and mobile-safe PDF preview headers
 - [x] Separate PDF logo and contact columns; resize/compress logos and guard email attachment size
 - [x] Polish header, confirm-password signup, Apple sign-in, and same-origin signup return behavior
 - [ ] Enable immediate email signup access — owner must turn off email confirmation in More → Users → Auth settings → Email; existing unrelated settings cannot be safely read/preserved by the available tool
