@@ -751,10 +751,19 @@ function InstaQuote() {
   };
 
 
-  const onLogo = (file?: File) => {
+  const onLogo = (file?: File, forSettings = false) => {
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image for your company logo.");
+      return;
+    }
     const reader = new FileReader();
-    reader.onload = () => setLogo(String(reader.result));
+    reader.onload = () => {
+      const result = String(reader.result);
+      if (forSettings) setSettings((s) => ({ ...s, logo_url: result }));
+      else setLogo(result);
+    };
+    reader.onerror = () => toast.error("Couldn't read the logo. Please try another image.");
     reader.readAsDataURL(file);
   };
 
@@ -1694,7 +1703,7 @@ function InstaQuote() {
 
       {/* PDF preview */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="no-print max-h-[88vh] overflow-y-auto bg-white p-0 sm:max-w-lg">
+        <DialogContent className="no-print max-h-[90dvh] min-w-0 overflow-x-hidden overflow-y-auto bg-white p-0 sm:max-w-3xl" onOpenAutoFocus={(event) => event.preventDefault()}>
           <DialogHeader className="no-print px-4 pt-4 pr-12">
             <DialogTitle>Quote preview — {quoteNo}</DialogTitle>
             <DialogDescription>
@@ -1715,7 +1724,7 @@ function InstaQuote() {
             taxEnabled={taxEnabled}
           />
           <div className="no-print sticky bottom-0 flex gap-3 border-t border-line bg-white p-3">
-            <button
+            <Button
               onClick={async () => {
                 const w = window as unknown as { Capacitor?: { isNativePlatform?: () => boolean }; webkit?: { messageHandlers?: unknown } };
                 const isNative = !!w.Capacitor?.isNativePlatform?.() || (!!w.webkit?.messageHandlers && !/Safari\//.test(navigator.userAgent));
@@ -1745,7 +1754,7 @@ function InstaQuote() {
               className="clay-shadow min-h-12 flex-1 rounded-xl bg-clay text-sm font-semibold text-cream active:translate-y-0.5"
             >
               Print / Save as PDF
-            </button>
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -2085,7 +2094,6 @@ function InstaQuote() {
             </label>
             {([
               ["default_terms", "Default payment terms", "text", "e.g. 50% deposit required"],
-              ["logo_url", "Logo URL", "url", "e.g. https://…"],
             ] as const).map(([key, label, type, ph]) => (
               <label key={key} className="block">
                 <span className="label-mono">{label}</span>
@@ -2098,6 +2106,40 @@ function InstaQuote() {
                 />
               </label>
             ))}
+            <div className="space-y-2">
+              <p className="label-mono">Company logo</p>
+              {settings.logo_url && (
+                <img src={settings.logo_url} alt="Company logo preview" className="size-16 rounded-md border border-line object-contain" />
+              )}
+              <input
+                id="settings-company-logo"
+                type="file"
+                accept="image/*"
+                aria-label="Company logo file"
+                className="sr-only"
+                onChange={(event) => {
+                  onLogo(event.target.files?.[0], true);
+                  event.target.value = "";
+                }}
+              />
+              <div className="grid gap-2">
+                <Button type="button" variant="outline" className="min-h-12 w-full" onClick={() => document.getElementById("settings-company-logo")?.click()}>
+                  <Upload className="size-4 shrink-0" aria-hidden="true" />
+                  {settings.logo_url ? "Change Logo" : "Upload Company Logo"}
+                </Button>
+                {settings.logo_url && (
+                  <Button type="button" variant="outline" className="min-h-12 w-full" onClick={() => setSettings((s) => ({ ...s, logo_url: "" }))}>
+                    <Trash2 className="size-4 shrink-0" aria-hidden="true" /> Remove Logo
+                  </Button>
+                )}
+              </div>
+              <label className="block">
+                <span className="label-mono">Logo URL</span>
+                <input type="url" value={settings.logo_url.startsWith("data:") ? "" : settings.logo_url} placeholder="e.g. https://…"
+                  onChange={(event) => setSettings((s) => ({ ...s, logo_url: event.target.value }))}
+                  className="field mt-1 min-h-12 w-full rounded-xl px-3" />
+              </label>
+            </div>
             <label className="block">
               <span className="label-mono">Trade</span>
               <select
