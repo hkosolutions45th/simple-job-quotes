@@ -71,7 +71,7 @@ export function QuoteSheet(props: Props) {
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-3">
             {logo ? (
-              <img src={logo} alt={`${business} logo`} className="size-14 shrink-0 rounded-md object-cover" />
+              <img src={logo} alt={`${business} logo`} className="size-14 shrink-0 rounded-md object-contain" />
             ) : (
               <div className="grid size-14 shrink-0 place-items-center rounded-md bg-clay font-mono text-xl font-bold text-cream">
                 {business.slice(0, 1).toUpperCase()}
@@ -80,15 +80,15 @@ export function QuoteSheet(props: Props) {
             <div className="min-w-0 overflow-hidden">
               <p className="break-words text-lg leading-tight font-bold sm:text-xl">{business}</p>
               <p className="label-mono">Quotation / Estimate</p>
+              {businessContact && (businessContact.phone || businessContact.email || businessContact.address) && (
+                <div className="mt-2 min-w-0 break-words text-[11px] leading-snug text-inksoft">
+                  {businessContact.address && <p>{businessContact.address}</p>}
+                  {businessContact.phone && <p className="font-mono">{businessContact.phone}</p>}
+                  {businessContact.email && <p>{businessContact.email}</p>}
+                </div>
+              )}
             </div>
           </div>
-          {businessContact && (businessContact.phone || businessContact.email || businessContact.address) && (
-            <div className="mt-2 min-w-0 break-words text-[11px] leading-snug text-inksoft">
-              {businessContact.address && <p>{businessContact.address}</p>}
-              {businessContact.phone && <p className="font-mono">{businessContact.phone}</p>}
-              {businessContact.email && <p>{businessContact.email}</p>}
-            </div>
-          )}
           <div className="mt-5 min-w-0 break-words text-sm">
           <p className="label-mono">Prepared for</p>
           <p className="font-semibold">{customer.name || "—"}</p>

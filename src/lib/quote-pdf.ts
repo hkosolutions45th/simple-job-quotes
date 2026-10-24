@@ -1,4 +1,5 @@
 import { cleanLineItemDescription, formatMoney, formatJobAddress, type Customer } from "@/lib/quote";
+import { pdfLogoDimensions, PDF_LOGO_QUALITY, validatePdfAttachment } from "@/lib/pdf-logo";
 
 type PdfInput = {
   business: string;
@@ -17,7 +18,7 @@ export async function buildQuotePdfBase64(p: PdfInput): Promise<string> {
   const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
   const m = (n: number) => formatMoney(n, p.currency);
-  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  const doc = new jsPDF({ unit: "pt", format: "letter", compress: true });
   const W = doc.internal.pageSize.getWidth();
   const L = 40;
   const R = W - 40;
@@ -29,15 +30,23 @@ export async function buildQuotePdfBase64(p: PdfInput): Promise<string> {
       if (!response.ok) throw new Error("Logo could not be downloaded");
       const bitmap = await createImageBitmap(await response.blob());
       const canvas = document.createElement("canvas");
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
+      const dimensions = pdfLogoDimensions(bitmap.width, bitmap.height);
+      canvas.width = dimensions.width;
+      canvas.height = dimensions.height;
       const context = canvas.getContext("2d");
-      if (!context) throw new Error("Logo could not be prepared");
-      context.drawImage(bitmap, 0, 0);
-      const scale = Math.min(42 / bitmap.width, 42 / bitmap.height);
-      doc.addImage(canvas.toDataURL("image/png"), "PNG", L, 30, bitmap.width * scale, bitmap.height * scale);
-      bitmap.close();
-      headerLeft += 52;
+      try {
+        if (!context) throw new Error("Logo could not be prepared");
+        // Flatten transparency onto the white document, then encode a bounded JPEG.
+        context.fillStyle = "white";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.imageSmoothingQuality = "high";
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const scale = Math.min(42 / canvas.width, 42 / canvas.height);
+        doc.addImage(canvas.toDataURL("image/jpeg", PDF_LOGO_QUALITY), "JPEG", L, 36, canvas.width * scale, canvas.height * scale);
+      } finally {
+        bitmap.close();
+      }
+      headerLeft += 58;
     } catch {
       throw new Error("Your business logo could not be added to the PDF. Re-upload the logo in Business Settings and try again.");
     }
@@ -49,8 +58,9 @@ export async function buildQuotePdfBase64(p: PdfInput): Promise<string> {
   doc.text("QUOTATION / ESTIMATE", headerLeft, headerBottom + 14);
   let y = headerBottom + 28;
   for (const v of [p.businessContact.address, p.businessContact.phone, p.businessContact.email].filter(Boolean)) {
-    doc.text(v, L, y);
-    y += 12;
+    const lines = doc.splitTextToSize(v, W / 2 - headerLeft);
+    doc.text(lines, headerLeft, y);
+    y += lines.length * 12;
   }
   const issued = new Date();
   const valid = new Date(issued.getTime() + 30 * 86400000);
@@ -111,5 +121,5 @@ export async function buildQuotePdfBase64(p: PdfInput): Promise<string> {
     y + 40,
   );
 
-  return doc.output("datauristring").split(",")[1] ?? "";
+  return validatePdfAttachment(doc.output("datauristring").split(",")[1] ?? "");
 }

@@ -24,3 +24,4 @@
 - Amount edits convert through the existing unit-rate-to-USD path, preserving one authoritative base price across currencies.
 - Self-account deletion revalidates the authenticated caller before lazily loading the privileged client, clears owned rows through a service-only SQL function, then deletes that caller's auth account; never accept a target user ID from the browser.
 - Quote emails go through the plain HTTP route `/api/public/send-quote-email` (bearer token verified in the handler, CORS enabled) using shared payload/response helpers; the browser calls it via an absolute published URL on native so the iOS app can reach it, and every failure returns readable JSON instead of a sanitized RPC error. Reply routing comes from the verified user only.
+- All PDF exports share the browser PDF builder, which bounds logo rasters before embedding and checks attachment size before returning, preventing oversized email requests.
