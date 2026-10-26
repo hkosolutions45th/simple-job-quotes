@@ -1,8 +1,13 @@
 import { writeDeviceText } from "./device-storage";
 
 /** Onboarding completion is not proof of a paid entitlement. */
-export function shouldShowOnboarding(completed: boolean, proAccess: boolean): boolean {
-  return !completed && !proAccess;
+/** On the iPhone app an active pro_access entitlement is always required, so a
+ * lapsed subscription is sent back to the paywall. On the web (no App Store
+ * check available) a completion flag — only ever written after a verified
+ * purchase — is accepted. */
+export function shouldShowOnboarding(completed: boolean, proAccess: boolean, nativeIOS = false): boolean {
+  if (proAccess) return false;
+  return nativeIOS ? true : !completed;
 }
 
 /** Device marker written once the onboarding/paywall step is completed, so a

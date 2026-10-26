@@ -16,8 +16,12 @@ test("completing onboarding saves the device flag as the literal true string", (
   assert.equal(readDeviceText(ONBOARDING_SEEN_KEY), "true");
 });
 
-test("completed onboarding skips onboarding without a subscription", () => {
-  assert.equal(shouldShowOnboarding(true, false), false);
+test("on the web, a completed (purchase-verified) account skips the paywall", () => {
+  assert.equal(shouldShowOnboarding(true, false, false), false);
+});
+test("on iPhone, a lapsed subscription is sent back to the paywall", () => {
+  assert.equal(shouldShowOnboarding(true, false, true), true);
+  assert.equal(shouldShowOnboarding(true, true, true), false);
 });
 test("active pro_access skips onboarding and blocks repeat paywall prompts", () => {
   const pro = hasProAccess({ entitlements: { active: { pro_access: { isActive: true } } } });

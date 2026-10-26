@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { checkRevenueCatAccess, purchaseRevenueCatAccess, subscribeRevenueCatAccess } from "@/lib/revenuecat";
+import { isNativeIOS, checkRevenueCatAccess, purchaseRevenueCatAccess, subscribeRevenueCatAccess } from "@/lib/revenuecat";
 import { markOnboardingSeen, shouldShowOnboarding } from "@/lib/account-access";
 import { readDeviceText } from "@/lib/device-storage";
 
@@ -61,6 +61,6 @@ export function useAccountAccess(userId: string | undefined) {
   }, [userId]);
 
   return { loading: Boolean(userId && state.owner !== userId), error: state.error, proAccess: state.owner === userId && state.pro,
-    showOnboarding: state.owner === userId && shouldShowOnboarding(state.completed, state.pro), complete, restore,
+    showOnboarding: state.owner === userId && shouldShowOnboarding(state.completed, state.pro, typeof window !== "undefined" && isNativeIOS()), complete, restore,
     retry: () => setRetry((n) => n + 1) };
 }

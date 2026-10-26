@@ -273,7 +273,7 @@ export function OnboardingFlow({
               <p className="mt-2 text-center text-xs text-muted-foreground">
                 By continuing you agree to our{" "}
                 <a href="https://hkosolutions.ca/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-clay underline underline-offset-2">
-                  Terms of Service
+                  Terms of Use (EULA)
                 </a>{" "}
                 and{" "}
                 <a href="https://hkosolutions.ca/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-clay underline underline-offset-2">
