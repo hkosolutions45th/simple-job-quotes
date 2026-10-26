@@ -12,7 +12,7 @@ let setup: Promise<void> | undefined;
 let owner: string | null = null;
 let queue: Promise<unknown> = Promise.resolve();
 
-function isNativeIOS(): boolean {
+export function isNativeIOS(): boolean {
   try {
     const cap = (window as { Capacitor?: { getPlatform?: () => string } }).Capacitor;
     return cap?.getPlatform?.() === "ios";
