@@ -767,6 +767,19 @@ function InstaQuote() {
     reader.readAsDataURL(file);
   };
 
+  const pickLogo = async (forSettings: boolean, inputId: string) => {
+    try {
+      const { pickImageNative } = await import("@/lib/pick-image");
+      const result = await pickImageNative();
+      if (result === "fallback") { document.getElementById(inputId)?.click(); return; }
+      if (!result) return;
+      if (forSettings) setSettings((s) => ({ ...s, logo_url: result }));
+      else setLogo(result);
+    } catch (e) {
+      toast.error(e instanceof Error && e.message ? e.message : "Couldn't open the camera. Try choosing a photo instead.");
+    }
+  };
+
   const newQuote = () => {
     setItems([]);
     setNotes("");
@@ -1219,18 +1232,20 @@ function InstaQuote() {
       <div className="app-safe-layout mx-auto max-w-[430px] px-4 pt-5 pb-36 max-[360px]:pb-40">
         {/* Header */}
         <header className="app-safe-header grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3">
-          <label className="clay-shadow relative grid size-12 shrink-0 cursor-pointer place-items-center rounded-xl bg-clay font-mono text-lg font-bold text-cream">
+          <label onClick={(e) => { e.preventDefault(); void pickLogo(false, "header-logo-input"); }} className="clay-shadow relative grid size-12 shrink-0 cursor-pointer place-items-center rounded-xl bg-clay font-mono text-lg font-bold text-cream">
             {logo ? (
               <img src={logo} alt="Business logo" className="size-12 rounded-xl object-cover" />
             ) : (
               <Upload className="size-5" aria-hidden="true" />
             )}
             <input
+              id="header-logo-input"
               type="file"
               accept="image/*"
               className="sr-only"
               aria-label="Upload business logo"
-              onChange={(e) => onLogo(e.target.files?.[0])}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => { onLogo(e.target.files?.[0]); e.target.value = ""; }}
             />
           </label>
           <div className="min-w-0">
@@ -2123,7 +2138,7 @@ function InstaQuote() {
                 }}
               />
               <div className={`grid gap-2 ${settings.logo_url ? "grid-cols-2" : "grid-cols-1"}`}>
-                <Button type="button" variant="outline" className="min-h-12 w-full" onClick={() => document.getElementById("settings-company-logo")?.click()}>
+                <Button type="button" variant="outline" className="min-h-12 w-full" onClick={() => void pickLogo(true, "settings-company-logo")}>
                   <Upload className="size-4 shrink-0" aria-hidden="true" />
                   {settings.logo_url ? "Change Logo" : "Upload Company Logo"}
                 </Button>
