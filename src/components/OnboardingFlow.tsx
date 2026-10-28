@@ -294,6 +294,7 @@ export function OnboardingFlow({
                   Already have an account? Sign in
                 </Button>
               )}
+            </div>
           </div>
         )}
       </div>
