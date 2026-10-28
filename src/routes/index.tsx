@@ -1172,7 +1172,7 @@ function InstaQuote() {
 
   // Auth guard: signed-out users see a clean sign-in landing, never the estimator or cached drafts.
   if (!user) {
-    if (!introSeen) return <OnboardingFlow beforeAccount onDone={async () => { writeDeviceText("has_seen_onboarding", "true"); setIntroSeen(true); await navigate({ to: "/auth", search: { signup: true } }); }} onRestore={async () => false} />;
+    if (!introSeen) return <OnboardingFlow beforeAccount onDone={async () => { writeDeviceText("has_seen_onboarding", "true"); setIntroSeen(true); await navigate({ to: "/auth", search: { signup: true } }); }} onRestore={async () => false} onSignIn={() => { writeDeviceText("has_seen_onboarding", "true"); setIntroSeen(true); void navigate({ to: "/auth" }); }} />;
     return (
       <div className="app-safe-layout flex min-h-screen flex-col items-center justify-center gap-8 bg-cream px-6 text-center text-ink">
         <div className="clay-shadow grid size-24 place-items-center rounded-2xl bg-clay text-cream">
@@ -1213,6 +1213,7 @@ function InstaQuote() {
         initialStep={introSeen ? 2 : 0}
         onDone={access.complete}
         onRestore={access.restore}
+        onSignIn={() => { void signOut().then(() => navigate({ to: "/auth" })); }}
         onTrade={async (tradeId) => {
           // Slide 2's pick lands in Business Settings straight away (device + account).
           setBusinessProfile((p) => ({ ...p, trade: tradeId }));

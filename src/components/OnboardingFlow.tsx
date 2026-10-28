@@ -46,11 +46,14 @@ export function OnboardingFlow({
   onRestore,
   beforeAccount = false,
   initialStep = 0,
+  /** Escape hatch on the paywall: returns to the sign-in screen (never unlocks the app). */
+  onSignIn,
 }: {
   beforeAccount?: boolean;
   initialStep?: number;
   onDone: (plan: Plan) => Promise<void>;
   onRestore: () => Promise<boolean>;
+  onSignIn?: () => void;
   /** Fired the instant a trade is tapped so it lands in Business Settings right away. */
   onTrade?: (tradeId: string) => void;
 }) {
@@ -242,7 +245,7 @@ export function OnboardingFlow({
                 <span className="absolute -top-3 rounded-full bg-leaf px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-cream">
                   Save 25%
                 </span>
-                <span className="text-2xl font-bold">$89</span>
+                <span className="text-2xl font-bold">$89.99</span>
                 <span className="text-sm text-muted-foreground">per year</span>
               </Button>
             </div>
@@ -264,11 +267,11 @@ export function OnboardingFlow({
                 {busy === "restore" ? "Restoring…" : "Restore Purchases"}
               </Button>
               <p className="mt-2 text-center text-xs leading-snug text-muted-foreground">
-                7 days free, then {plan === "annual" ? "$89.00/year" : "$9.99/month"}. Cancel anytime in App Store
+                7 days free, then {plan === "annual" ? "$89.99/year" : "$9.99/month"}. Cancel anytime in App Store
                 settings.
               </p>
               <p className="mt-2 text-center text-xs leading-snug text-muted-foreground">
-                $9.99/month or $89.00/year (with 7-day free trial). Subscriptions auto-renew unless turned off at least 24 hours before the trial or current period ends.
+                $9.99/month or $89.99/year (with 7-day free trial). Subscriptions auto-renew unless turned off at least 24 hours before the trial or current period ends.
               </p>
               <p className="mt-2 text-center text-xs text-muted-foreground">
                 By continuing you agree to our{" "}
@@ -281,6 +284,16 @@ export function OnboardingFlow({
                 </a>
                 .
               </p>
+              {onSignIn && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={onSignIn}
+                  className="mt-3 w-full text-sm font-semibold underline underline-offset-4"
+                >
+                  Already have an account? Sign in
+                </Button>
+              )}
             </div>
           </div>
         )}

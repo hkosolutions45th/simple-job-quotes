@@ -162,7 +162,7 @@ function TermsPage() {
         <p>
           InstaQuote offers a 7-day free trial when you first subscribe. The trial starts when you confirm
           it, and if you do not cancel before it ends, it converts automatically into the plan you picked
-          — monthly ($9.99/month) or annual ($89/year) — and you are charged for the first period.
+          — monthly ($9.99/month) or annual ($89.99/year) — and you are charged for the first period.
         </p>
         <p>
           If you subscribe on an iPhone or iPad, your subscription is billed through your Apple ID using
