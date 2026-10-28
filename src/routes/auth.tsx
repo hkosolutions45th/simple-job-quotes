@@ -98,7 +98,7 @@ function AuthPage() {
   };
 
   if (!ready) return <div role="status" className="startup-screen flex min-h-dvh items-center justify-center bg-background"><Loader2 className="size-6 animate-spin" /></div>;
-  if (!introSeen) return <OnboardingFlow beforeAccount onDone={async () => { writeDeviceText("has_seen_onboarding", "true"); setIntroSeen(true); setMode("signup"); }} onRestore={async () => false} />;
+  if (!introSeen) return <OnboardingFlow beforeAccount onDone={async () => { writeDeviceText("has_seen_onboarding", "true"); setIntroSeen(true); setMode("signup"); }} onRestore={async () => false} onSignIn={() => { setIntroSeen(true); setMode("signin"); }} />;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
