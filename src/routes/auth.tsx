@@ -8,6 +8,7 @@ import { Loader2, Mic } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { authRedirectUrl } from "@/lib/auth-deep-link";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -66,7 +67,7 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin, data: { trade: readDeviceText("instaquote:trade") ?? "" } },
+          options: { emailRedirectTo: authRedirectUrl(), data: { trade: readDeviceText("instaquote:trade") ?? "" } },
         });
         if (error) throw error;
         // An already-registered email returns a user with no identities and no email is sent.
@@ -124,7 +125,7 @@ function AuthPage() {
             <p className="mt-2 text-xs text-inksoft">Don't see it? Check your spam or junk folder.</p>
             <Button type="button" variant="outline" disabled={busy} className="mt-3 min-h-12 w-full" onClick={async () => {
               setBusy(true);
-              const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: window.location.origin } });
+              const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: authRedirectUrl() } });
               setBusy(false);
               if (error) toast.error(error.message || "Couldn't resend the email. Please try again shortly.");
               else toast.success(`Verification email sent again to ${email}.`);
