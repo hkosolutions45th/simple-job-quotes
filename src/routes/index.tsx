@@ -2200,6 +2200,7 @@ function InstaQuote() {
             {savingSettings && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
             {savingSettings ? "Saving…" : "Save settings"}
           </button>
+          {user && <AccountProfileSection user={user} onSignOut={() => { setSettingsOpen(false); void signOut(); }} />}
           <div className="space-y-3 border-t border-line pt-4">
             {access.proAccess && <p className="text-sm font-semibold text-leaf">Pro subscription active</p>}
             <Button variant="outline" className="min-h-12 w-full" disabled={restoringPurchases}
