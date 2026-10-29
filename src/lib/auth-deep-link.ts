@@ -10,6 +10,12 @@ export function authRedirectUrl(path = ""): string {
   return isNativeIOS() ? APP_AUTH_CALLBACK : window.location.origin + path;
 }
 
+/** Password-reset return address; the type flag survives PKCE links that omit it. */
+export function recoveryRedirectUrl(): string {
+  if (typeof window === "undefined") return "";
+  return isNativeIOS() ? `${APP_AUTH_CALLBACK}?type=recovery` : `${window.location.origin}/reset-password`;
+}
+
 /** True when an auth link is a password-recovery link. */
 export function isRecoveryLink(url: string): boolean {
   const parsed = new URL(url);
