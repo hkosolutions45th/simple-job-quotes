@@ -14,7 +14,7 @@ export function providerLabel(user: Pick<User, "app_metadata">): string {
 }
 
 export function AccountProfileSection({ user, onSignOut }: { user: User; onSignOut: () => void }) {
-  const [name, setName] = useState<string>(String(user.user_metadata?.display_name ?? user.user_metadata?.full_name ?? ""));
+  const [name, setName] = useState<string>(String(user.user_metadata?.["display_name"] ?? user.user_metadata?.["full_name"] ?? ""));
   const [email, setEmail] = useState(user.email ?? "");
   const [busy, setBusy] = useState(false);
   const isEmailAccount = (user.app_metadata?.provider ?? "email") === "email";
