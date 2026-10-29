@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
 import { OnboardingFlow, TRADES } from "@/components/OnboardingFlow";
 import { supabase } from "@/integrations/supabase/client";
+import { AccountProfileSection } from "@/components/AccountProfileSection";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccountAccess } from "@/hooks/useAccountAccess";
 import { deleteOwnAccount } from "@/lib/account.functions";
@@ -2200,6 +2201,7 @@ function InstaQuote() {
             {savingSettings && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
             {savingSettings ? "Saving…" : "Save settings"}
           </button>
+          {user && <AccountProfileSection user={user} onSignOut={() => { setSettingsOpen(false); void signOut(); }} />}
           <div className="space-y-3 border-t border-line pt-4">
             {access.proAccess && <p className="text-sm font-semibold text-leaf">Pro subscription active</p>}
             <Button variant="outline" className="min-h-12 w-full" disabled={restoringPurchases}

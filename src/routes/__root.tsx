@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -120,6 +121,17 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+  useEffect(() => {
+    let stop: (() => void) | undefined;
+    let alive = true;
+    void import("@/lib/auth-deep-link").then(({ listenForAuthDeepLinks }) =>
+      listenForAuthDeepLinks(
+        () => { toast.success("You're signed in"); void router.navigate({ to: "/", replace: true }); },
+        (message) => toast.error(message),
+      )).then((s) => { if (alive) stop = s; else s(); }).catch(() => undefined);
+    return () => { alive = false; stop?.(); };
+  }, [router]);
 
   return (
     <QueryClientProvider client={queryClient}>
