@@ -5,9 +5,21 @@ import { isNativeIOS } from "./revenuecat";
 export const APP_AUTH_CALLBACK = "instaquote://auth-callback";
 
 /** Where auth emails (confirm, change email, reset) should send the user back to. */
-export function authRedirectUrl(): string {
+export function authRedirectUrl(path = ""): string {
   if (typeof window === "undefined") return "";
-  return isNativeIOS() ? APP_AUTH_CALLBACK : window.location.origin;
+  return isNativeIOS() ? APP_AUTH_CALLBACK : window.location.origin + path;
+}
+
+/** Password-reset return address; the type flag survives PKCE links that omit it. */
+export function recoveryRedirectUrl(): string {
+  if (typeof window === "undefined") return "";
+  return isNativeIOS() ? `${APP_AUTH_CALLBACK}?type=recovery` : `${window.location.origin}/reset-password`;
+}
+
+/** True when an auth link is a password-recovery link. */
+export function isRecoveryLink(url: string): boolean {
+  const parsed = new URL(url);
+  return parsed.searchParams.get("type") === "recovery" || new URLSearchParams(parsed.hash.replace(/^#/, "")).get("type") === "recovery";
 }
 
 /** Signs the user in from an incoming auth link (PKCE code or token fragment). */
@@ -33,12 +45,12 @@ export async function consumeAuthLink(url: string): Promise<boolean> {
 }
 
 /** Native only: listen for instaquote:// links and hand the session to the app. */
-export async function listenForAuthDeepLinks(onSignedIn: () => void, onError: (m: string) => void): Promise<() => void> {
+export async function listenForAuthDeepLinks(onSignedIn: (recovery: boolean) => void, onError: (m: string) => void): Promise<() => void> {
   if (typeof window === "undefined" || !isNativeIOS()) return () => undefined;
   const { App } = await import("@capacitor/app");
   const handle = await App.addListener("appUrlOpen", ({ url }) => {
     if (!url.startsWith("instaquote://")) return;
-    consumeAuthLink(url).then((ok) => { if (ok) onSignedIn(); })
+    consumeAuthLink(url).then((ok) => { if (ok) onSignedIn(isRecoveryLink(url)); })
       .catch((e) => onError(e instanceof Error ? e.message : "That sign-in link didn't work. Please try again."));
   });
   return () => { void handle.remove(); };

@@ -127,7 +127,10 @@ function RootComponent() {
     let alive = true;
     void import("@/lib/auth-deep-link").then(({ listenForAuthDeepLinks }) =>
       listenForAuthDeepLinks(
-        () => { toast.success("You're signed in"); void router.navigate({ to: "/", replace: true }); },
+        (recovery) => {
+          if (recovery) { void router.navigate({ to: "/reset-password", replace: true }); return; }
+          toast.success("You're signed in"); void router.navigate({ to: "/", replace: true });
+        },
         (message) => toast.error(message),
       )).then((s) => { if (alive) stop = s; else s(); }).catch(() => undefined);
     return () => { alive = false; stop?.(); };

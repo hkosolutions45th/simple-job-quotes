@@ -8,7 +8,7 @@ import { Loader2, Mic } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
-import { authRedirectUrl } from "@/lib/auth-deep-link";
+import { authRedirectUrl, recoveryRedirectUrl } from "@/lib/auth-deep-link";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -43,6 +43,17 @@ function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  const sendReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: recoveryRedirectUrl() });
+    setBusy(false);
+    if (error) toast.error(error.message || "Couldn't send the reset email. Please try again.");
+    else setResetSent(true);
+  };
 
   useEffect(() => {
     setIntroSeen(readDeviceText("has_seen_onboarding") === "true");
@@ -116,7 +127,23 @@ function AuthPage() {
           table.
         </p>
 
-        {checkEmail ? (
+        {forgot ? (
+          <div className="mt-6 rounded-2xl bg-card p-4 ring-1 ring-black/5">
+            <p className="text-sm font-semibold">Reset your password</p>
+            {resetSent ? (
+              <p className="mt-1 text-sm text-inksoft">If an account exists for {email}, we sent a link to choose a new password. Check your spam folder if you don't see it.</p>
+            ) : (
+              <form onSubmit={sendReset} className="mt-3 grid gap-3">
+                <label className="block">
+                  <span className="label-mono">Email</span>
+                  <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. you@yourbusiness.com" className="field mt-1" />
+                </label>
+                <Button type="submit" disabled={busy} className="min-h-12 w-full">{busy ? "Sending…" : "Send reset link"}</Button>
+              </form>
+            )}
+            <Button type="button" variant="ghost" className="mt-2 w-full text-sm underline" onClick={() => { setForgot(false); setResetSent(false); setMode("signin"); }}>Back to sign in</Button>
+          </div>
+        ) : checkEmail ? (
           <div className="mt-6 rounded-2xl bg-card p-4 ring-1 ring-black/5">
             <p className="text-sm font-semibold">Check your email</p>
             <p className="mt-1 text-sm text-inksoft">
@@ -174,6 +201,7 @@ function AuthPage() {
                   className="field mt-1"
                 />
               </label>
+              {mode === "signin" && <button type="button" onClick={() => setForgot(true)} className="-mt-1 justify-self-end text-sm font-semibold underline underline-offset-4">Forgot Password?</button>}
               {mode === "signup" && <label className="block">
                 <span className="label-mono">Confirm password</span>
                 <input type="password" required minLength={6} autoComplete="new-password" value={confirmPassword}
