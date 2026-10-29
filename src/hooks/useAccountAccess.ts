@@ -50,7 +50,8 @@ export function useAccountAccess(userId: string | undefined) {
     const { error } = await supabase.from("user_profiles").upsert({ user_id: userId, has_completed_onboarding: true, ...(trade ? { trade } : {}) }, { onConflict: "user_id" });
     if (error) throw new Error("Couldn't save your onboarding progress. Please try again.");
     markOnboardingSeen();
-    setState((s) => s.owner === userId ? { ...s, completed: true } : s);
+    // Verified entitlement updates state immediately so the paywall dismisses.
+    setState((s) => s.owner === userId ? { ...s, completed: true, pro: true, error: null } : s);
   }, [userId]);
 
   const restore = useCallback(async () => {

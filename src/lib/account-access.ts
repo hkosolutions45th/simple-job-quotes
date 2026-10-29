@@ -17,6 +17,8 @@ export function markOnboardingSeen(): boolean {
   return writeDeviceText(ONBOARDING_SEEN_KEY, "true");
 }
 
+/** RevenueCat entitlement IDs that unlock the app (current first, legacy kept for existing subscribers). */
+export const PRO_ENTITLEMENTS = ["instaquote_pro_premium", "pro_access"];
 export function hasProAccess(info: { entitlements: { active: Record<string, { isActive: boolean }> } }): boolean {
-  return info.entitlements.active["pro_access"]?.isActive === true;
+  return PRO_ENTITLEMENTS.some((id) => info.entitlements.active[id]?.isActive === true);
 }
