@@ -1,7 +1,7 @@
 import { test, mock } from "bun:test";
 import assert from "node:assert/strict";
 
-const info = (active) => ({ entitlements: { active: active ? { pro_access: { isActive: true } } : {} } });
+const info = (active) => ({ entitlements: { active: active ? { instaquote_pro_premium: { isActive: true } } : {} } });
 let active = false;
 let cancelled = false;
 let purchases = 0;

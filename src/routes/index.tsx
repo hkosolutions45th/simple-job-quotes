@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
 import { OnboardingFlow, TRADES } from "@/components/OnboardingFlow";
 import { supabase } from "@/integrations/supabase/client";
+import { AccountProfileSection } from "@/components/AccountProfileSection";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccountAccess } from "@/hooks/useAccountAccess";
 import { deleteOwnAccount } from "@/lib/account.functions";
