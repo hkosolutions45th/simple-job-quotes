@@ -26,6 +26,12 @@ test("invalid counters and corrupt data restore safely", () => {
   writeDeviceText("corrupt", "{");
   assert.deepEqual(readDeviceJSON("corrupt", [], Array.isArray), []);
 });
+test("last sign-in email is stored separately from business and quote caches", () => {
+  writeDeviceText("instaquote:lastSignInEmail", "remembered@example.com");
+  writeDeviceText("instaquote:businessProfile", JSON.stringify({ email: "office@example.com" }));
+  assert.equal(readDeviceText("instaquote:lastSignInEmail"), "remembered@example.com");
+  assert.equal(JSON.parse(readDeviceText("instaquote:businessProfile") ?? "{}").email, "office@example.com");
+});
 const source = { id: "original", status: "accepted", currency: "CAD", total_amount: 320.04,
   line_items: { quoteNo: "IQ-1001", notes: "Private client information", items: [{ id: "item", quantity: 2, basePriceUSD: 100, rate: 142.56 }],
     rateFactor: 1.4256, taxRate: 13, taxEnabled: true,
