@@ -55,6 +55,15 @@ export function formatJobAddress(customer: Pick<Customer, "address" | "city" | "
     .map((value) => value?.trim()).filter(Boolean).join(", ");
 }
 
+/** Document address lines keep locality together and omit missing fields. */
+export function formatAddressLines(address: { address: string; city?: string; province?: string; postalCode?: string }): string[] {
+  return [
+    address.address.trim(),
+    [address.city, address.province].map((value) => value?.trim()).filter(Boolean).join(", "),
+    formatPostalCode(address.postalCode ?? "").trim(),
+  ].filter(Boolean);
+}
+
 export function rateFromAmount(amount: number, quantity: number): number {
   return quantity > 0 && Number.isFinite(amount) ? Math.max(0, amount) / quantity : 0;
 }
