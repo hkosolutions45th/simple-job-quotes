@@ -57,12 +57,14 @@ function AuthPage() {
 
   useEffect(() => {
     setIntroSeen(readDeviceText("has_seen_onboarding") === "true");
+    setEmail(readDeviceText("instaquote:lastSignInEmail") ?? "");
     supabase.auth.getSession().then(({ data: { session } }) => {
       setReady(true);
       if (session) navigate({ to: "/", replace: true });
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+        if (session.user.email) writeDeviceText("instaquote:lastSignInEmail", session.user.email.trim());
         navigate({ to: "/", replace: true });
       }
     });
@@ -92,6 +94,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        writeDeviceText("instaquote:lastSignInEmail", email.trim());
       }
     } catch (err: any) {
       toast.error(err?.message ?? "Something went wrong");
@@ -185,7 +188,10 @@ function AuthPage() {
                   required
                   autoComplete="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (mode === "signin") writeDeviceText("instaquote:lastSignInEmail", e.target.value.trim());
+                  }}
                   className="field mt-1"
                 />
               </label>

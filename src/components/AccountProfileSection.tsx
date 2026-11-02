@@ -17,6 +17,7 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
   const [name, setName] = useState<string>(String(user.user_metadata?.["display_name"] ?? user.user_metadata?.["full_name"] ?? ""));
   const [email, setEmail] = useState(user.email ?? "");
   const [busy, setBusy] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
   const isEmailAccount = (user.app_metadata?.provider ?? "email") === "email";
 
   const save = async () => {
@@ -28,7 +29,11 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
         { emailRedirectTo: authRedirectUrl() },
       );
       if (error) throw error;
-      toast.success(emailChanged ? "Profile updated. Check your new email to confirm the change." : "Profile updated");
+      if (emailChanged) setPendingEmail(email.trim());
+      toast.success(emailChanged ? "Confirmation link sent to your new email address." : "Profile updated", emailChanged ? {
+        description: `Open the email sent to ${email.trim()} and click the confirmation link to finalize your email change.`,
+        duration: 10000,
+      } : undefined);
     } catch (e) {
       toast.error(e instanceof Error && e.message ? e.message : "Couldn't update your profile. Please try again.");
     } finally { setBusy(false); }
@@ -46,7 +51,9 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
         <span className="label-mono">Email address</span>
         <input className="field mt-1" type="email" value={email} disabled={!isEmailAccount} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. you@yourbusiness.com" autoComplete="email" />
         {!isEmailAccount && <span className="mt-1 block text-xs text-inksoft">Your email is managed by your sign-in provider.</span>}
+        {isEmailAccount && <span className="mt-1 block text-xs text-inksoft">Changing your email requires confirmation. Open the email sent to your new email address and click the confirmation link to finalize the change. Your current email remains active until confirmation is complete.</span>}
       </label>
+      {pendingEmail && <p role="status" className="text-sm text-inksoft">Check {pendingEmail} and click the confirmation link to finalize your email change. If a confirmation also arrives at your current address, confirm that link too.</p>}
       <Button className="min-h-12 w-full" disabled={busy} onClick={() => void save()} aria-busy={busy}>
         {busy && <Loader2 className="size-4 animate-spin" aria-hidden="true" />} {busy ? "Saving…" : "Update Profile"}
       </Button>

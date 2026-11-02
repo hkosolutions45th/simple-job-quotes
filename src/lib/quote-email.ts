@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { cleanLineItemDescription, formatMoney, formatJobAddress } from "./quote";
+import { cleanLineItemDescription, formatMoney, formatJobAddress, formatAddressLines } from "./quote";
 
 const itemSchema = z.object({
   description: z.string().default(""),
@@ -14,6 +14,9 @@ export const payloadSchema = z.object({
   businessPhone: z.string().max(40).default(""),
   businessEmail: z.string().max(160).default(""),
   businessAddress: z.string().max(300).default(""),
+  businessCity: z.string().max(120).default(""),
+  businessProvince: z.string().max(120).default(""),
+  businessPostalCode: z.string().max(24).default(""),
   quoteNo: z.string().min(1).max(60),
   clientName: z.string().max(120).default(""),
   jobAddress: z.string().max(240).default(""),
@@ -86,12 +89,12 @@ function buildHtml(p: Payload) {
     `<tr><td style="padding:5px 0;color:#6b6358">${label}</td><td style="padding:5px 0;text-align:right;font-weight:${bold ? 700 : 400}">${value}</td></tr>`;
 
   const muted = "color:#6b6358";
-  const contact = [p.businessAddress, p.businessPhone, p.businessEmail].filter(Boolean)
+  const contact = [...formatAddressLines({ address: p.businessAddress, city: p.businessCity, province: p.businessProvince, postalCode: p.businessPostalCode }), p.businessPhone, p.businessEmail].filter(Boolean)
     .map((v) => `<div style="font-size:13px;${muted};line-height:1.5">${esc(v)}</div>`).join("");
   const detail = (label: string, value: string) => value
     ? `<tr><td style="padding:3px 12px 3px 0;font-size:13px;font-weight:700;color:#2b2722;white-space:nowrap;vertical-align:top">${label}</td><td style="padding:3px 0;font-size:13px;color:#2b2722">${value}</td></tr>`
     : "";
-  const address = esc(formatJobAddress({ address: p.jobAddress, city: p.city, province: p.province ?? "", postalCode: p.postalCode }));
+  const address = formatAddressLines({ address: p.jobAddress, city: p.city, province: p.province, postalCode: p.postalCode }).map(esc).join("<br/>");
   const message = p.message.trim()
     ? `<tr><td style="padding:22px 28px 0;font-size:15px;line-height:1.6;color:#2b2722">${esc(p.message.trim()).replace(/\r?\n/g, "<br/>")}</td></tr>`
     : "";

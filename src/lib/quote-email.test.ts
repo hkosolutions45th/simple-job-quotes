@@ -49,6 +49,13 @@ test("the email HTML has bold table headers and a total row", () => {
 test("a blank confirmation ID cannot count as a successful send", async () => {
   assert.equal((await readResendResult(Response.json({ id: " " }))).sent, false);
 });
+test("contractor document address fields survive email payload validation", () => {
+  const parsed = payloadSchema.parse({ ...quote, businessAddress: "75 McBride Trail", businessCity: "Barrie", businessProvince: "Ontario", businessPostalCode: "L9J0Y6" });
+  assert.equal(parsed.businessAddress, "75 McBride Trail");
+  assert.equal(parsed.businessCity, "Barrie");
+  assert.equal(parsed.businessProvince, "Ontario");
+  assert.equal(parsed.businessPostalCode, "L9J0Y6");
+});
 test("Mail fallback encodes the recipient, subject and full quote without an attachment", () => {
   const data = payloadSchema.parse({ ...quote, message: "Paint & repair?\nThanks!", business: "A & B", clientName: "Sam", jobAddress: "10 Main St", city: "Toronto", postalCode: "M5V 1A1", terms: "50% deposit required" });
   const href = buildQuoteMailto(data);
