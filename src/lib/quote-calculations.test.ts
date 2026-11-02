@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatPostalCode, formatJobAddress, rateFromAmount, lineTotal } from "./quote";
+import { formatPostalCode, formatJobAddress, formatAddressLines, rateFromAmount, lineTotal } from "./quote";
 
 test("Canadian postal codes insert the required space without changing ZIP codes", () => {
   assert.equal(formatPostalCode("l9j0y6"), "L9J 0Y6");
@@ -8,6 +8,13 @@ test("Canadian postal codes insert the required space without changing ZIP codes
 });
 test("job address includes street, city, province and formatted postal code", () => {
   assert.equal(formatJobAddress({ address: "75 McBride Trail", city: "Barrie", province: "ON", postalCode: "L9J0Y6" }), "75 McBride Trail, Barrie, ON, L9J 0Y6");
+});
+test("document addresses stack street, comma-separated city/province, and postal code", () => {
+  assert.deepEqual(formatAddressLines({ address: "75 McBride Trail", city: "Barrie", province: "Ontario", postalCode: "L9J0Y6" }), ["75 McBride Trail", "Barrie, Ontario", "L9J 0Y6"]);
+});
+test("document addresses omit missing fields without blank lines or stray commas", () => {
+  assert.deepEqual(formatAddressLines({ address: "100 Main St", province: "ON" }), ["100 Main St", "ON"]);
+  assert.deepEqual(formatAddressLines({ address: "", city: "Barrie", postalCode: "90210" }), ["Barrie", "90210"]);
 });
 test("editing amount back-calculates unit rate", () => {
   assert.equal(rateFromAmount(250, 5), 50);
