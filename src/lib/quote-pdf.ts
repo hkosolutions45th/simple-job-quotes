@@ -1,10 +1,10 @@
-import { cleanLineItemDescription, formatMoney, formatJobAddress, type Customer } from "@/lib/quote";
+import { cleanLineItemDescription, formatMoney, formatAddressLines, type Customer } from "@/lib/quote";
 import { pdfLogoDimensions, PDF_LOGO_QUALITY, validatePdfAttachment } from "@/lib/pdf-logo";
 
 type PdfInput = {
   business: string;
   logo?: string | null;
-  businessContact: { phone: string; email: string; address: string };
+  businessContact: { phone: string; email: string; address: string; city?: string; province?: string; postalCode?: string };
   quoteNo: string;
   customer: Customer;
   items: { description: string; quantity: number; rate: number }[];
@@ -57,7 +57,7 @@ export async function buildQuotePdfBase64(p: PdfInput): Promise<string> {
   doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(120);
   doc.text("QUOTATION / ESTIMATE", headerLeft, headerBottom + 14);
   let y = headerBottom + 28;
-  for (const v of [p.businessContact.address, p.businessContact.phone, p.businessContact.email].filter(Boolean)) {
+  for (const v of [...formatAddressLines(p.businessContact), p.businessContact.phone, p.businessContact.email].filter(Boolean)) {
     const lines = doc.splitTextToSize(v, W / 2 - headerLeft);
     doc.text(lines, headerLeft, y);
     y += lines.length * 12;
@@ -75,7 +75,8 @@ export async function buildQuotePdfBase64(p: PdfInput): Promise<string> {
   y += 20;
   const c = p.customer;
   const left = ["PREPARED FOR", c.name || "—", c.email, c.phone].filter(Boolean);
-  const right = ["JOB ADDRESS", ...doc.splitTextToSize(formatJobAddress(c) || "—", W / 2 - 50), "", "PAYMENT TERMS", ...doc.splitTextToSize(c.terms || "Due on completion", W / 2 - 50)];
+  const addressLines = formatAddressLines(c);
+  const right = ["JOB ADDRESS", ...(addressLines.length ? addressLines.flatMap((line) => doc.splitTextToSize(line, W / 2 - 50)) : ["—"]), "", "PAYMENT TERMS", ...doc.splitTextToSize(c.terms || "Due on completion", W / 2 - 50)];
   doc.setFontSize(10).setTextColor(40);
   left.forEach((v, i) => doc.setFont("helvetica", i === 0 ? "bold" : "normal").text(v, L, y + i * 13));
   right.forEach((v, i) => doc.setFont("helvetica", v === "JOB ADDRESS" || v === "PAYMENT TERMS" ? "bold" : "normal").text(v, W / 2 + 10, y + i * 13));

@@ -21,6 +21,8 @@
 - Account access uses a Cloud profile completion flag and serialized RevenueCat identity checks before rendering onboarding; entitlement state is account-scoped and never inferred from device completion caches, preventing cross-account access and repeat paywalls.
 - Pre-account onboarding is presentation-only; only a verified RevenueCat purchase may write account onboarding completion, so introduction caches cannot unlock account access.
 - Format client addresses and postal codes through shared quote helpers across editor, email, and PDF; keep legacy customers without a province readable.
+- Pass contractor addresses as separate fields and use the shared address-line formatter in document previews, exported PDFs, and email HTML to keep their layout synchronized.
+- Remember only the sign-in email in a dedicated device-storage key that survives sign-out but is cleared with all device data on account deletion; never persist passwords.
 - Amount edits convert through the existing unit-rate-to-USD path, preserving one authoritative base price across currencies.
 - Self-account deletion revalidates the authenticated caller before lazily loading the privileged client, clears owned rows through a service-only SQL function, then deletes that caller's auth account; never accept a target user ID from the browser.
 - Quote emails go through the plain HTTP route `/api/public/send-quote-email` (bearer token verified in the handler, CORS enabled) using shared payload/response helpers; the browser calls it via an absolute published URL on native so the iOS app can reach it, and every failure returns readable JSON instead of a sanitized RPC error. Reply routing comes from the verified user only.

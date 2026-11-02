@@ -148,9 +148,10 @@ function InstaQuote() {
   const businessContact = {
     phone: businessProfile.phone,
     email: businessProfile.email,
-    address: [businessProfile.address, [businessProfile.city, businessProfile.province, businessProfile.postalCode].filter(Boolean).join(" ")]
-      .filter(Boolean)
-      .join(", "),
+    address: businessProfile.address,
+    city: businessProfile.city,
+    province: businessProfile.province,
+    postalCode: businessProfile.postalCode,
   };
   const [logo, setLogo] = useState<string | null>(null);
   const [quoteNo, setQuoteNo] = useState("IQ-1001");
@@ -703,6 +704,9 @@ function InstaQuote() {
         businessPhone: businessProfile.phone,
         businessEmail: businessProfile.email,
         businessAddress: businessContact.address,
+        businessCity: businessContact.city,
+        businessProvince: businessContact.province,
+        businessPostalCode: businessContact.postalCode,
         quoteNo,
         clientName: customer.name,
         jobAddress: customer.address,

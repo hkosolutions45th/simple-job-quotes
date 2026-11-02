@@ -1,6 +1,6 @@
 import {
   cleanLineItemDescription,
-  formatJobAddress,
+  formatAddressLines,
   money,
   lineTotal,
   type Customer,
@@ -9,7 +9,7 @@ import {
 
 type Props = {
   business: string;
-  businessContact?: { phone: string; email: string; address: string };
+  businessContact?: { phone: string; email: string; address: string; city?: string; province?: string; postalCode?: string };
   logo: string | null;
   quoteNo: string;
   customer: Customer;
@@ -80,9 +80,9 @@ export function QuoteSheet(props: Props) {
             <div className="min-w-0 overflow-hidden">
               <p className="quote-business-name text-lg leading-tight font-bold sm:text-xl">{business}</p>
               <p className="label-mono">Quotation / Estimate</p>
-              {businessContact && (businessContact.phone || businessContact.email || businessContact.address) && (
+              {businessContact && (businessContact.phone || businessContact.email || formatAddressLines(businessContact).length > 0) && (
                 <div className="mt-2 min-w-0 break-words text-[11px] leading-snug text-inksoft">
-                  {businessContact.address && <p>{businessContact.address}</p>}
+                  {formatAddressLines(businessContact).map((line, index) => <p key={index}>{line}</p>)}
                   {businessContact.phone && <p className="font-mono">{businessContact.phone}</p>}
                   {businessContact.email && <p>{businessContact.email}</p>}
                 </div>
@@ -105,7 +105,7 @@ export function QuoteSheet(props: Props) {
           </div>
           <div>
             <p className="label-mono">Job address</p>
-            <p className="text-inksoft">{formatJobAddress(customer) || "—"}</p>
+            <div className="text-inksoft">{formatAddressLines(customer).length ? formatAddressLines(customer).map((line, index) => <p key={index}>{line}</p>) : "—"}</div>
             <p className="label-mono mt-3">Payment terms</p>
             <p className="text-inksoft">{customer.terms || "Due on completion"}</p>
           </div>

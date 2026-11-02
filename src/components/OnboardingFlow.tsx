@@ -226,7 +226,7 @@ export function OnboardingFlow({
                     <Check className="size-4" aria-hidden="true" />
                   </span>
                 )}
-                <span className="text-2xl font-bold">$9.99</span>
+                <span className="text-xl font-bold">$9.99 USD</span>
                 <span className="text-sm text-muted-foreground">per month</span>
               </Button>
               <Button
@@ -245,7 +245,7 @@ export function OnboardingFlow({
                 <span className="absolute -top-3 rounded-full bg-leaf px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-cream">
                   Save 25%
                 </span>
-                <span className="text-2xl font-bold">$89.99</span>
+                <span className="text-xl font-bold">$89.99 USD</span>
                 <span className="text-sm text-muted-foreground">per year</span>
               </Button>
             </div>
@@ -267,11 +267,11 @@ export function OnboardingFlow({
                 {busy === "restore" ? "Restoring…" : "Restore Purchases"}
               </Button>
               <p className="mt-2 text-center text-xs leading-snug text-muted-foreground">
-                7 days free, then {plan === "annual" ? "$89.99/year" : "$9.99/month"}. Cancel anytime in App Store
+                7 days free, then {plan === "annual" ? "$89.99 USD/year" : "$9.99 USD/month"}. Cancel anytime in App Store
                 settings.
               </p>
               <p className="mt-2 text-center text-xs leading-snug text-muted-foreground">
-                $9.99/month or $89.99/year (with 7-day free trial). Subscriptions auto-renew unless turned off at least 24 hours before the trial or current period ends.
+                $9.99 USD/month or $89.99 USD/year (with 7-day free trial). Subscriptions auto-renew unless turned off at least 24 hours before the trial or current period ends.
               </p>
               <p className="mt-2 text-center text-xs text-muted-foreground">
                 By continuing you agree to our{" "}
