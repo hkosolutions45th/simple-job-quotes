@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Correct iOS Keychain form hints and synchronize confirmed email changes with the refreshed account session.
+- [x] Correct iOS Keychain form hints and synchronize confirmed email changes with the refreshed account session (12 tests pass; browser submit and mounted-profile updates verified; actual Keychain prompts and email links require an iPhone check).
 - [x] Clarify USD paywall prices, stack contractor document addresses, remember sign-in email, and explain email-change confirmation (26 tests and browser sign-out/reload checks pass)
 - [x] Add Business Settings upload/change/remove logo controls and mobile-safe PDF preview headers
 - [x] Separate PDF logo and contact columns; resize/compress logos and guard email attachment size
