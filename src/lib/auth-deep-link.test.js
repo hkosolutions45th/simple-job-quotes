@@ -1,7 +1,7 @@
 import { beforeEach, mock, test } from "bun:test";
 import assert from "node:assert/strict";
 
-const calls: string[] = [];
+const calls = [];
 let sessionEmail = "old@example.com";
 let failRefresh = false;
 mock.module("@/integrations/supabase/client", () => ({ supabase: { auth: {
