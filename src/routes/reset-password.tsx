@@ -65,11 +65,11 @@ function ResetPasswordPage() {
           <form onSubmit={submit} className="mt-6 grid gap-3">
             <label className="block">
               <span className="label-mono">New password</span>
-              <input type="password" required minLength={6} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className="field mt-1" />
+              <input type="password" name="password" required minLength={6} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className="field mt-1" />
             </label>
             <label className="block">
               <span className="label-mono">Confirm new password</span>
-              <input type="password" required minLength={6} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="field mt-1" />
+              <input type="password" name="confirm-password" required minLength={6} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="field mt-1" />
             </label>
             <Button type="submit" disabled={busy} className="mt-2 min-h-14 w-full">{busy ? "Saving…" : "Update password"}</Button>
           </form>

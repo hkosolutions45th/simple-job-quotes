@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { Loader2, LogOut } from "lucide-react";
@@ -19,6 +19,16 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
   const [busy, setBusy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
   const isEmailAccount = (user.app_metadata?.provider ?? "email") === "email";
+
+  // Auth refreshes may arrive while settings remains mounted after confirmation.
+  useEffect(() => {
+    setEmail(user.email ?? "");
+    setPendingEmail("");
+  }, [user.id, user.email]);
+
+  useEffect(() => {
+    setName(String(user.user_metadata?.["display_name"] ?? user.user_metadata?.["full_name"] ?? ""));
+  }, [user.id, user.user_metadata?.["display_name"], user.user_metadata?.["full_name"]]);
 
   const save = async () => {
     setBusy(true);

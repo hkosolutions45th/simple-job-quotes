@@ -26,10 +26,13 @@ export function isRecoveryLink(url: string): boolean {
 export async function consumeAuthLink(url: string): Promise<boolean> {
   const parsed = new URL(url);
   const hash = new URLSearchParams(parsed.hash.replace(/^#/, ""));
+  const err = hash.get("error_description") ?? parsed.searchParams.get("error_description");
+  if (err) throw new Error(err);
   const code = parsed.searchParams.get("code");
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) throw error;
+    await refreshConfirmedUser();
     return true;
   }
   const access_token = hash.get("access_token");
@@ -37,21 +40,37 @@ export async function consumeAuthLink(url: string): Promise<boolean> {
   if (access_token && refresh_token) {
     const { error } = await supabase.auth.setSession({ access_token, refresh_token });
     if (error) throw error;
+    await refreshConfirmedUser();
     return true;
   }
-  const err = hash.get("error_description") ?? parsed.searchParams.get("error_description");
-  if (err) throw new Error(err);
+  // Email-change confirmations can return without tokens when already signed in.
+  if (parsed.protocol === "instaquote:" && parsed.hostname === "auth-callback") {
+    await refreshConfirmedUser();
+    return true;
+  }
   return false;
+}
+
+/** Fetch the confirmed account, then persist fresh auth data and emit TOKEN_REFRESHED. */
+async function refreshConfirmedUser(): Promise<void> {
+  const { error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  const { data, error } = await supabase.auth.refreshSession();
+  if (error) throw error;
+  if (!data.session) throw new Error("Please sign in again to load your updated account.");
 }
 
 /** Native only: listen for instaquote:// links and hand the session to the app. */
 export async function listenForAuthDeepLinks(onSignedIn: (recovery: boolean) => void, onError: (m: string) => void): Promise<() => void> {
   if (typeof window === "undefined" || !isNativeIOS()) return () => undefined;
   const { App } = await import("@capacitor/app");
-  const handle = await App.addListener("appUrlOpen", ({ url }) => {
+  const consume = (url: string) => {
     if (!url.startsWith("instaquote://")) return;
-    consumeAuthLink(url).then((ok) => { if (ok) onSignedIn(isRecoveryLink(url)); })
+    return consumeAuthLink(url).then((ok) => { if (ok) onSignedIn(isRecoveryLink(url)); })
       .catch((e) => onError(e instanceof Error ? e.message : "That sign-in link didn't work. Please try again."));
-  });
+  };
+  const handle = await App.addListener("appUrlOpen", ({ url }) => { void consume(url); });
+  const launch = await App.getLaunchUrl().catch(() => undefined);
+  if (launch?.url) await consume(launch.url);
   return () => { void handle.remove(); };
 }

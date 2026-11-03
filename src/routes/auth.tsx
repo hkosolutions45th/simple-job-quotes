@@ -186,7 +186,8 @@ function AuthPage() {
                 <input
                   type="email"
                   required
-                  autoComplete="email"
+                  name="username"
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
@@ -200,6 +201,7 @@ function AuthPage() {
                 <input
                   type="password"
                   required
+                  name="password"
                   minLength={6}
                   autoComplete={mode === "signin" ? "current-password" : "new-password"}
                   value={password}
@@ -210,7 +212,7 @@ function AuthPage() {
               {mode === "signin" && <button type="button" onClick={() => setForgot(true)} className="-mt-1 justify-self-end text-sm font-semibold underline underline-offset-4">Forgot Password?</button>}
               {mode === "signup" && <label className="block">
                 <span className="label-mono">Confirm password</span>
-                <input type="password" required minLength={6} autoComplete="new-password" value={confirmPassword}
+                <input type="password" name="confirm-password" required minLength={6} autoComplete="new-password" value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)} className="field mt-1" />
               </label>}
               <Button
