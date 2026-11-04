@@ -16,7 +16,7 @@ export type Customer = {
   province?: string;
   postalCode: string;
   terms: string;
-  validityDays?: number;
+  validityDays?: number | undefined;
 };
 
 /** Legacy quotes and invalid input retain the original 30-day validity. */
