@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatPostalCode, formatJobAddress, formatAddressLines, rateFromAmount, lineTotal } from "./quote";
+import { formatPostalCode, formatJobAddress, formatAddressLines, rateFromAmount, lineTotal, generateLineItems } from "./quote";
 
 test("Canadian postal codes insert the required space without changing ZIP codes", () => {
   assert.equal(formatPostalCode("l9j0y6"), "L9J 0Y6");
@@ -23,4 +23,11 @@ test("editing amount back-calculates unit rate", () => {
 test("quantity and rate edits recalculate amount", () => {
   assert.equal(lineTotal({ id: "a", description: "Painting", quantity: 5, rate: 50 }), 250);
   assert.equal(lineTotal({ id: "a", description: "Painting", quantity: 6, rate: 50 }), 300);
+});
+
+test("street numbers never become line-item quantities", () => {
+  const items = generateLineItems("Replace deck railing at 124 Mapleview Dr with 40 linear feet of railing");
+  const deck = items.find((i) => /deck|fence/i.test(i.description));
+  assert.ok(deck, "deck item generated from notes");
+  assert.equal(deck.quantity, 40);
 });

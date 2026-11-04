@@ -133,6 +133,13 @@ const numberIn = (text: string): number | null => {
   return Number.isFinite(n) && n > 0 ? n : null;
 };
 
+/** Street addresses (e.g. "124 Mapleview Dr") must never feed quantities. */
+const stripAddressNumbers = (text: string): string =>
+  text.replace(
+    /\b\d+[A-Za-z]?\s+(?:[A-Za-z0-9.'-]+\s+){0,3}?(?:street|st\.?|avenue|ave\.?|road|rd\.?|drive|dr\.?|boulevard|blvd\.?|lane|ln\.?|court|ct\.?|crescent|circle|terrace|place|way|highway|hwy\.?|trail|parkway|pkwy\.?|gate|row)\b/gi,
+    "",
+  );
+
 /**
  * Turns free-form dictation into editable line items.
  * Always returns at least a labour line so the contractor has something to edit.
@@ -150,7 +157,7 @@ export function generateLineItems(notes: string): LineItem[] {
     for (const entry of CATALOG) {
       if (!entry.match.test(fragment) || used.has(entry.description)) continue;
       used.add(entry.description);
-      const qty = numberIn(fragment);
+      const qty = numberIn(stripAddressNumbers(fragment));
       items.push({
         id: newId(),
         description: `${entry.description} (${entry.unit})`,
