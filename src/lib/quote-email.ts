@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { cleanLineItemDescription, formatMoney, formatJobAddress, formatAddressLines } from "./quote";
+import { cleanLineItemDescription, formatMoney, formatJobAddress, formatAddressLines, quoteValidityDays } from "./quote";
 
 const itemSchema = z.object({
   description: z.string().default(""),
@@ -24,6 +24,7 @@ export const payloadSchema = z.object({
   province: z.string().max(120).default(""),
   postalCode: z.string().max(24).default(""),
   terms: z.string().max(240).default(""),
+  validityDays: z.number().int().positive().default(30),
   taxRate: z.number().default(13),
   currency: z.string().max(3).default("USD"),
   taxEnabled: z.boolean().default(true),
@@ -40,7 +41,7 @@ export function emailErrorMessage(error: unknown): string {
   return "No error details were returned";
 }
 
-export function buildQuoteMailto(p: { province?: string } & Pick<Payload, "to" | "business" | "quoteNo" | "message" | "clientName" | "jobAddress" | "city" | "postalCode" | "items" | "currency" | "taxRate" | "taxEnabled" | "terms">) {
+export function buildQuoteMailto(p: { province?: string; validityDays?: number } & Pick<Payload, "to" | "business" | "quoteNo" | "message" | "clientName" | "jobAddress" | "city" | "postalCode" | "items" | "currency" | "taxRate" | "taxEnabled" | "terms">) {
   const money = (value: number) => formatMoney(value, p.currency);
   const subtotal = p.items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
   const tax = p.taxEnabled ? subtotal * p.taxRate / 100 : 0;
@@ -52,6 +53,7 @@ export function buildQuoteMailto(p: { province?: string } & Pick<Payload, "to" |
     ...p.items.map((item) => `${item.description} — ${item.quantity} × ${money(item.rate)} = ${money(item.quantity * item.rate)}`),
     "", `Subtotal: ${money(subtotal)}`, `Tax: ${money(tax)}`, `Total: ${money(subtotal + tax)}`,
     p.terms ? `Payment terms: ${p.terms}` : "",
+    `Quote valid for ${quoteValidityDays(p.validityDays)} days from the issue date.`,
   ].join("\n").trim();
   return `mailto:${encodeURIComponent(p.to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
@@ -114,7 +116,7 @@ function buildHtml(p: Payload) {
       </td>
     </tr></table>
   </td></tr>
-  ${contact ? `<tr><td style="padding:16px 28px 0">${contact}</td></tr>` : ""}
+  <tr><td style="padding:24px 28px 0"><div style="font-size:13px;font-weight:700;${muted};line-height:1.5">${esc(p.business)}</div>${contact}</td></tr>
   ${message}
   <tr><td style="padding:20px 28px 0">
     <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;${muted};margin-bottom:6px">Prepared for</div>
@@ -145,7 +147,7 @@ function buildHtml(p: Payload) {
     </table>
   </td></tr>
   <tr><td style="padding:24px 28px 26px;font-size:12px;line-height:1.6;${muted}">
-    Quote valid for 30 days from the issue date. Prices assume standard site access and may be revised if hidden conditions are found.${p.pdfBase64 ? " The full quote is attached as a PDF." : ""}<br/><br/>
+    Quote valid for ${p.validityDays} days from the issue date. Prices assume standard site access and may be revised if hidden conditions are found.${p.pdfBase64 ? " The full quote is attached as a PDF." : ""}<br/><br/>
     Thank you for the opportunity — <strong style="color:#2b2722">${esc(p.business)}</strong>. Simply reply to this email with any questions.
   </td></tr>
 </table>

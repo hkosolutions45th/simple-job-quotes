@@ -3,6 +3,8 @@ import {
   formatAddressLines,
   money,
   lineTotal,
+  quoteValidityDays,
+  quoteValidUntil,
   type Customer,
   type LineItem,
 } from "@/lib/quote";
@@ -57,7 +59,7 @@ export function QuoteSheet(props: Props) {
   const today = new Date();
   const fmt = (d: Date) =>
     d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-  const validUntil = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const validUntil = quoteValidUntil(today, customer.validityDays);
 
   const depositMatch = customer.terms.match(/(\d{1,3})\s*%/);
   const depositPct = depositMatch?.[1] ? Number(depositMatch[1]) : null;
@@ -81,7 +83,8 @@ export function QuoteSheet(props: Props) {
               <p className="quote-business-name text-lg leading-tight font-bold sm:text-xl">{business}</p>
               <p className="label-mono">Quotation / Estimate</p>
               {businessContact && (businessContact.phone || businessContact.email || formatAddressLines(businessContact).length > 0) && (
-                <div className="mt-2 min-w-0 break-words text-[11px] leading-snug text-inksoft">
+                <div className="mt-5 min-w-0 break-words text-[11px] leading-snug text-inksoft">
+                  <p className="font-semibold">{business}</p>
                   {formatAddressLines(businessContact).map((line, index) => <p key={index}>{line}</p>)}
                   {businessContact.phone && <p className="font-mono">{businessContact.phone}</p>}
                   {businessContact.email && <p>{businessContact.email}</p>}
@@ -187,7 +190,7 @@ export function QuoteSheet(props: Props) {
       </section>
 
       <p className="mt-6 border-t border-line pt-3 font-mono text-[11px] leading-relaxed text-inksoft">
-        Quote valid for 30 days from the issue date. Prices assume standard site access and may be
+        Quote valid for {quoteValidityDays(customer.validityDays)} days from the issue date. Prices assume standard site access and may be
         revised if hidden conditions are found. Work begins once the deposit is received and a start
         date is confirmed. Thank you for the opportunity to quote — {business}.
       </p>
