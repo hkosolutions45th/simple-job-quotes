@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatPostalCode, formatJobAddress, formatAddressLines, rateFromAmount, lineTotal } from "./quote";
+import { formatPostalCode, formatJobAddress, formatAddressLines, rateFromAmount, lineTotal, generateLineItems } from "./quote";
 
 test("Canadian postal codes insert the required space without changing ZIP codes", () => {
   assert.equal(formatPostalCode("l9j0y6"), "L9J 0Y6");

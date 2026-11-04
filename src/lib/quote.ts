@@ -157,7 +157,7 @@ export function generateLineItems(notes: string): LineItem[] {
     for (const entry of CATALOG) {
       if (!entry.match.test(fragment) || used.has(entry.description)) continue;
       used.add(entry.description);
-      const qty = numberIn(fragment);
+      const qty = numberIn(stripAddressNumbers(fragment));
       items.push({
         id: newId(),
         description: `${entry.description} (${entry.unit})`,
