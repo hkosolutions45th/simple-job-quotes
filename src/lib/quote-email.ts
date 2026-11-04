@@ -145,10 +145,15 @@ function buildHtml(p: Payload) {
       <tr><td style="padding:12px 0 4px;border-top:2px solid #2b2722;font-size:16px;font-weight:700">Total due</td><td style="padding:12px 0 4px;border-top:2px solid #2b2722;text-align:right;font-size:18px;font-weight:700;color:#b5532a">${money(total)}</td></tr>
       ${deposit !== null ? line(`Deposit to book (${depositPct}%)`, money(deposit), true) : ""}
     </table>
+    <div style="clear:both;font-size:0;line-height:0">&nbsp;</div>
   </td></tr>
-  <tr><td style="padding:24px 28px 26px;font-size:12px;line-height:1.6;${muted}">
-    Quote valid for ${p.validityDays} days from the issue date. Prices assume standard site access and may be revised if hidden conditions are found.${p.pdfBase64 ? " The full quote is attached as a PDF." : ""}<br/><br/>
-    Thank you for the opportunity — <strong style="color:#2b2722">${esc(p.business)}</strong>. Simply reply to this email with any questions.
+  <tr><td style="padding:24px 28px 26px">
+    <p style="display:block;width:100%;clear:both;margin:0 0 14px;font-size:12px;line-height:1.6;${muted}">
+      Quote valid for ${p.validityDays} days from the issue date. Prices assume standard site access and may be revised if hidden conditions are found.${p.pdfBase64 ? " The full quote is attached as a PDF." : ""}
+    </p>
+    <p style="display:block;width:100%;clear:both;margin:0;font-size:12px;line-height:1.6;${muted}">
+      Thank you for the opportunity — <strong style="color:#2b2722">${esc(p.business)}</strong>. Simply reply to this email with any questions.
+    </p>
   </td></tr>
 </table>
 </td></tr></table></body></html>`;
