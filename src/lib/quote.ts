@@ -16,7 +16,19 @@ export type Customer = {
   province?: string;
   postalCode: string;
   terms: string;
+  validityDays?: number | undefined;
 };
+
+/** Legacy quotes and invalid input retain the original 30-day validity. */
+export function quoteValidityDays(value?: number): number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 1 ? Math.floor(value) : 30;
+}
+
+export function quoteValidUntil(issued: Date, validityDays?: number): Date {
+  const valid = new Date(issued);
+  valid.setDate(valid.getDate() + quoteValidityDays(validityDays));
+  return valid;
+}
 
 export const newId = () => Math.random().toString(36).slice(2, 10);
 
@@ -192,6 +204,7 @@ export function quoteMessage(opts: {
     `Thanks for having us out${jobAddress ? ` at ${jobAddress}` : ""}. Your quote ${opts.quoteNo} from ${opts.business} comes to ${money(opts.total)} including tax.`,
     "",
     opts.customer.terms ? `Terms: ${opts.customer.terms}.` : "",
+    `Quote valid for ${quoteValidityDays(opts.customer.validityDays)} days from the issue date.`,
     "Reply to this message to book a start date and we'll get you on the schedule.",
     "",
     `— ${opts.business}`,

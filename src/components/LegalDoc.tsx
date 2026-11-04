@@ -12,7 +12,7 @@ type LegalPageProps = {
 
 /**
  * Shared shell for the InstaQuote legal documents: sticky back bar that returns
- * to Business Settings, a single readable column, and cross-links between docs.
+ * to Account Settings, a single readable column, and cross-links between docs.
  */
 export function LegalPage({
   title,

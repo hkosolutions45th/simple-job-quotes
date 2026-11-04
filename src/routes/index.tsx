@@ -32,6 +32,7 @@ import {
   cleanLineItemDescription,
   formatPostalCode,
   rateFromAmount,
+  quoteValidityDays,
   generateLineItems,
   lineTotal,
   money,
@@ -202,6 +203,7 @@ function InstaQuote() {
     province: "",
     postalCode: "",
     terms: "50% deposit required",
+      validityDays: 30,
   });
   const clientMatch = savedClients.find(
     (c) => c.name.trim().toLowerCase() === customer.name.trim().toLowerCase(),
@@ -327,6 +329,7 @@ function InstaQuote() {
   quoteIdRef.current = quoteId;
   const defaultTerms = businessProfile.defaultTerms;
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settings, setSettings] = useState({
     business_name: "",
@@ -727,6 +730,7 @@ function InstaQuote() {
       province: customer.province ?? "",
         postalCode: customer.postalCode,
         terms: customer.terms,
+        validityDays: quoteValidityDays(customer.validityDays),
         taxRate,
         currency,
         taxEnabled,
@@ -760,7 +764,7 @@ function InstaQuote() {
               to, business, quoteNo, message: emailNote, clientName: customer.name,
               jobAddress: customer.address, city: customer.city,
       province: customer.province ?? "", postalCode: customer.postalCode,
-              items, currency, taxRate, taxEnabled, terms: customer.terms,
+              items, currency, taxRate, taxEnabled, terms: customer.terms, validityDays: quoteValidityDays(customer.validityDays),
             });
           },
         },
@@ -814,6 +818,7 @@ function InstaQuote() {
       province: "",
       postalCode: "",
       terms: defaultTerms || "50% deposit required",
+      validityDays: 30,
     });
     setTaxRate(businessProfile.taxRate);
     setQuoteNo(takeNextQuoteNo());
@@ -898,7 +903,7 @@ function InstaQuote() {
   useEffect(() => {
     if (!settingsRequested || !deviceReady || authLoading || !profileReady) return;
     setSettingsRequested(false);
-    openSettings();
+    setAccountSettingsOpen(true);
     navigate({ to: "/", search: {}, replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settingsRequested, deviceReady, authLoading, profileReady]);
@@ -1091,6 +1096,7 @@ function InstaQuote() {
         province: payload.customer.province ?? "",
         postalCode: formatPostalCode(payload.customer.postalCode ?? payload.customer.zipCode ?? ""),
         terms: payload.customer.terms ?? (defaultTerms || "50% deposit required"),
+        validityDays: quoteValidityDays(payload.customer.validityDays),
       });
     }
     if (payload.quoteNo) setQuoteNo(payload.quoteNo);
@@ -1132,6 +1138,7 @@ function InstaQuote() {
       province: "",
       postalCode: "",
       terms: "50% deposit required",
+      validityDays: 30,
     });
     toast.success("Signed out");
     navigate({ to: "/auth", replace: true });
@@ -1170,6 +1177,7 @@ function InstaQuote() {
       setLogo(null);
       setQuoteId(null);
       setSettingsOpen(false);
+      setAccountSettingsOpen(false);
       setDeleteConfirm(false);
       toast.success("Your account has been deleted.");
       await navigate({ to: "/auth", replace: true });
@@ -1295,53 +1303,24 @@ function InstaQuote() {
           </Button>
         </header>
 
-        {/* Account */}
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 rounded-xl bg-card p-2 ring-1 ring-black/5 sm:flex-nowrap">
-          {user ? (
-            <>
-              <span className="min-w-0 flex-1 basis-full truncate px-2 text-xs text-inksoft sm:basis-0">
-                Signed in as {user.email}
-              </span>
-              <button
-                onClick={openSaved}
-                className="flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-cream px-3 text-xs font-semibold ring-1 ring-line active:translate-y-0.5"
-              >
-                <FolderOpen className="size-4" aria-hidden="true" /> Saved Quotes
-              </button>
-              <button
-                onClick={openSettings}
-                aria-label="Business settings"
-                className="grid size-10 place-items-center rounded-lg bg-cream text-inksoft ring-1 ring-line active:translate-y-0.5"
-              >
-                <Settings className="size-4" aria-hidden="true" />
-              </button>
-              <Button variant="outline" onClick={signOut} className="min-h-10 shrink-0 px-2 text-xs">
-                <LogOut className="size-4" aria-hidden="true" /> Sign Out
-              </Button>
-            </>
-          ) : (
-            <>
-              <span className="min-w-0 flex-1 px-2 text-xs text-inksoft">
-                Sign in to save quotes to your account.
-              </span>
-              <button
-                onClick={openSettings}
-                aria-label="Business settings"
-                className="grid size-10 shrink-0 place-items-center rounded-lg bg-cream text-inksoft ring-1 ring-line active:translate-y-0.5"
-              >
-                <Settings className="size-4" aria-hidden="true" />
-              </button>
-              <Link
-                to="/auth"
-                className="flex min-h-10 items-center rounded-lg bg-ink px-4 text-xs font-semibold text-cream active:translate-y-0.5"
-              >
-                Sign in
-              </Link>
-            </>
-          )}
+        {/* Dashboard toolbar */}
+        <div className="mt-3 space-y-2">
+          <p className="truncate px-1 text-xs text-inksoft">Signed in as {user.email}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" onClick={openSettings} className="min-h-12 min-w-0 gap-1.5 px-2 text-xs">
+              <Settings className="size-4 shrink-0" aria-hidden="true" /> Business Information
+            </Button>
+            <Button variant="outline" onClick={() => void openSaved()} className="min-h-12 min-w-0 gap-1.5 px-2 text-xs">
+              <FolderOpen className="size-4 shrink-0" aria-hidden="true" /> Saved Quotes
+            </Button>
+            <Button variant="outline" onClick={() => setAccountSettingsOpen(true)} className="min-h-12 min-w-0 gap-1.5 px-2 text-xs">
+              <Settings className="size-4 shrink-0" aria-hidden="true" /> Account Settings
+            </Button>
+            <Button variant="outline" onClick={() => void signOut()} className="min-h-12 min-w-0 gap-1.5 px-2 text-xs">
+              <LogOut className="size-4 shrink-0" aria-hidden="true" /> Sign Out
+            </Button>
+          </div>
         </div>
-
-
 
         {/* Dictate */}
         <section className="mt-5 rounded-2xl bg-card p-4 ring-1 ring-black/5">
@@ -1654,6 +1633,14 @@ function InstaQuote() {
                 onChange={(e) => setCustomer({ ...customer, terms: e.target.value })}
                 className="field mt-1"
               />
+            </label>
+            <label className="block">
+              <span className="label-mono">Quote Validity Period (days)</span>
+              <input type="number" inputMode="numeric" min={1} step={1}
+                value={customer.validityDays ?? 30} placeholder="e.g. 30"
+                onChange={(e) => setCustomer({ ...customer, validityDays: e.target.value === "" ? undefined : Number(e.target.value) })}
+                onBlur={() => setCustomer((c) => ({ ...c, validityDays: quoteValidityDays(c.validityDays) }))}
+                className="field mt-1" />
             </label>
           </div>
         </section>
@@ -2067,7 +2054,7 @@ function InstaQuote() {
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader className="pr-12">
-            <DialogTitle>Business Settings</DialogTitle>
+            <DialogTitle>Business Information</DialogTitle>
             <DialogDescription>These details pre-fill every new quote.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -2199,6 +2186,18 @@ function InstaQuote() {
               </select>
             </label>
           </div>
+          <Button onClick={() => void saveSettings()} disabled={savingSettings} aria-busy={savingSettings} className="min-h-12 w-full">
+            {savingSettings && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+            {savingSettings ? "Saving…" : "Save Business Information"}
+          </Button>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={accountSettingsOpen} onOpenChange={setAccountSettingsOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <DialogHeader className="pr-12">
+            <DialogTitle>Account Settings</DialogTitle>
+            <DialogDescription>Manage your account and subscription.</DialogDescription>
+          </DialogHeader>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-4">
             <span className="label-mono">Legal</span>
             <Link to="/privacy" className="text-sm font-semibold underline underline-offset-4">
@@ -2208,17 +2207,7 @@ function InstaQuote() {
               Terms of Service
             </Link>
           </div>
-          <button
-            onClick={saveSettings}
-
-            disabled={savingSettings}
-            aria-busy={savingSettings}
-            className="clay-shadow-leaf flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-leaf font-semibold text-cream disabled:opacity-70"
-          >
-            {savingSettings && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-            {savingSettings ? "Saving…" : "Save settings"}
-          </button>
-          {user && <AccountProfileSection user={user} onSignOut={() => { setSettingsOpen(false); void signOut(); }} />}
+          {user && <AccountProfileSection user={user} onSignOut={() => { setAccountSettingsOpen(false); void signOut(); }} />}
           <div className="space-y-3 border-t border-line pt-4">
             {access.proAccess && <p className="text-sm font-semibold text-leaf">Pro subscription active</p>}
             <Button variant="outline" className="min-h-12 w-full" disabled={restoringPurchases}

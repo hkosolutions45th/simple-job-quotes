@@ -1,4 +1,4 @@
-import { cleanLineItemDescription, formatMoney, formatAddressLines, type Customer } from "@/lib/quote";
+import { cleanLineItemDescription, formatMoney, formatAddressLines, quoteValidityDays, quoteValidUntil, type Customer } from "@/lib/quote";
 import { pdfLogoDimensions, PDF_LOGO_QUALITY, validatePdfAttachment } from "@/lib/pdf-logo";
 
 type PdfInput = {
@@ -56,14 +56,19 @@ export async function buildQuotePdfBase64(p: PdfInput): Promise<string> {
   const headerBottom = 50 + (businessLines.length - 1) * 21;
   doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(120);
   doc.text("QUOTATION / ESTIMATE", headerLeft, headerBottom + 14);
-  let y = headerBottom + 28;
+  let y = headerBottom + 40;
+  doc.setFont("helvetica", "bold");
+  const contractorLines = doc.splitTextToSize(p.business, W / 2 - headerLeft);
+  doc.text(contractorLines, headerLeft, y);
+  y += contractorLines.length * 12;
+  doc.setFont("helvetica", "normal");
   for (const v of [...formatAddressLines(p.businessContact), p.businessContact.phone, p.businessContact.email].filter(Boolean)) {
     const lines = doc.splitTextToSize(v, W / 2 - headerLeft);
     doc.text(lines, headerLeft, y);
     y += lines.length * 12;
   }
   const issued = new Date();
-  const valid = new Date(issued.getTime() + 30 * 86400000);
+  const valid = quoteValidUntil(issued, p.customer.validityDays);
   const f = (d: Date) => d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   doc.setTextColor(40).setFont("helvetica", "bold").setFontSize(12).text(`Quote ${p.quoteNo}`, R, 50, { align: "right" });
   doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(120);
@@ -115,7 +120,7 @@ export async function buildQuotePdfBase64(p: PdfInput): Promise<string> {
   doc.text("DATE", R - 160, y + 12);
   doc.text(
     doc.splitTextToSize(
-      `Quote valid for 30 days from the issue date. Prices assume standard site access and may be revised if hidden conditions are found. Thank you for the opportunity to quote — ${p.business}.`,
+      `Quote valid for ${quoteValidityDays(p.customer.validityDays)} days from the issue date. Prices assume standard site access and may be revised if hidden conditions are found. Thank you for the opportunity to quote — ${p.business}.`,
       R - L,
     ),
     L,

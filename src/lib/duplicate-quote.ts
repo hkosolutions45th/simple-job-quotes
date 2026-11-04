@@ -15,6 +15,7 @@ export function duplicateQuoteRecord(row: any, quoteNo: string, userId: string) 
       customer: {
         name: "", email: "", phone: "", address: "", city: "", province: "", postalCode: "",
         terms: payload.customer?.terms ?? "",
+        validityDays: payload.customer?.validityDays ?? 30,
       },
     },
   };
