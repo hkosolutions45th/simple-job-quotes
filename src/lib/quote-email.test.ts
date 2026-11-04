@@ -74,4 +74,10 @@ test("Mail fallback encodes the recipient, subject and full quote without an att
   assert.ok(body.includes("10 Main St, Toronto, M5V 1A1"));
   assert.ok(body.includes("Payment terms: 50% deposit required"));
   assert.equal(url.searchParams.has("attachment"), false);
+});test("the validity sentence sits in its own full-width cleared block below the totals", () => {
+  const html = buildResendPayload(quote, "c@example.com").html;
+  const match = html.match(/<p style="[^"]*clear:both[^"]*"[^>]*>\s*Quote valid for \d+ days from the issue date\./);
+  assert.ok(match, "validity text must be wrapped in a cleared block element");
+  assert.ok(html.indexOf("Total due") < html.indexOf("Quote valid for"), "validity text must render after the totals table");
+  assert.ok(html.includes('clear:both;font-size:0;line-height:0'), "a clearing spacer must follow the right-aligned totals table");
 });
