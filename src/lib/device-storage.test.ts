@@ -61,3 +61,9 @@ test("duplicates preserve currency, tax and deposit terms", () => {
   assert.equal(copy.line_items.customer.terms, "50% deposit required");
   assert.equal(copy.total_amount, 320.04);
 });
+test("duplicates retain per-quote validity without carrying client identity", () => {
+  const copy = duplicateQuoteRecord({ ...source, line_items: { ...source.line_items, customer: { ...source.line_items.customer, validityDays: 45 } } }, "IQ-1005", "user");
+  assert.equal(copy.line_items.customer.validityDays, 45);
+  assert.equal(copy.line_items.customer.name, "");
+  assert.equal(duplicateQuoteRecord(source, "IQ-1006", "user").line_items.customer.validityDays, 30);
+});

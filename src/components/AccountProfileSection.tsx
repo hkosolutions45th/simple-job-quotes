@@ -18,6 +18,9 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
   const [email, setEmail] = useState(user.email ?? "");
   const [busy, setBusy] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
   const isEmailAccount = (user.app_metadata?.provider ?? "email") === "email";
 
   // Auth refreshes may arrive while settings remains mounted after confirmation.
@@ -49,6 +52,21 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
     } finally { setBusy(false); }
   };
 
+  const changePassword = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (password !== confirmPassword) { toast.error("Passwords do not match."); return; }
+    setPasswordBusy(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      setPassword("");
+      setConfirmPassword("");
+      toast.success("Password updated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't update your password. Please try again.");
+    } finally { setPasswordBusy(false); }
+  };
+
   return (
     <div className="space-y-3 border-t border-line pt-4">
       <p className="label-mono">Account</p>
@@ -67,6 +85,20 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
       <Button className="min-h-12 w-full" disabled={busy} onClick={() => void save()} aria-busy={busy}>
         {busy && <Loader2 className="size-4 animate-spin" aria-hidden="true" />} {busy ? "Saving…" : "Update Profile"}
       </Button>
+      {isEmailAccount && <form onSubmit={changePassword} className="space-y-3 border-t border-line pt-3">
+        <input type="text" name="username" autoComplete="username" value={user.email ?? ""} readOnly className="sr-only" aria-label="Account email for password change" />
+        <label className="block">
+          <span className="label-mono">New password</span>
+          <input type="password" name="new-password" autoComplete="new-password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="field mt-1" />
+        </label>
+        <label className="block">
+          <span className="label-mono">Confirm new password</span>
+          <input type="password" name="confirm-password" autoComplete="new-password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="field mt-1" />
+        </label>
+        <Button type="submit" variant="outline" className="min-h-12 w-full" disabled={passwordBusy} aria-busy={passwordBusy}>
+          {passwordBusy && <Loader2 className="size-4 animate-spin" aria-hidden="true" />} {passwordBusy ? "Saving…" : "Change Password"}
+        </Button>
+      </form>}
       <Button variant="outline" className="min-h-12 w-full" onClick={onSignOut}>
         <LogOut className="size-4" aria-hidden="true" /> Sign Out
       </Button>

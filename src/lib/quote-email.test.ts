@@ -4,6 +4,11 @@ import { buildQuoteMailto, buildResendPayload, emailErrorMessage, payloadSchema,
 
 const quote = payloadSchema.parse({ to: "client@example.com", business: "Contractor Business", quoteNo: "IQ-2045", message: "Your requested painting quote", items: [{ description: "Painting", quantity: 2, rate: 100 }], pdfBase64: "JVBERi0=" });
 
+test("email payloads default per-quote validity to 30 days and preserve edits", () => {
+  assert.equal(quote.validityDays, 30);
+  assert.equal(payloadSchema.parse({ ...quote, validityDays: 45 }).validityDays, 45);
+});
+
 test("quotes always use the branded verified-domain sender", () => {
   assert.equal(buildResendPayload(quote, "contractor@example.com").from, "InstaQuote <instaquote@hkosolutions.ca>");
 });

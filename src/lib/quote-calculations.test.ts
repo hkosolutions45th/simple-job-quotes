@@ -1,6 +1,17 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatPostalCode, formatJobAddress, formatAddressLines, rateFromAmount, lineTotal, generateLineItems } from "./quote";
+import { formatPostalCode, formatJobAddress, formatAddressLines, rateFromAmount, lineTotal, generateLineItems, quoteValidityDays, quoteValidUntil } from "./quote";
+
+test("quote validity defaults to 30 days for existing quotes", () => {
+  assert.equal(quoteValidityDays(undefined), 30);
+  assert.equal(quoteValidUntil(new Date(2026, 10, 4)).getDate(), 4);
+  assert.equal(quoteValidUntil(new Date(2026, 10, 4)).getMonth(), 11);
+});
+test("each quote's selected validity determines its expiration date", () => {
+  assert.equal(quoteValidityDays(45), 45);
+  assert.equal(quoteValidUntil(new Date(2026, 10, 4), 45).getDate(), 19);
+  assert.equal(quoteValidUntil(new Date(2026, 10, 4), 45).getMonth(), 11);
+});
 
 test("Canadian postal codes insert the required space without changing ZIP codes", () => {
   assert.equal(formatPostalCode("l9j0y6"), "L9J 0Y6");
