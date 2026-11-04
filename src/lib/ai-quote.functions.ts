@@ -12,7 +12,9 @@ If unit rates or quantities are implied or missing, make a realistic industry-st
 
 Also extract any client details mentioned in the notes into the "client" object: client name, email, phone, street address, city, state/province, and postal/ZIP code. Put only the street line in "address", the city in "city", state/province in "province", and either a postal code or ZIP code in "postalCode". Use an empty string for every detail that is not mentioned.
 
-Line-item descriptions must be short titles describing only the work or material. Put quantity and pricing only in their dedicated numeric fields. Never append parenthetical or bracketed currency, measurement, unit, quantity, pricing, estimation, supply-only, or rate notes to a description. For example, return "Supply and install composite deck railing", never "Supply and install composite deck railing (linear feet; estimated CAD)".`;
+Line-item descriptions must be short titles describing only the work or material. Put quantity and pricing only in their dedicated numeric fields. Never append parenthetical or bracketed currency, measurement, unit, quantity, pricing, estimation, supply-only, or rate notes to a description. For example, return "Supply and install composite deck railing", never "Supply and install composite deck railing (linear feet; estimated CAD)".
+
+Quantities must describe only the amount of work or material being priced (square footage, hours, counts, or lengths stated in the job instructions). Never use house or street numbers, unit numbers, phone numbers, postal codes, or dates from the client's address or contact details as a quantity.`;
 
 export type AiLineItem = {
   description: string;

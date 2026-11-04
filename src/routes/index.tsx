@@ -561,12 +561,25 @@ function InstaQuote() {
           postalCode: formatPostalCode(client.postalCode || c.postalCode),
         }));
       }
-      const rows: BaseItem[] = aiItems.map((i) => ({
-        id: newId(),
-        description: cleanLineItemDescription(i.description),
-        quantity: i.quantity,
-        basePriceUSD: i.unitRate / (rateFactorRef.current || 1),
-      }));
+      // Defensive mapping: a malformed AI payload must never throw here.
+      const safeAiItems = Array.isArray(aiItems) ? aiItems : [];
+      const rows: BaseItem[] = safeAiItems.flatMap((i) => {
+        try {
+          const description = cleanLineItemDescription(i?.description ?? "");
+          if (!description) return [];
+          const quantity = Number(i?.quantity);
+          const unitRate = Number(i?.unitRate);
+          return [{
+            id: newId(),
+            description,
+            quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+            basePriceUSD: Number.isFinite(unitRate) ? unitRate / (rateFactorRef.current || 1) : 0,
+          }];
+        } catch {
+          return [];
+        }
+      });
+      if (!rows.length) throw new Error("The AI couldn't find any line items in those notes.");
       setItems(rows);
       toast.success(`${rows.length} line items generated`, {
         description: "Tweak quantities and rates before you send.",
