@@ -24,3 +24,10 @@ test("quantity and rate edits recalculate amount", () => {
   assert.equal(lineTotal({ id: "a", description: "Painting", quantity: 5, rate: 50 }), 250);
   assert.equal(lineTotal({ id: "a", description: "Painting", quantity: 6, rate: 50 }), 300);
 });
+
+test("street numbers never become line-item quantities", () => {
+  const items = generateLineItems("Replace deck railing at 124 Mapleview Dr with 40 linear feet of railing");
+  const deck = items.find((i) => /deck|fence/i.test(i.description));
+  assert.ok(deck, "deck item generated from notes");
+  assert.equal(deck.quantity, 40);
+});
