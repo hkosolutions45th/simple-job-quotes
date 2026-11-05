@@ -10,5 +10,5 @@ test("same email matches an existing client before inserting despite a new name"
   assert.equal(findDirectoryClient(clients, null, { name: "Harry Odia", email: " HARRY@example.com " })?.id, "harry-id");
 });
 test("unrelated clients with blank emails are not matched", () => {
-  assert.equal(findDirectoryClient([{ ...clients[0], email: "" }], null, { name: "Jane", email: "" }), undefined);
+  assert.equal(findDirectoryClient([{ id: "harry-id", name: "Harry", email: "" }], null, { name: "Jane", email: "" }), undefined);
 });

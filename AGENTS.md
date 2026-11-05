@@ -17,6 +17,7 @@
 - Saved clients and business profile sync to the signed-in user's account (Cloud authoritative on load) with device storage as offline cache — so data follows the user across domains and devices.
 - Long-form legal/policy pages render through the shared legal document shell and their back control deep-links to the dashboard with a settings query flag that opens Account Settings once the account profile has loaded; keep that flag's search validation on the index route so the return path works from any entry point.
 - Store per-quote validity with the quote customer JSON and normalize it through shared quote helpers; this preserves legacy records and synchronizes preview, PDF, email, and duplication without schema changes.
+- Resolve directory clients through the shared identity helper, prioritizing selected IDs and nonempty emails before names, so renames do not become inserts.
 - Business Information and Account Settings use separate dialogs; profile/account actions must not submit business edits.
 
 - RevenueCat: `src/lib/revenuecat.ts` owns Purchases setup; it lazy-imports `@revenuecat/purchases-capacitor` and configures only when `Capacitor.getPlatform() === "ios"`, so the web/SSR bundle never loads the SDK. Call `initRevenueCat()` once at app launch; never statically import the SDK from a route.
