@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formatPostalCode, formatJobAddress, formatAddressLines, rateFromAmount, lineTotal, generateLineItems, quoteValidityDays, quoteValidUntil } from "./quote";
+import { formatPostalCode, formatJobAddress, formatAddressLines, rateFromAmount, lineTotal, generateLineItems, quoteValidityDays, quoteValidUntil, parseValidityInput } from "./quote";
+
+test("validity can remain blank during editing and falls back to 30 at normalization", () => {
+  assert.equal(parseValidityInput(""), undefined);
+  assert.equal(quoteValidityDays(parseValidityInput("")), 30);
+  assert.equal(parseValidityInput("45"), 45);
+});
 
 test("quote validity defaults to 30 days for existing quotes", () => {
   assert.equal(quoteValidityDays(undefined), 30);

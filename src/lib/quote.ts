@@ -24,6 +24,11 @@ export function quoteValidityDays(value?: number): number {
   return typeof value === "number" && Number.isFinite(value) && value >= 1 ? Math.floor(value) : 30;
 }
 
+/** Keep a cleared editor blank until blur; normalization belongs at output boundaries. */
+export function parseValidityInput(value: string): number | undefined {
+  return value === "" ? undefined : Number(value);
+}
+
 export function quoteValidUntil(issued: Date, validityDays?: number): Date {
   const valid = new Date(issued);
   valid.setDate(valid.getDate() + quoteValidityDays(validityDays));
