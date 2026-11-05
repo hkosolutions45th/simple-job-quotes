@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Allow blank validity edits and update renamed directory clients by stable identity (13 tests pass; signed-in blank/blur and rename/reload with unchanged client ID verified; test client removed).
 - [x] Update contractor document headers, persist per-quote validity, and split dashboard business/account settings (29 tests pass; signed-in save/reload, PDF/email output, legal return, and 320px layout verified).
 - [x] Correct iOS Keychain form hints and synchronize confirmed email changes with the refreshed account session (12 tests pass; browser submit and mounted-profile updates verified; actual Keychain prompts and email links require an iPhone check).
 - [x] Clarify USD paywall prices, stack contractor document addresses, remember sign-in email, and explain email-change confirmation (26 tests and browser sign-out/reload checks pass)
