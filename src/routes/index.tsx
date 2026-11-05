@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { duplicateQuoteRecord } from "@/lib/duplicate-quote";
+import { findDirectoryClient } from "@/lib/client-directory";
 import { clearAllDeviceStorage, clearDeviceText, nextQuoteNumber, readDeviceJSON, readDeviceText, writeDeviceText } from "@/lib/device-storage";
 import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
@@ -33,6 +34,7 @@ import {
   formatPostalCode,
   rateFromAmount,
   quoteValidityDays,
+  parseValidityInput,
   generateLineItems,
   lineTotal,
   money,
@@ -174,6 +176,7 @@ function InstaQuote() {
   // Saved clients directory (this device).
   type SavedClient = { id: string; name: string; email: string; phone: string; address: string; city: string; province?: string; postalCode: string };
   const [savedClients, setSavedClients] = useState<SavedClient[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   useEffect(() => {
     try {
       setSavedClients(readDeviceJSON<SavedClient[]>("instaquote:clients", [], (v): v is SavedClient[] =>
@@ -205,9 +208,7 @@ function InstaQuote() {
     terms: "50% deposit required",
       validityDays: 30,
   });
-  const clientMatch = savedClients.find(
-    (c) => c.name.trim().toLowerCase() === customer.name.trim().toLowerCase(),
-  );
+  const clientMatch = findDirectoryClient(savedClients, selectedClientId, customer);
   const clientSaved = Boolean(clientMatch);
   const clientModified = Boolean(
     clientMatch &&
@@ -219,10 +220,10 @@ function InstaQuote() {
         clientMatch.postalCode !== customer.postalCode ||
         clientMatch.name !== customer.name.trim()),
   );
-  const updateClient = async () => {
-    if (!clientMatch) return;
+  const updateClient = async (target = clientMatch) => {
+    if (!target || !customer.name.trim()) return;
     const updated: SavedClient = {
-      ...clientMatch,
+      ...target,
       name: customer.name.trim(),
       email: customer.email,
       phone: customer.phone,
@@ -231,12 +232,13 @@ function InstaQuote() {
       province: customer.province ?? "",
       postalCode: customer.postalCode,
     };
-    storeClients(savedClients.map((c) => (c.id === clientMatch.id ? updated : c)).sort((a, b) => a.name.localeCompare(b.name)));
+    storeClients([...savedClients.filter((c) => c.id !== target.id), updated].sort((a, b) => a.name.localeCompare(b.name)));
+    setSelectedClientId(target.id);
     if (user) {
       const { error } = await supabase
         .from("saved_clients")
         .update({ name: updated.name, email: updated.email, phone: updated.phone, address: updated.address, city: updated.city, province: updated.province ?? "", postal_code: updated.postalCode })
-        .eq("id", clientMatch.id)
+        .eq("id", target.id)
         .eq("user_id", user.id);
       if (error) toast.warning("Updated on this device only", { description: "We'll sync it to your account next time you're online." });
     }
@@ -259,6 +261,22 @@ function InstaQuote() {
   };
   const toggleSaveClient = async (on: boolean) => {
     if (on) {
+      if (!customer.name.trim()) return;
+      let existing = clientMatch;
+      if (user && !existing) {
+        const { data, error } = await supabase.from("saved_clients")
+          .select("id, name, email, phone, address, city, province, postal_code")
+          .eq("user_id", user.id);
+        if (error) {
+          toast.error("Couldn't check your directory. Please try again before saving this client.");
+          return;
+        }
+        existing = findDirectoryClient((data ?? []).map((c) => ({ ...c, postalCode: c.postal_code })), selectedClientId, customer);
+      }
+      if (existing) {
+        await updateClient(existing);
+        return;
+      }
       let entry: SavedClient = {
         id: newId(),
         name: customer.name.trim(),
@@ -279,9 +297,11 @@ function InstaQuote() {
         else if (error) toast.warning("Saved on this device only", { description: "We'll sync it to your account next time you're online." });
       }
       storeClients([...savedClients, entry].sort((a, b) => a.name.localeCompare(b.name)));
+      setSelectedClientId(entry.id);
       toast.success(`${entry.name} saved to your clients`);
     } else if (clientMatch) {
       storeClients(savedClients.filter((c) => c.id !== clientMatch.id));
+      setSelectedClientId(null);
       if (user) await supabase.from("saved_clients").delete().eq("id", clientMatch.id).eq("user_id", user.id);
       toast.success(`${clientMatch.name} removed from your clients`);
     }
@@ -297,9 +317,8 @@ function InstaQuote() {
         .eq("user_id", user.id);
       if (!active || error || !data) return;
       const cloud: SavedClient[] = data.map((r) => ({ id: r.id, name: r.name, email: r.email, phone: r.phone, address: r.address, city: r.city, province: r.province, postalCode: formatPostalCode(r.postal_code) }));
-      const names = new Set(cloud.map((c) => c.name.trim().toLowerCase()));
       const local = readDeviceJSON<SavedClient[]>("instaquote:clients", [], (v): v is SavedClient[] => Array.isArray(v));
-      const missing = local.filter((c) => c?.name && !names.has(c.name.trim().toLowerCase()));
+      const missing = local.filter((c) => c?.name && !findDirectoryClient(cloud, c.id, { name: c.name, email: c.email ?? "" }));
       if (missing.length) {
         const { data: added } = await supabase
           .from("saved_clients")
@@ -803,6 +822,7 @@ function InstaQuote() {
   };
 
   const newQuote = () => {
+    setSelectedClientId(null);
     setItems([]);
     setNotes("");
     setQuoteId(null);
@@ -1072,6 +1092,7 @@ function InstaQuote() {
   };
 
   const loadQuote = (row: any, loadedMessage = "Quote loaded — saving will update it") => {
+    setSelectedClientId(null);
     const payload = (row.line_items ?? {}) as any;
     setQuoteId(row.id);
     setCurrency(row.currency ?? "USD");
@@ -1121,6 +1142,7 @@ function InstaQuote() {
     // Guest defaults: blank business profile, no saved clients, and a fresh draft quote.
     setBusinessProfile(EMPTY_PROFILE);
     setSavedClients([]);
+    setSelectedClientId(null);
     setSaved([]);
     setQuoteId(null);
     setLogo(null);
@@ -1517,6 +1539,7 @@ function InstaQuote() {
                   onChange={(e) => {
                     const c = savedClients.find((s) => s.id === e.target.value);
                     if (!c) return;
+                    setSelectedClientId(c.id);
                     setCustomer((prev) => ({ ...prev, name: c.name, email: c.email, phone: c.phone, address: c.address, city: c.city, province: c.province ?? "", postalCode: formatPostalCode(c.postalCode) }));
                     toast.success(`${c.name} added to this quote`);
                   }}
@@ -1599,22 +1622,22 @@ function InstaQuote() {
             </div>
             {customer.name.trim() && clientModified && clientMatch ? (
               <div className="flex flex-col gap-1">
-                <button
+                <Button
                   type="button"
-                  onClick={updateClient}
+                  onClick={() => void updateClient()}
                   className="clay-shadow flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-clay px-3 text-sm font-semibold text-cream active:translate-y-0.5"
                 >
                   <Save className="size-4 shrink-0" aria-hidden="true" />
                   Update client information
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={revertClient}
                   className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-ink/70 underline underline-offset-4 ring-1 ring-transparent active:text-ink"
                 >
                   <Undo2 className="size-4 shrink-0" aria-hidden="true" />
                   Revert to saved
-                </button>
+                </Button>
               </div>
             ) : customer.name.trim() ? (
               <label className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-cream px-3 ring-1 ring-black/5">
@@ -1636,9 +1659,9 @@ function InstaQuote() {
             </label>
             <label className="block">
               <span className="label-mono">Quote Validity Period (days)</span>
-              <input type="number" inputMode="numeric" min={1} step={1}
-                value={customer.validityDays ?? 30} placeholder="e.g. 30"
-                onChange={(e) => setCustomer({ ...customer, validityDays: e.target.value === "" ? undefined : Number(e.target.value) })}
+              <input type="text" inputMode="numeric" pattern="[0-9]*"
+                value={customer.validityDays ?? ""} placeholder="e.g. 30"
+                onChange={(e) => { if (/^[0-9]*$/.test(e.target.value)) setCustomer({ ...customer, validityDays: parseValidityInput(e.target.value) }); }}
                 onBlur={() => setCustomer((c) => ({ ...c, validityDays: quoteValidityDays(c.validityDays) }))}
                 className="field mt-1" />
             </label>
