@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ApiPublicDeleteAccountRouteImport } from './routes/api/public/delete-account'
 import { Route as ApiPublicSendQuoteEmailRouteImport } from './routes/api/public/send-quote-email'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDeleteAccountRoute = ApiPublicDeleteAccountRouteImport.update({
+  id: '/api/public/delete-account',
+  path: '/api/public/delete-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSendQuoteEmailRoute = ApiPublicSendQuoteEmailRouteImport.update({
   id: '/api/public/send-quote-email',
   path: '/api/public/send-quote-email',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/api/public/delete-account': typeof ApiPublicDeleteAccountRoute
   '/api/public/send-quote-email': typeof ApiPublicSendQuoteEmailRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/api/public/delete-account': typeof ApiPublicDeleteAccountRoute
   '/api/public/send-quote-email': typeof ApiPublicSendQuoteEmailRoute
 }
 export interface FileRoutesById {
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/api/public/delete-account': typeof ApiPublicDeleteAccountRoute
   '/api/public/send-quote-email': typeof ApiPublicSendQuoteEmailRoute
 }
 export interface FileRouteTypes {
@@ -80,6 +89,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/api/public/delete-account'
     | '/api/public/send-quote-email'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/api/public/delete-account'
     | '/api/public/send-quote-email'
   id:
     | '__root__'
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/api/public/delete-account'
     | '/api/public/send-quote-email'
   fileRoutesById: FileRoutesById
 }
@@ -105,6 +117,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ApiPublicDeleteAccountRoute: typeof ApiPublicDeleteAccountRoute
   ApiPublicSendQuoteEmailRoute: typeof ApiPublicSendQuoteEmailRoute
 }
 
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/delete-account': {
+      id: '/api/public/delete-account'
+      path: '/api/public/delete-account'
+      fullPath: '/api/public/delete-account'
+      preLoaderRoute: typeof ApiPublicDeleteAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/send-quote-email': {
       id: '/api/public/send-quote-email'
       path: '/api/public/send-quote-email'
@@ -161,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ApiPublicDeleteAccountRoute: ApiPublicDeleteAccountRoute,
   ApiPublicSendQuoteEmailRoute: ApiPublicSendQuoteEmailRoute,
 }
 export const routeTree = rootRouteImport

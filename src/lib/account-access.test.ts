@@ -50,6 +50,14 @@ test("failed data deletion cannot report a deleted account", async () => {
   assert.equal(result.deleted, false);
   assert.equal(deleted, false);
 });
+test("failed auth deletion remains retryable and cannot report success", async () => {
+  const result = await removeOwnAccount("verified-user", {
+    clearData: async () => ({ error: null }),
+    deleteAuth: async () => ({ error: { message: "unavailable" } }),
+  });
+  assert.equal(result.deleted, false);
+  assert.match(result.error ?? "", /could not finish/);
+});
 test("account deletion clears persistent storage and in-memory fallback", () => {
   const values = new Map<string, string>();
   Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {

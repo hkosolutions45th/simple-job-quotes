@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AccountProfileSection } from "@/components/AccountProfileSection";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccountAccess } from "@/hooks/useAccountAccess";
-import { deleteOwnAccount } from "@/lib/account.functions";
+import { deleteAccountRequest } from "@/lib/delete-account-request";
 import { useServerFn } from "@tanstack/react-start";
 import { generateQuoteItems } from "@/lib/ai-quote.functions";
 import { sendQuoteEmailRequest } from "@/lib/send-quote-email";
@@ -108,7 +108,6 @@ function InstaQuote() {
   const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const access = useAccountAccess(user?.id);
-  const dispatchDeleteAccount = useServerFn(deleteOwnAccount);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [restoringPurchases, setRestoringPurchases] = useState(false);
@@ -1181,7 +1180,7 @@ function InstaQuote() {
     if (deletingAccount) return;
     setDeletingAccount(true);
     try {
-      const result = await dispatchDeleteAccount();
+      const result = await deleteAccountRequest();
       if (!result.deleted) { toast.error(result.error ?? "Couldn't delete your account. Please try again."); return; }
       await queryClient.cancelQueries();
       queryClient.clear();
