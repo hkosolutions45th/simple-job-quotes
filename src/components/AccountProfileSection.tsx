@@ -62,6 +62,7 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
       if (error) throw error;
       setPassword("");
       setConfirmPassword("");
+      setPasswordOpen(false);
       toast.success("Password updated");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't update your password. Please try again.");
