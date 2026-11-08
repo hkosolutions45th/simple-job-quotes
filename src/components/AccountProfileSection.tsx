@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { Loader2, LogOut } from "lucide-react";
+import { ChevronDown, Loader2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { authRedirectUrl } from "@/lib/auth-deep-link";
