@@ -86,20 +86,47 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
       <Button className="min-h-12 w-full" disabled={busy} onClick={() => void save()} aria-busy={busy}>
         {busy && <Loader2 className="size-4 animate-spin" aria-hidden="true" />} {busy ? "Saving…" : "Update Profile"}
       </Button>
-      {isEmailAccount && <form onSubmit={changePassword} className="space-y-3 border-t border-line pt-3">
-        <input type="text" name="username" autoComplete="username" value={user.email ?? ""} readOnly className="sr-only" aria-label="Account email for password change" />
-        <label className="block">
-          <span className="label-mono">New password</span>
-          <input type="password" name="new-password" autoComplete="new-password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="field mt-1" />
-        </label>
-        <label className="block">
-          <span className="label-mono">Confirm new password</span>
-          <input type="password" name="confirm-password" autoComplete="new-password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="field mt-1" />
-        </label>
-        <Button type="submit" variant="outline" className="min-h-12 w-full" disabled={passwordBusy} aria-busy={passwordBusy}>
-          {passwordBusy && <Loader2 className="size-4 animate-spin" aria-hidden="true" />} {passwordBusy ? "Saving…" : "Change Password"}
+      {isEmailAccount && <div className="border-t border-line pt-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-12 w-full justify-between"
+          aria-expanded={passwordOpen}
+          onClick={() => {
+            setPasswordOpen((open) => {
+              if (open) { setPassword(""); setConfirmPassword(""); }
+              return !open;
+            });
+          }}
+        >
+          Change Password
+          <ChevronDown className={`size-4 transition-transform ${passwordOpen ? "rotate-180" : ""}`} aria-hidden="true" />
         </Button>
-      </form>}
+        {passwordOpen && <form onSubmit={changePassword} className="space-y-3 pt-3">
+          <input type="text" name="username" autoComplete="username" value={user.email ?? ""} readOnly className="sr-only" aria-label="Account email for password change" />
+          <label className="block">
+            <span className="label-mono">New password</span>
+            <input type="password" name="new-password" autoComplete="new-password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="field mt-1" />
+          </label>
+          <label className="block">
+            <span className="label-mono">Confirm new password</span>
+            <input type="password" name="confirm-password" autoComplete="new-password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="field mt-1" />
+          </label>
+          <div className="flex gap-2">
+            <Button type="submit" className="min-h-12 flex-1" disabled={passwordBusy} aria-busy={passwordBusy}>
+              {passwordBusy && <Loader2 className="size-4 animate-spin" aria-hidden="true" />} {passwordBusy ? "Saving…" : "Save New Password"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-12 flex-1"
+              onClick={() => { setPasswordOpen(false); setPassword(""); setConfirmPassword(""); }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>}
+      </div>}
       <Button variant="outline" className="min-h-12 w-full" onClick={onSignOut}>
         <LogOut className="size-4" aria-hidden="true" /> Sign Out
       </Button>
