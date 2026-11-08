@@ -7,7 +7,7 @@ import { readDeviceText, writeDeviceText } from "@/lib/device-storage";
 import { Loader2, Mic } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+import { signInWithProvider } from "@/lib/native-oauth";
 import { authRedirectUrl, recoveryRedirectUrl } from "@/lib/auth-deep-link";
 
 export const Route = createFileRoute("/auth")({
@@ -105,8 +105,7 @@ function AuthPage() {
 
   const social = async (provider: "google" | "apple") => {
     try {
-      const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
-      if (result.error) throw result.error;
+      await signInWithProvider(provider);
     } catch (err: any) {
       toast.error(err?.message ?? "Sign-in failed");
     }

@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { isNativeIOS } from "./revenuecat";
+import { Capacitor } from "@capacitor/core";
 
 /** Custom scheme the iOS app registers; auth emails opened on the phone return here. */
 export const APP_AUTH_CALLBACK = "instaquote://auth-callback";
@@ -62,10 +63,12 @@ async function refreshConfirmedUser(): Promise<void> {
 
 /** Native only: listen for instaquote:// links and hand the session to the app. */
 export async function listenForAuthDeepLinks(onSignedIn: (recovery: boolean) => void, onError: (m: string) => void): Promise<() => void> {
-  if (typeof window === "undefined" || !isNativeIOS()) return () => undefined;
+  if (typeof window === "undefined" || !Capacitor.isNativePlatform()) return () => undefined;
   const { App } = await import("@capacitor/app");
   const consume = (url: string) => {
-    if (!url.startsWith("instaquote://")) return;
+    const parsed = new URL(url);
+    if (parsed.protocol !== "instaquote:" || parsed.hostname !== "auth-callback") return;
+    void import("@capacitor/browser").then(({ Browser }) => Browser.close()).catch(() => undefined);
     return consumeAuthLink(url).then((ok) => { if (ok) onSignedIn(isRecoveryLink(url)); })
       .catch((e) => onError(e instanceof Error ? e.message : "That sign-in link didn't work. Please try again."));
   };

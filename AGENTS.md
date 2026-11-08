@@ -28,6 +28,8 @@
 - Remember only the sign-in email in a dedicated device-storage key that survives sign-out but is cleared with all device data on account deletion; never persist passwords.
 - Amount edits convert through the existing unit-rate-to-USD path, preserving one authoritative base price across currencies.
 - Self-account deletion revalidates the authenticated caller before lazily loading the privileged client, clears owned rows through a service-only SQL function, then deletes that caller's auth account; never accept a target user ID from the browser.
+- Native OAuth opens the published managed broker in Capacitor Browser and returns through the registered auth deep link; web OAuth retains the managed iframe-safe helper because local shells do not host /~oauth.
+- Account deletion uses a bearer-verified CORS HTTP endpoint and hosted native URL, not local-shell RPC; this avoids native routing and cross-origin RPC failures without relaxing server-function CSRF protection.
 - Quote emails go through the plain HTTP route `/api/public/send-quote-email` (bearer token verified in the handler, CORS enabled) using shared payload/response helpers; the browser calls it via an absolute published URL on native so the iOS app can reach it, and every failure returns readable JSON instead of a sanitized RPC error. Reply routing comes from the verified user only.
 - All PDF exports share the browser PDF builder, which bounds logo rasters before embedding and checks attachment size before returning, preventing oversized email requests.
 - Auth emails redirect via `authRedirectUrl()` (instaquote://auth-callback on native iOS, web origin otherwise) and the root route consumes incoming deep links; keeps confirmation/reset links returning into the app.
