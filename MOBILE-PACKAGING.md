@@ -8,6 +8,9 @@ The root `capacitor.config.json` contains the requested app identity and `dist` 
 - Prepare and inspect a static web shell containing `dist/index.html`. The current TanStack Start output also needs its hosted server; copying the SSR bundle into a native app is insufficient.
 - Configure native-to-hosted-server requests, authentication redirects, microphone permission declarations, signing, app icons and native launch screens. Keep server secrets on the hosted server.
 - Test voice recognition, safe areas, PDF sharing, authentication, and storage persistence on real iOS and Android devices before store submission.
+- After installing the Browser plugin, sync/rebuild the native project. Register the `instaquote` URL scheme in Xcode (URL Types); the hosted auth allow-list already includes `instaquote://**`. Google/Apple open the published `/~oauth/initiate` in Capacitor Browser and return to `instaquote://auth-callback`.
+- Keychain hints are present on standard submit forms. Native password saving/autofill still depends on iOS/WKWebView and the packaged app's Associated Domains/webcredentials setup; verify on a signed iPhone build rather than assuming HTML hints alone guarantee a prompt.
+- Native deletion calls the published `/api/public/delete-account`; publish the server changes before testing the rebuilt app.
 - Build and sign native packages using Xcode/Android Studio, then complete each store's listing and review requirements.
 
 The in-app branded startup screen is separate from the native launch screen. Device settings and account-scoped quote caches use persistent local storage; uninstalling the app, clearing site data, or blocked/full storage can remove or prevent device persistence. Cloud-saved quotes remain available after sign-in. Quote cache storage does not add offline editing or offline saving.
