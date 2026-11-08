@@ -1,4 +1,7 @@
 # Roadmap
+- [ ] Fix native Google/Apple hosted OAuth and verify callback/session handling.
+- [ ] Diagnose production account deletion and verify secure owned-data cleanup.
+- [ ] Verify standard sign-in/signup forms and iOS autofill hints.
 - [x] Allow blank validity edits and update renamed directory clients by stable identity (13 tests pass; signed-in blank/blur and rename/reload with unchanged client ID verified; test client removed).
 - [x] Update contractor document headers, persist per-quote validity, and split dashboard business/account settings (29 tests pass; signed-in save/reload, PDF/email output, legal return, and 320px layout verified).
 - [x] Correct iOS Keychain form hints and synchronize confirmed email changes with the refreshed account session (12 tests pass; browser submit and mounted-profile updates verified; actual Keychain prompts and email links require an iPhone check).
