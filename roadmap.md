@@ -1,7 +1,8 @@
 # Roadmap
-- [ ] Fix native Google/Apple hosted OAuth and verify callback/session handling.
-- [ ] Diagnose production account deletion and verify secure owned-data cleanup.
-- [ ] Verify standard sign-in/signup forms and iOS autofill hints.
+- [x] Fix native Google/Apple OAuth: published broker opens in native Browser with app callback; both hosted initiation URLs return 302 and forward the registered callback; native/web dispatch and session-refresh tests pass.
+- [x] Fix native account deletion transport; temporary signed-in account deleted through Settings with quotes, clients, business profile and auth row verified removed; absent/invalid tokens rejected. Existing service-only cleanup RPC retained.
+- [x] Verify standard sign-in/signup forms and existing iOS autofill hints; 17 account/OAuth tests pass and build clean.
+- [ ] Verify production mobile Google/Apple completion and actual Keychain prompts — publish changes, sync/rebuild native Browser plugin, and test a signed iPhone app with the registered URL scheme; native device unavailable here.
 - [x] Allow blank validity edits and update renamed directory clients by stable identity (13 tests pass; signed-in blank/blur and rename/reload with unchanged client ID verified; test client removed).
 - [x] Update contractor document headers, persist per-quote validity, and split dashboard business/account settings (29 tests pass; signed-in save/reload, PDF/email output, legal return, and 320px layout verified).
 - [x] Correct iOS Keychain form hints and synchronize confirmed email changes with the refreshed account session (12 tests pass; browser submit and mounted-profile updates verified; actual Keychain prompts and email links require an iPhone check).
