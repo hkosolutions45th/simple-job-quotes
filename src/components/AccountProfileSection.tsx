@@ -21,6 +21,7 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const isEmailAccount = (user.app_metadata?.provider ?? "email") === "email";
 
   // Auth refreshes may arrive while settings remains mounted after confirmation.
