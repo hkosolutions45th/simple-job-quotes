@@ -185,6 +185,7 @@ function AuthPage() {
                 <input
                   type="email"
                   required
+                  id="username"
                   name="username"
                   autoComplete="username"
                   value={email}
@@ -200,6 +201,7 @@ function AuthPage() {
                 <input
                   type="password"
                   required
+                  id="password"
                   name="password"
                   minLength={6}
                   autoComplete={mode === "signin" ? "current-password" : "new-password"}
