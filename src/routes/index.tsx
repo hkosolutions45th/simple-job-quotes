@@ -1245,15 +1245,7 @@ function InstaQuote() {
     );
   }
 
-  if (access.error) return (
-    <div className="app-safe-layout flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-6 text-center text-foreground">
-      <h1 className="text-2xl font-bold">Check your account</h1>
-      <p className="max-w-sm text-muted-foreground">{access.error}</p>
-      <Button onClick={access.retry} className="min-h-12">Try again</Button>
-      <Button variant="outline" onClick={() => void signOut()} className="min-h-12">Sign out</Button>
-    </div>
-  );
-
+  // Verification hiccups never block a signed-in user; they land on the trial paywall instead.
   if (access.showOnboarding) {
     return (
       <OnboardingFlow
