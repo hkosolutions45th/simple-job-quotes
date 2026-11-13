@@ -34,3 +34,4 @@
 - All PDF exports share the browser PDF builder, which bounds logo rasters before embedding and checks attachment size before returning, preventing oversized email requests.
 - Auth emails redirect via `authRedirectUrl()` (instaquote://auth-callback on native iOS, web origin otherwise) and the root route consumes incoming deep links; keeps confirmation/reset links returning into the app.
 - Successful native auth callbacks refetch the user and refresh the persisted auth session before navigation; mounted account fields synchronize from refreshed user props so confirmed email changes do not revert.
+- Serve the Apple association document from the extensionless public file with matching JSON headers in Vite preview and Nitro route rules, so Apple can read the same association document in development and production.

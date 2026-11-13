@@ -7,6 +7,19 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  vite: {
+    plugins: [{
+      name: "apple-association-content-type",
+      configureServer(server) {
+        server.middlewares.use((request, response, next) => {
+          if (request.url?.split("?")[0] === "/.well-known/apple-app-site-association") {
+            response.setHeader("Content-Type", "application/json");
+          }
+          next();
+        });
+      },
+    }],
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this

@@ -186,7 +186,7 @@ function AuthPage() {
                   type="email"
                   required
                   id="username"
-                  name="username"
+                  name="email"
                   autoComplete="username"
                   value={email}
                   onChange={(e) => {

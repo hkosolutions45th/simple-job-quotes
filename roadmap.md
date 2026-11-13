@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Add Apple association document and JSON serving headers; update sign-in email name; confirm explicit persistent auth storage, 10 tests, HTTP 200 JSON and signed-in dashboard after reopening browser page.
+- [ ] Activate Apple domain association and verify native relaunch/autofill — requires real Apple Team ID, signed bundle identifier, publishing and a signed iPhone with Associated Domains enabled.
 - [x] Fix native Google/Apple OAuth: published broker opens in native Browser with app callback; both hosted initiation URLs return 302 and forward the registered callback; native/web dispatch and session-refresh tests pass.
 - [x] Fix native account deletion transport; temporary signed-in account deleted through Settings with quotes, clients, business profile and auth row verified removed; absent/invalid tokens rejected. Existing service-only cleanup RPC retained.
 - [x] Verify standard sign-in/signup forms and existing iOS autofill hints; 17 account/OAuth tests pass and build clean.
