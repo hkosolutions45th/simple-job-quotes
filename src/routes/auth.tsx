@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { OnboardingFlow } from "@/components/OnboardingFlow";
 import { readDeviceText, writeDeviceText } from "@/lib/device-storage";
 import { Loader2, Mic } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { SavePassword } from "@capgo/capacitor-autofill-save-password";
 
 import { supabase } from "@/integrations/supabase/client";
 import { signInWithProvider } from "@/lib/native-oauth";
@@ -71,6 +73,21 @@ function AuthPage() {
     return () => data.subscription.unsubscribe();
   }, [navigate]);
 
+  // Offer to save credentials to iCloud Keychain on native iOS; never block login on dismissal/error.
+  const offerKeychainSave = async (userEmail: string, userPassword: string) => {
+    if (Capacitor.getPlatform() !== "ios") return;
+    try {
+      await SavePassword.promptDialog({
+        username: userEmail,
+        password: userPassword,
+        url: "instaquote.hkosolutions.ca",
+        title: "InstaQuote Pro",
+      });
+    } catch {
+      // User dismissed the prompt or saving failed — sign-in continues regardless.
+    }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === "signup" && password !== confirmPassword) { toast.error("Passwords do not match."); return; }
@@ -89,12 +106,15 @@ function AuthPage() {
           setMode("signin");
           return;
         }
-        if (data.session) await navigate({ to: "/", replace: true });
-        else setCheckEmail(true);
+        if (data.session) {
+          await offerKeychainSave(email.trim(), password);
+          await navigate({ to: "/", replace: true });
+        } else setCheckEmail(true);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         writeDeviceText("instaquote:lastSignInEmail", email.trim());
+        await offerKeychainSave(email.trim(), password);
       }
     } catch (err: any) {
       toast.error(err?.message ?? "Something went wrong");
