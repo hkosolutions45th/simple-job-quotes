@@ -3,12 +3,12 @@
     "apps": [],
     "details": [
       {
-        "appID": "YOUR_TEAM_ID.YOUR_BUNDLE_ID",
+        "appID": "L8TQ75YMT5.app.lovable.simplejobquotes",
         "paths": ["*"]
       }
     ]
   },
   "webcredentials": {
-    "apps": ["YOUR_TEAM_ID.YOUR_BUNDLE_ID"]
+    "apps": ["L8TQ75YMT5.app.lovable.simplejobquotes"]
   }
 }

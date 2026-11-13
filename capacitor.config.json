@@ -1,5 +1,5 @@
 {
-  "appId": "com.instaquote.app",
+  "appId": "app.lovable.simplejobquotes",
   "appName": "InstaQuote Pro",
   "webDir": "dist",
   "bundledWebRuntime": false
