@@ -210,6 +210,7 @@ export function quoteMessage(opts: {
     "",
     opts.customer.terms ? `Terms: ${opts.customer.terms}.` : "",
     `Quote valid for ${quoteValidityDays(opts.customer.validityDays)} days from the issue date.`,
+    "",
     "Reply to this message to book a start date and we'll get you on the schedule.",
     "",
     `— ${opts.business}`,
