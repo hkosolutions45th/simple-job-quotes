@@ -1,15 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 import { emailErrorMessage, type Payload } from "./quote-email";
 
-const PUBLISHED_ORIGIN = "https://simple-job-quotes.lovable.app";
+import { hostedAppOrigin } from "./hosted-app";
 
 export type SendResult = { sent: true; id: string } | { sent: false; error: string };
 
 /** Native app pages are served from capacitor://, so call the published server. */
 function endpoint() {
-  const native = (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.();
-  const origin = native || !/^https?:$/.test(window.location.protocol) ? PUBLISHED_ORIGIN : window.location.origin;
-  return `${origin}/api/public/send-quote-email`;
+  return `${hostedAppOrigin()}/api/public/send-quote-email`;
 }
 
 export async function sendQuoteEmailRequest(payload: Payload): Promise<SendResult> {

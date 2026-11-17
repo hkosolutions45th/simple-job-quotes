@@ -5,7 +5,7 @@ import { removeOwnAccount } from "@/lib/delete-account";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 const reply = (body: { deleted: boolean; error?: string }, status = 200) =>
   Response.json(body, { status, headers: { ...CORS, "Cache-Control": "no-store" } });
