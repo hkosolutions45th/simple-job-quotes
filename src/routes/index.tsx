@@ -338,6 +338,7 @@ function InstaQuote() {
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [emailNote, setEmailNote] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [savedOpen, setSavedOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -644,16 +645,17 @@ function InstaQuote() {
 
   const copyMessage = async (
     copiedToast = "Message copied to clipboard — ready to paste!",
+    text = message,
   ) => {
     try {
-      await navigator.clipboard.writeText(message);
+      await navigator.clipboard.writeText(text);
       toast.success(copiedToast);
       return true;
     } catch {
       // Clipboard blocked (e.g. private browsing) — fall back to a hidden textarea copy.
       try {
         const ta = document.createElement("textarea");
-        ta.value = message;
+        ta.value = text;
         ta.style.position = "fixed";
         ta.style.opacity = "0";
         document.body.appendChild(ta);
@@ -683,7 +685,7 @@ function InstaQuote() {
         }
       }, 1500);
     } catch {
-      await copyMessage();
+      await copyMessage(undefined, shareMessage);
     }
   };
 
@@ -706,6 +708,7 @@ function InstaQuote() {
       });
       return;
     }
+    setShareMessage(message);
     setSendOpen(true);
   };
 
@@ -1804,10 +1807,11 @@ function InstaQuote() {
             </DialogDescription>
           </DialogHeader>
           <textarea
-            readOnly
             rows={9}
-            value={message}
-            className="w-full resize-none rounded-xl bg-cream p-3 text-sm leading-relaxed ring-1 ring-line outline-none"
+            value={shareMessage}
+            onChange={(e) => setShareMessage(e.target.value)}
+            aria-label="Quote summary message"
+            className="field w-full resize-none leading-relaxed"
           />
           <div className="flex flex-col gap-1">
             <div className="grid grid-cols-2 gap-3">
@@ -1818,7 +1822,7 @@ function InstaQuote() {
                 onClick={() => {
                   void markSent(quoteId);
                   void sendVia(
-                    `sms:${customer.phone.replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(message)}`,
+                    `sms:${customer.phone.replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(shareMessage)}`,
                   );
                 }}
                 className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-cream px-2 py-2 text-center text-[13px] font-semibold leading-snug ring-1 ring-line active:translate-y-0.5"
@@ -1833,6 +1837,7 @@ function InstaQuote() {
                 onClick={() =>
                   void copyMessage(
                     "Summary copied! Ready to paste into your email or messaging app.",
+                    shareMessage,
                   )
                 }
                 className="clay-shadow flex min-h-12 items-center justify-center gap-2 rounded-xl bg-clay px-2 py-2 text-center text-[13px] font-semibold leading-snug text-cream active:translate-y-0.5"
@@ -1851,7 +1856,7 @@ function InstaQuote() {
             </div>
           </div>
           <button
-            onClick={() => void copyMessage()}
+            onClick={() => void copyMessage(undefined, shareMessage)}
             title="Copies the text summary to your clipboard."
             aria-describedby="share-copy-help"
             className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-inksoft underline underline-offset-4"
