@@ -8,7 +8,7 @@ const base = {
   quoteNo: "Q-1042",
 };
 
-const address = { address: "", city: "", province: "", postalCode: "" };
+const address = { address: "", city: "", province: "", postalCode: "", email: "", phone: "" };
 
 test("a blank line separates the validity line from the reply call-to-action", () => {
   const message = quoteMessage({
