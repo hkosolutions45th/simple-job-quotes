@@ -25,7 +25,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAccountAccess } from "@/hooks/useAccountAccess";
 import { deleteAccountRequest } from "@/lib/delete-account-request";
 import { useServerFn } from "@tanstack/react-start";
-import { generateQuoteItems } from "@/lib/ai-quote.functions";
+import { requestQuoteItems } from "@/lib/generate-quote-request";
 import { sendQuoteEmailRequest } from "@/lib/send-quote-email";
 import { buildQuoteMailto, emailErrorMessage } from "@/lib/quote-email";
 import { clearRevenueCatIdentity, initRevenueCat } from "@/lib/revenuecat";
@@ -569,7 +569,7 @@ function InstaQuote() {
     }
     setGenerating(true);
     try {
-      const { items: aiItems, client } = await generateQuoteItems({ data: { notes } });
+      const { items: aiItems, client } = await requestQuoteItems(notes);
       if (client && (client.name || client.email || client.phone || client.address || client.city || client.province || client.postalCode)) {
         setCustomer((c) => ({
           ...c,

@@ -38,9 +38,15 @@ export type AiQuoteResult = {
   client: AiClient;
 };
 
+export const quoteNotesSchema = Input;
+
 export const generateQuoteItems = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Input.parse(input))
-  .handler(async ({ data }): Promise<AiQuoteResult> => {
+  .handler(async ({ data }): Promise<AiQuoteResult> => runQuoteAi(data.notes));
+
+/** Shared AI call; used by the server function (web) and the native HTTP route. */
+export async function runQuoteAi(notes: string): Promise<AiQuoteResult> {
+  const data = { notes };
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) throw new Error("AI is not configured for this project.");
 
@@ -152,7 +158,7 @@ export const generateQuoteItems = createServerFn({ method: "POST" })
     const parsed = safeParse(text);
     if (!parsed.length) throw new Error("The AI couldn't find any line items in those notes.");
     return { items: parsed, client: parseClient(text) };
-  });
+}
 
 function cleanDescription(value: string): string {
   const currency = "(?:USD|CAD|EUR|GBP|AUD|MXN)";
