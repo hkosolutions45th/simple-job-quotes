@@ -139,8 +139,8 @@ function TermsPage() {
 
       <LegalSection id="third-party" heading="Third-party services inside the app">
         <p>
-          Parts of InstaQuote depend on services we do not control: Google sign-in, the AI provider that
-          reads your notes, the email delivery service behind the Email PDF button, the exchange-rate lookups
+          Parts of InstaQuote depend on services we do not control: Google sign-in and Sign in with
+          Apple ("Continue with Apple"), the AI provider that reads your notes, the email delivery service behind the Email PDF button, the exchange-rate lookups
           behind currency conversion, and your browser's own speech recognition and printing. Those services
           have their own terms and availability. If one of them is down, rate-limited or changes its API, the
           related feature may be unavailable or inaccurate, and we are not responsible for that outage. Where

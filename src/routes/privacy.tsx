@@ -64,9 +64,9 @@ function PrivacyPage() {
 
       <LegalSection id="collected" heading="What we collect">
         <p>
-          <strong>Account information.</strong> Your email address, and if you sign in with Google,
-          the name and email Google shares with us. We also store a sign-in identifier and the date
-          your account was created.
+          <strong>Account information.</strong> Your email address, and if you sign in with Google or
+          with Apple ("Continue with Apple"), the name and email that provider shares with us. We also
+          store a sign-in identifier and the date your account was created.
         </p>
         <p>
           <strong>Business profile.</strong> Whatever you enter in Business Settings: business name,
@@ -147,9 +147,10 @@ function PrivacyPage() {
       <LegalSection id="email" heading="Email, texts and sharing">
         <p>
           <strong>Email PDF.</strong> When you use this button, we send the quote from your verified
-          sending domain to the address you enter, with the quote PDF attached and a short styled message
-          built from the quote. We record that the message was sent (address, time, delivery result) so
-          we can tell you whether it failed.
+          sending domain to the address you enter, as a clean, printable formatted quote email built
+          from the quote — the line items, totals, terms and your business details appear directly in
+          the message body, ready to read or print. We record that the message was sent (address, time,
+          delivery result) so we can tell you whether it failed.
         </p>
         <p>
           <strong>Text and copy.</strong> The Text / Share options never route a message through us. "Send
@@ -163,6 +164,10 @@ function PrivacyPage() {
         <ul>
           <li>
             <strong>Google</strong> — sign-in, if you choose "Continue with Google". Their privacy terms
+            apply to that step.
+          </li>
+          <li>
+            <strong>Apple</strong> — sign-in, if you choose "Continue with Apple". Apple's privacy terms
             apply to that step.
           </li>
           <li>
