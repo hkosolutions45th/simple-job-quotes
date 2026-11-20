@@ -48,3 +48,16 @@ test("permission failure preserves notes and resets listening", async () => {
   await s.controller.start(); assert.equal(s.notes(), "Existing job notes");
   assert.equal(s.listening(), false); assert.deepEqual(s.errors, ["NotAllowedError"]);
 });
+test("reset when switching quotes or typing ignores a late transcript", async () => {
+  const s = setup(); await s.controller.start();
+  const stale = s.captures[0]?.onresult;
+  s.controller.reset(); stale?.(result("Late text from previous quote"));
+  assert.equal(s.notes(), "Existing job notes");
+  assert.equal(s.listening(), false);
+});
+test("stopping during a pending permission request cancels recording", async () => {
+  let grant = () => {};
+  const s = setup(() => new Promise<void>((resolve) => { grant = resolve; }));
+  const start = s.controller.start(); s.controller.stop(); grant(); await start;
+  assert.equal(s.captures.length, 0); assert.equal(s.listening(), false);
+});

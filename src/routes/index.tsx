@@ -799,6 +799,7 @@ function InstaQuote() {
   };
 
   const newQuote = () => {
+    dictationRef.current?.reset();
     setSelectedClientId(null);
     setItems([]);
     setNotes("");
@@ -1069,6 +1070,7 @@ function InstaQuote() {
   };
 
   const loadQuote = (row: any, loadedMessage = "Quote loaded — saving will update it") => {
+    dictationRef.current?.reset();
     setSelectedClientId(null);
     const payload = (row.line_items ?? {}) as any;
     setQuoteId(row.id);
@@ -1105,6 +1107,7 @@ function InstaQuote() {
   };
 
   const signOut = async () => {
+    dictationRef.current?.reset();
     const uid = user?.id;
     await queryClient.cancelQueries();
     queryClient.clear();
@@ -1156,6 +1159,7 @@ function InstaQuote() {
 
   const deleteAccount = async () => {
     if (deletingAccount) return;
+    dictationRef.current?.reset();
     setDeletingAccount(true);
     try {
       const result = await deleteAccountRequest();
@@ -1353,7 +1357,11 @@ function InstaQuote() {
             id="notes"
             rows={4}
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(e) => {
+              dictationRef.current?.reset();
+              notesRef.current = e.target.value;
+              setNotes(e.target.value);
+            }}
             placeholder="Tap the button above to dictate or type job notes here..."
             className="mt-1 w-full resize-none rounded-xl bg-cream p-3 text-sm leading-relaxed ring-1 ring-line outline-none focus-visible:ring-2 focus-visible:ring-clay"
           />

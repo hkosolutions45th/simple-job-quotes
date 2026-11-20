@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Sweep dictation retry, typed edits, quote switching/duplication, sign-out/deletion, saved notes, generation and background cleanup; abort stale captures before changing notes/account; 15 tests pass and signed-in browser simulation verifies append, background restart, typed corrections and blank new quote. Actual iPhone speech remains unverified.
 - [x] Preserve notes across dictation sessions, create fresh capture on every start/retry, and abort/reset on visibilitychange and native appStateChange; 5 tests pass and signed-in browser simulation verifies append/background/restart with three fresh captures; build OK.
 - [ ] Verify actual iOS microphone recovery after app switching — requires a rebuilt signed iPhone app; browser recognition was simulated for lifecycle checks.
 - [x] Sweep account password changes, sign-in recovery, reset-password page, and web/native callbacks; identity-aware fresh-user checks, shared recovery handling, retry-safe failures and bounded reset loading implemented; 18 tests pass; browser recovery failure/retry and expired-link state verified. Live password success/email delivery and iPhone callbacks remain unverified.
