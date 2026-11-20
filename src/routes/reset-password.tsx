@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { updateRecoveryPassword } from "@/lib/account-password";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -28,26 +29,34 @@ function ResetPasswordPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    // A stalled session lookup must not leave an expired link spinning forever.
+    const timeout = setTimeout(() => { if (active) setReady(true); }, 5000);
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
       if (session && (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN")) { setHasSession(true); setReady(true); }
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setHasSession(true);
-      // Give the recovery link a moment to be processed before showing the expired message.
-      setTimeout(() => setReady(true), session ? 0 : 1500);
-    });
-    return () => data.subscription.unsubscribe();
+      if (!active) return;
+      setHasSession(Boolean(session));
+      setReady(true);
+    }).catch(() => { if (active) setReady(true); });
+    return () => { active = false; clearTimeout(timeout); data.subscription.unsubscribe(); };
   }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirm) { toast.error("Passwords do not match."); return; }
     setBusy(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setBusy(false);
-    if (error) { toast.error(error.message || "Couldn't update your password. Please try again."); return; }
-    toast.success("Password updated");
-    await navigate({ to: "/", replace: true });
+    try {
+      await updateRecoveryPassword(supabase.auth, password, confirm);
+      setPassword("");
+      setConfirm("");
+      toast.success("Password updated successfully.");
+      await navigate({ to: "/", replace: true });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't update your password. Please try again.");
+    } finally { setBusy(false); }
   };
 
   return (

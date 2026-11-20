@@ -5,7 +5,7 @@ import { ChevronDown, Loader2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { authRedirectUrl, recoveryRedirectUrl } from "@/lib/auth-deep-link";
-import { hasPasswordIdentity, updateAccountPassword } from "@/lib/account-password";
+import { hasPasswordIdentity, requestPasswordReset, updateAccountPassword } from "@/lib/account-password";
 
 const PROVIDER_LABELS: Record<string, string> = { apple: "Signed in with Apple", google: "Signed in with Google", email: "Email / Password" };
 
@@ -63,7 +63,10 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
     if (password !== confirmPassword) { toast.error("Passwords do not match."); return; }
     setPasswordBusy(true);
     try {
-      await updateAccountPassword(supabase.auth, user, currentPassword, password, confirmPassword);
+      const { data, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      if (!data.user || data.user.id !== user.id) throw new Error("Please sign in again before updating your password.");
+      await updateAccountPassword(supabase.auth, data.user, currentPassword, password, confirmPassword);
       setCurrentPassword("");
       setPassword("");
       setConfirmPassword("");
@@ -78,8 +81,7 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
     if (!user.email) { toast.error("Your account has no email address for password recovery."); return; }
     setResetBusy(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(user.email, { redirectTo: recoveryRedirectUrl() });
-      if (error) throw error;
+      await requestPasswordReset(supabase.auth, user.email, recoveryRedirectUrl());
       toast.success("Password-reset email sent.", { description: "Check your account email and follow the link to choose a new password." });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't send the password-reset email. Please try again.");

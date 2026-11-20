@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Sweep account password changes, sign-in recovery, reset-password page, and web/native callbacks; identity-aware fresh-user checks, shared recovery handling, retry-safe failures and bounded reset loading implemented; 18 tests pass; browser recovery failure/retry and expired-link state verified. Live password success/email delivery and iPhone callbacks remain unverified.
 - [x] Update Account Settings password flow for email identities, social-only accounts, and forgotten passwords; 11 tests pass, signed-in current-password field, verification rejection and cancel checked; build OK.
 - [ ] Verify successful live password change and reset-email delivery — temporary account password setup returns an auth-service Internal Server Error; reset confirmation could not be verified with that account.
 - [x] Add Apple association document and JSON serving headers; update sign-in email name; confirm explicit persistent auth storage, 10 tests, HTTP 200 JSON and signed-in dashboard after reopening browser page.

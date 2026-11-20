@@ -11,6 +11,7 @@ import { SavePassword } from "@capgo/capacitor-autofill-save-password";
 import { supabase } from "@/integrations/supabase/client";
 import { signInWithProvider } from "@/lib/native-oauth";
 import { authRedirectUrl, recoveryRedirectUrl } from "@/lib/auth-deep-link";
+import { requestPasswordReset } from "@/lib/account-password";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -51,10 +52,12 @@ function AuthPage() {
   const sendReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: recoveryRedirectUrl() });
-    setBusy(false);
-    if (error) toast.error(error.message || "Couldn't send the reset email. Please try again.");
-    else setResetSent(true);
+    try {
+      await requestPasswordReset(supabase.auth, email, recoveryRedirectUrl());
+      setResetSent(true);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't send the reset email. Please try again.");
+    } finally { setBusy(false); }
   };
 
   useEffect(() => {
