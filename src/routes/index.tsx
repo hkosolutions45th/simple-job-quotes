@@ -18,6 +18,7 @@ import { findDirectoryClient } from "@/lib/client-directory";
 import { clearAllDeviceStorage, clearDeviceText, nextQuoteNumber, readDeviceJSON, readDeviceText, writeDeviceText } from "@/lib/device-storage";
 import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
+import { QuoteNumericInput } from "@/components/QuoteNumericInput";
 import { OnboardingFlow, TRADES } from "@/components/OnboardingFlow";
 import { supabase } from "@/integrations/supabase/client";
 import { AccountProfileSection } from "@/components/AccountProfileSection";
@@ -1415,33 +1416,26 @@ function InstaQuote() {
               <div className="mt-3 grid grid-cols-[0.75fr_1fr_1.2fr] gap-2 max-[340px]:grid-cols-2">
                 <label className="block min-w-0">
                   <span className="label-mono">Qty</span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
+                  <QuoteNumericInput
                     value={item.quantity}
-                    onChange={(e) => updateItem(item.id, { quantity: Number(e.target.value) })}
+                    onValueChange={(quantity) => updateItem(item.id, { quantity })}
                     className="field mt-1 font-mono"
                   />
                 </label>
                 <label className="block min-w-0">
                   <span className="label-mono">Unit rate</span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step="0.01"
+                  <QuoteNumericInput
                     value={item.rate}
-                    onChange={(e) => updateItem(item.id, { rate: Number(e.target.value) })}
+                    onValueChange={(rate) => updateItem(item.id, { rate })}
                     className="field mt-1 font-mono"
                   />
                 </label>
                 <label className="block min-w-0 max-[340px]:col-span-2">
                   <span className="label-mono">Total</span>
-                  <input type="number" inputMode="decimal" min={0} step="0.01"
+                  <QuoteNumericInput
                     aria-label={`Amount for item ${index + 1}`} value={Number(lineTotal(item).toFixed(2))}
                     disabled={item.quantity <= 0}
-                    onChange={(e) => updateItem(item.id, { rate: rateFromAmount(Number(e.target.value), item.quantity) })}
+                    onValueChange={(amount) => updateItem(item.id, { rate: rateFromAmount(amount, item.quantity) })}
                     className="field mt-1 font-mono" />
                 </label>
               </div>
@@ -1485,12 +1479,9 @@ function InstaQuote() {
                   aria-label="Apply sales tax"
                   className="data-[state=checked]:bg-leaf"
                 />
-                <input
-                  type="number"
-                  min={0}
-                  max={30}
+                <QuoteNumericInput
                   value={taxRate}
-                  onChange={(e) => setTaxRate(Number(e.target.value))}
+                  onValueChange={setTaxRate}
                   aria-label="Tax rate percent"
                   className="w-12 rounded-md bg-cream/10 px-1.5 py-1 text-center font-mono text-[11px] text-cream outline-none"
                 />
