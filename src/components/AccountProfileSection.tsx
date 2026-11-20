@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { ChevronDown, Loader2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { authRedirectUrl } from "@/lib/auth-deep-link";
+import { authRedirectUrl, recoveryRedirectUrl } from "@/lib/auth-deep-link";
+import { hasPasswordIdentity, updateAccountPassword } from "@/lib/account-password";
 
 const PROVIDER_LABELS: Record<string, string> = { apple: "Signed in with Apple", google: "Signed in with Google", email: "Email / Password" };
 
@@ -22,6 +23,10 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [resetBusy, setResetBusy] = useState(false);
+  const hasPassword = hasPasswordIdentity(user);
+  const passwordLabel = hasPassword ? "Change Password" : "Set a Password";
   const isEmailAccount = (user.app_metadata?.provider ?? "email") === "email";
 
   // Auth refreshes may arrive while settings remains mounted after confirmation.
@@ -58,15 +63,27 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
     if (password !== confirmPassword) { toast.error("Passwords do not match."); return; }
     setPasswordBusy(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      await updateAccountPassword(supabase.auth, user, currentPassword, password, confirmPassword);
+      setCurrentPassword("");
       setPassword("");
       setConfirmPassword("");
       setPasswordOpen(false);
-      toast.success("Password updated");
+      toast.success(hasPassword ? "Password updated successfully." : "Password set successfully. You can now sign in with your email and password.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't update your password. Please try again.");
     } finally { setPasswordBusy(false); }
+  };
+
+  const sendPasswordReset = async () => {
+    if (!user.email) { toast.error("Your account has no email address for password recovery."); return; }
+    setResetBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, { redirectTo: recoveryRedirectUrl() });
+      if (error) throw error;
+      toast.success("Password-reset email sent.", { description: "Check your account email and follow the link to choose a new password." });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't send the password-reset email. Please try again.");
+    } finally { setResetBusy(false); }
   };
 
   return (
@@ -87,24 +104,34 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
       <Button className="min-h-12 w-full" disabled={busy} onClick={() => void save()} aria-busy={busy}>
         {busy && <Loader2 className="size-4 animate-spin" aria-hidden="true" />} {busy ? "Saving…" : "Update Profile"}
       </Button>
-      {isEmailAccount && <div className="border-t border-line pt-3">
+      <div className="border-t border-line pt-3">
         <Button
           type="button"
           variant="outline"
           className="min-h-12 w-full justify-between"
           aria-expanded={passwordOpen}
+          disabled={passwordBusy}
           onClick={() => {
             setPasswordOpen((open) => {
-              if (open) { setPassword(""); setConfirmPassword(""); }
+              if (open) { setCurrentPassword(""); setPassword(""); setConfirmPassword(""); }
               return !open;
             });
           }}
         >
-          Change Password
+          {passwordLabel}
           <ChevronDown className={`size-4 transition-transform ${passwordOpen ? "rotate-180" : ""}`} aria-hidden="true" />
         </Button>
         {passwordOpen && <form onSubmit={changePassword} className="space-y-3 pt-3">
           <input type="text" name="username" autoComplete="username" value={user.email ?? ""} readOnly className="sr-only" aria-label="Account email for password change" />
+          {hasPassword && <div>
+            <label className="block">
+              <span className="label-mono">Current password</span>
+              <input type="password" name="current-password" autoComplete="current-password" required value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="field mt-1" />
+            </label>
+            <Button type="button" variant="link" className="mt-1 h-auto px-0 py-2 text-xs" disabled={resetBusy || passwordBusy} onClick={() => void sendPasswordReset()}>
+              {resetBusy ? "Sending reset email…" : "Forgot current password?"}
+            </Button>
+          </div>}
           <label className="block">
             <span className="label-mono">New password</span>
             <input type="password" name="new-password" autoComplete="new-password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="field mt-1" />
@@ -121,13 +148,14 @@ export function AccountProfileSection({ user, onSignOut }: { user: User; onSignO
               type="button"
               variant="outline"
               className="min-h-12 flex-1"
-              onClick={() => { setPasswordOpen(false); setPassword(""); setConfirmPassword(""); }}
+              disabled={passwordBusy}
+              onClick={() => { setPasswordOpen(false); setCurrentPassword(""); setPassword(""); setConfirmPassword(""); }}
             >
               Cancel
             </Button>
           </div>
         </form>}
-      </div>}
+      </div>
       <Button variant="outline" className="min-h-12 w-full" onClick={onSignOut}>
         <LogOut className="size-4" aria-hidden="true" /> Sign Out
       </Button>

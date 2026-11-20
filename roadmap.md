@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Update Account Settings password flow for email identities, social-only accounts, and forgotten passwords; verify tests and signed-in interaction.
 - [x] Add Apple association document and JSON serving headers; update sign-in email name; confirm explicit persistent auth storage, 10 tests, HTTP 200 JSON and signed-in dashboard after reopening browser page.
 - [ ] Activate Apple domain association and verify native relaunch/autofill — requires real Apple Team ID, signed bundle identifier, publishing and a signed iPhone with Associated Domains enabled.
 - [x] Fix native Google/Apple OAuth: published broker opens in native Browser with app callback; both hosted initiation URLs return 302 and forward the registered callback; native/web dispatch and session-refresh tests pass.
