@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { describe, test } from "node:test";
+import assert from "node:assert/strict";
 import type { User } from "@supabase/supabase-js";
 import { hasPasswordIdentity, updateAccountPassword } from "./account-password";
 
@@ -21,29 +22,29 @@ describe("account password rules", () => {
   test("email identity requires verification and current_password even with Google linked", async () => {
     const { auth, calls } = client();
     await updateAccountPassword(auth, account(["google", "email"]), "old-password", "new-password", "new-password");
-    expect(calls).toEqual([["verify", { email: "contractor@example.com", password: "old-password" }], ["update", { password: "new-password", current_password: "old-password" }]]);
+    assert.deepEqual(calls, [["verify", { email: "contractor@example.com", password: "old-password" }], ["update", { password: "new-password", current_password: "old-password" }]]);
   });
   for (const provider of ["google", "apple"]) {
     test(`${provider}-only accounts set a password without current-password verification`, async () => {
       const { auth, calls } = client();
-      expect(hasPasswordIdentity(account([provider]))).toBe(false);
+      assert.equal(hasPasswordIdentity(account([provider])), false);
       await updateAccountPassword(auth, account([provider]), "", "new-password", "new-password");
-      expect(calls).toEqual([["update", { password: "new-password" }]]);
+      assert.deepEqual(calls, [["update", { password: "new-password" }]]);
     });
   }
   test("missing current password prevents an update", async () => {
     const { auth, calls } = client();
-    await expect(updateAccountPassword(auth, account(["email"]), "", "new-password", "new-password")).rejects.toThrow("Enter your current password");
-    expect(calls).toEqual([]);
+    await assert.rejects(updateAccountPassword(auth, account(["email"]), "", "new-password", "new-password"), /Enter your current password/);
+    assert.deepEqual(calls, []);
   });
   test("incorrect current password prevents an update", async () => {
     const { auth, calls } = client(true);
-    await expect(updateAccountPassword(auth, account(["email"]), "wrong-password", "new-password", "new-password")).rejects.toThrow("Couldn't verify");
-    expect(calls).toHaveLength(1);
+    await assert.rejects(updateAccountPassword(auth, account(["email"]), "wrong-password", "new-password", "new-password"), /Couldn't verify/);
+    assert.equal(calls.length, 1);
   });
   test("mismatched confirmation prevents any auth request", async () => {
     const { auth, calls } = client();
-    await expect(updateAccountPassword(auth, account(["email"]), "old-password", "new-password", "different-password")).rejects.toThrow("Passwords do not match.");
-    expect(calls).toEqual([]);
+    await assert.rejects(updateAccountPassword(auth, account(["email"]), "old-password", "new-password", "different-password"), /Passwords do not match/);
+    assert.deepEqual(calls, []);
   });
 });
