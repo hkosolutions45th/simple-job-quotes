@@ -23,6 +23,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AccountProfileSection } from "@/components/AccountProfileSection";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccountAccess } from "@/hooks/useAccountAccess";
+import { DictationController, type SpeechCapture } from "@/lib/dictation";
+import { Capacitor } from "@capacitor/core";
 import { deleteAccountRequest } from "@/lib/delete-account-request";
 import { useServerFn } from "@tanstack/react-start";
 import { requestQuoteItems } from "@/lib/generate-quote-request";
@@ -471,8 +473,9 @@ function InstaQuote() {
   const navigate = useNavigate();
 
 
-  const recognitionRef = useRef<any>(null);
-  const baseNotesRef = useRef("");
+  const dictationRef = useRef<DictationController | null>(null);
+  const notesRef = useRef(notes);
+  notesRef.current = notes;
 
   const subtotal = useMemo(() => subtotalOf(items), [items]);
   const [mounted, setMounted] = useState(false);
@@ -480,88 +483,60 @@ function InstaQuote() {
   const tax = taxEnabled ? (subtotal * taxRate) / 100 : 0;
   const total = subtotal + tax;
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-    if (!SR) return;
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = "en-US";
-    rec.onresult = (event: any) => {
-      let text = "";
-      for (let i = 0; i < event.results.length; i++) text += event.results[i][0].transcript;
-      const base = baseNotesRef.current;
-      setNotes((base ? base.trimEnd() + " " : "") + text.trim());
-    };
-    rec.onerror = (event: any) => {
-      setListening(false);
-      if (event?.error === "not-allowed" || event?.error === "service-not-allowed") {
-        setMicDenied(true);
-        return;
-      }
-      toast.error("Couldn't hear you", { description: "Check microphone access and try again." });
-    };
-    rec.onend = () => setListening(false);
-    recognitionRef.current = rec;
-    return () => {
-      try {
-        rec.stop();
-      } catch {
-        /* already stopped */
-      }
-    };
-  }, []);
-
   const [micDenied, setMicDenied] = useState(false);
 
-  const startDictation = useCallback(async () => {
-    const rec = recognitionRef.current;
-    if (!rec) {
-      toast.error("Dictation isn't supported in this browser", {
-        description: "Type your notes below instead — everything else works the same.",
-      });
-      return;
+  useEffect(() => {
+    const controller = new DictationController({
+      create: () => {
+        const speechWindow = window as typeof window & { SpeechRecognition?: new () => SpeechCapture; webkitSpeechRecognition?: new () => SpeechCapture };
+        const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+        return Recognition ? new Recognition() : null;
+      },
+      permission: async () => {
+        if (!navigator.mediaDevices?.getUserMedia) return;
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
+      },
+      getNotes: () => notesRef.current,
+      onNotes: (value) => { notesRef.current = value; setNotes(value); },
+      onListening: setListening,
+      onError: (error) => {
+        if (["not-allowed", "service-not-allowed", "NotAllowedError", "NotFoundError"].includes(error)) { setMicDenied(true); return; }
+        if (error === "unsupported") {
+          toast.error("Dictation isn't supported in this browser", { description: "Type your notes below instead — everything else works the same." });
+          return;
+        }
+        toast.error("Couldn't hear you", { description: "Tap the mic to try again. Check microphone access if this continues." });
+      },
+    });
+    dictationRef.current = controller;
+    let active = true;
+    let removeAppListener: (() => void) | undefined;
+    const background = () => { if (document.visibilityState === "hidden") controller.reset(); };
+    document.addEventListener("visibilitychange", background);
+    if (Capacitor.isNativePlatform()) {
+      void import("@capacitor/app").then(({ App }) => App.addListener("appStateChange", ({ isActive }) => {
+        if (!isActive) controller.reset();
+      })).then((handle) => {
+        if (active) removeAppListener = () => { void handle.remove(); };
+        else void handle.remove();
+      }).catch(() => { /* Browser visibility handling remains available. */ });
     }
-    // Trigger the browser's native mic permission prompt before starting recognition.
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((t) => t.stop());
-    } catch (err) {
-      const name = (err as DOMException)?.name;
-      if (name === "NotAllowedError" || name === "NotFoundError") {
-        setMicDenied(true);
-      } else {
-        toast.error("Microphone unavailable", {
-          description: "Check that no other app is using the mic, then try again.",
-        });
-      }
-      return;
-    }
-    // Start every recording from a blank notes field.
-    baseNotesRef.current = "";
-    setNotes("");
-    try {
-      rec.start();
-      setListening(true);
-    } catch {
-      /* already running */
-    }
-  }, []);
-
-  const stopDictation = useCallback(() => {
-    try {
-      recognitionRef.current?.stop();
-    } catch {
-      /* not running */
-    }
-    setListening(false);
+    return () => {
+      active = false;
+      document.removeEventListener("visibilitychange", background);
+      removeAppListener?.();
+      controller.reset();
+      dictationRef.current = null;
+    };
   }, []);
 
   const toggleDictation = useCallback(() => {
-    if (listening) stopDictation();
-    else startDictation();
-  }, [listening, startDictation, stopDictation]);
+    const controller = dictationRef.current;
+    if (!controller) return;
+    if (controller.active) controller.stop();
+    else { setMicDenied(false); void controller.start(); }
+  }, []);
 
   const generate = async () => {
     if (!notes.trim()) {
@@ -1947,7 +1922,7 @@ function InstaQuote() {
               type="button"
               onClick={() => {
                 setMicDenied(false);
-                void startDictation();
+                void dictationRef.current?.start();
               }}
               className="clay-shadow min-h-12 flex-1 rounded-xl bg-clay px-4 text-sm font-bold text-cream"
             >
