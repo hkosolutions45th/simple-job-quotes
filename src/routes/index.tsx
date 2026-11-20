@@ -19,6 +19,7 @@ import { clearAllDeviceStorage, clearDeviceText, nextQuoteNumber, readDeviceJSON
 import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
 import { QuoteNumericInput } from "@/components/QuoteNumericInput";
+import { numericDraftValue } from "@/lib/numeric-input";
 import { OnboardingFlow, TRADES } from "@/components/OnboardingFlow";
 import { supabase } from "@/integrations/supabase/client";
 import { AccountProfileSection } from "@/components/AccountProfileSection";
@@ -2096,13 +2097,10 @@ function InstaQuote() {
             </label>
             <label className="block">
               <span className="label-mono">Default tax rate (%)</span>
-              <input
-                type="number"
+              <QuoteNumericInput
                 inputMode="decimal"
-                min={0}
-                step="0.01"
-                value={settings.tax_rate}
-                onChange={(e) => setSettings((s) => ({ ...s, tax_rate: e.target.value }))}
+                value={numericDraftValue(settings.tax_rate)}
+                onValueChange={(next) => setSettings((s) => ({ ...s, tax_rate: String(next) }))}
                 className="field mt-1 min-h-12 w-full rounded-xl px-3"
               />
             </label>
