@@ -1782,7 +1782,7 @@ function InstaQuote() {
 
       {/* Send modal */}
       <Dialog open={sendOpen} onOpenChange={setSendOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" onOpenAutoFocus={(event) => event.preventDefault()}>
           <DialogHeader className="pr-10">
             <DialogTitle>Send SMS or Copy Summary</DialogTitle>
             <DialogDescription>
