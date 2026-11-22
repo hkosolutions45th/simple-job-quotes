@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { OnboardingFlow } from "@/components/OnboardingFlow";
@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signInWithProvider } from "@/lib/native-oauth";
 import { authRedirectUrl, recoveryRedirectUrl } from "@/lib/auth-deep-link";
 import { requestPasswordReset } from "@/lib/account-password";
+import { watchOAuthLoading } from "@/lib/oauth-loading";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -48,6 +49,18 @@ function AuthPage() {
   const [checkEmail, setCheckEmail] = useState(false);
   const [forgot, setForgot] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [oauthProvider, setOAuthProvider] = useState<"google" | "apple" | null>(null);
+  const oauthCleanup = useRef<(() => void) | null>(null);
+  useEffect(() => () => { oauthCleanup.current?.(); }, []);
+  useEffect(() => {
+    if (!oauthProvider || !Capacitor.isNativePlatform()) return;
+    let active = true;
+    let remove: (() => void) | undefined;
+    void import("@capacitor/browser").then(({ Browser }) => Browser.addListener("browserFinished", () => oauthCleanup.current?.()))
+      .then((handle) => { if (active) remove = () => { void handle.remove(); }; else void handle.remove(); })
+      .catch(() => undefined);
+    return () => { active = false; remove?.(); };
+  }, [oauthProvider]);
 
   const sendReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,10 +140,23 @@ function AuthPage() {
   };
 
   const social = async (provider: "google" | "apple") => {
+    if (oauthProvider) return;
+    setOAuthProvider(provider);
+    const cleanup = watchOAuthLoading(window, () => {
+      if (oauthCleanup.current === cleanup) oauthCleanup.current = null;
+      setOAuthProvider(null);
+    }, () => {
+      toast.info("Sign-in is taking longer than expected. You can try again.");
+    });
+    oauthCleanup.current = cleanup;
     try {
       await signInWithProvider(provider);
+      if (!Capacitor.isNativePlatform()) cleanup();
     } catch (err: any) {
-      toast.error(err?.message ?? "Sign-in failed");
+      if (oauthCleanup.current === cleanup) {
+        cleanup();
+        toast.error(err?.message ?? "Sign-in failed");
+      }
     }
   };
 
@@ -187,13 +213,14 @@ function AuthPage() {
         ) : (
           <>
             <Button variant="outline"
+              disabled={busy || oauthProvider !== null} aria-busy={oauthProvider === "google"}
               onClick={() => void social("google")}
               className="clay-shadow mt-6 min-h-14 w-full rounded-xl bg-card px-4 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
             >
-              Continue with Google
+              {oauthProvider === "google" && <Loader2 className="size-4 animate-spin" />} Continue with Google
             </Button>
-            <Button variant="outline" onClick={() => void social("apple")} className="mt-3 min-h-14 w-full bg-foreground text-background">
-              Continue with Apple
+            <Button variant="outline" disabled={busy || oauthProvider !== null} aria-busy={oauthProvider === "apple"} onClick={() => void social("apple")} className="mt-3 min-h-14 w-full bg-foreground text-background">
+              {oauthProvider === "apple" && <Loader2 className="size-4 animate-spin" />} Continue with Apple
             </Button>
 
             <div className="my-5 flex items-center gap-3">

@@ -2,14 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DictationController, type SpeechCapture } from "./dictation";
 
-function setup(permission: () => Promise<void> = async () => {}) {
+function setup(permission: () => Promise<void> = async () => {}, onStart: (capture: SpeechCapture, attempt: number) => void = () => {}) {
   let notes = "Existing job notes";
   const captures: SpeechCapture[] = [];
   const errors: string[] = [];
   let listening = false;
   const controller = new DictationController({
     create: () => {
-      const capture: SpeechCapture = { continuous: false, interimResults: false, lang: "", onresult: null, onerror: null, onend: null, start() {}, stop() {}, abort() {} };
+      const capture: SpeechCapture = { continuous: false, interimResults: false, lang: "", onresult: null, onerror: null, onend: null, start() { onStart(capture, captures.length); }, stop() {}, abort() {} };
       captures.push(capture); return capture;
     }, permission, getNotes: () => notes, onNotes: (value) => { notes = value; }, onListening: (value) => { listening = value; }, onError: (error) => { errors.push(error); },
   });
@@ -60,4 +60,47 @@ test("stopping during a pending permission request cancels recording", async () 
   const s = setup(() => new Promise<void>((resolve) => { grant = resolve; }));
   const start = s.controller.start(); s.controller.stop(); grant(); await start;
   assert.equal(s.captures.length, 0); assert.equal(s.listening(), false);
+});
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+test("foreground immediately aborts and detaches a lingering capture; first tap starts fresh", async () => {
+  const s = setup(); await s.controller.start();
+  const capture = s.captures[0];
+  assert.ok(capture);
+  let aborted = false; capture.abort = () => { aborted = true; };
+  s.controller.foreground();
+  assert.equal(aborted, true);
+  assert.equal(capture.onresult, null); assert.equal(capture.onerror, null); assert.equal(capture.onend, null);
+  assert.equal(s.listening(), false);
+  await s.controller.start();
+  assert.equal(s.captures.length, 2); assert.equal(s.listening(), true);
+});
+for (const error of ["aborted", "audio-capture", "throw"]) {
+  test(`foreground ${error} failure retries exactly once after 250ms without another tap`, async () => {
+    const s = setup(async () => {}, (capture, attempt) => {
+      if (attempt !== 1) return;
+      if (error === "throw") throw new Error("start failed");
+      capture.onerror?.({ error });
+    });
+    s.controller.foreground(); await s.controller.start();
+    await delay(200); assert.equal(s.captures.length, 1); assert.deepEqual(s.errors, []);
+    await delay(80); assert.equal(s.captures.length, 2); assert.equal(s.listening(), true);
+    s.captures[1]?.onresult?.(result("Fresh session"));
+    assert.equal(s.notes(), "Existing job notes\nFresh session");
+    s.controller.reset();
+  });
+}
+test("second immediate failure reports error without a third capture", async () => {
+  const s = setup(async () => {}, (capture) => capture.onerror?.({ error: "audio-capture" }));
+  s.controller.foreground(); await s.controller.start(); await delay(280);
+  assert.equal(s.captures.length, 2); assert.deepEqual(s.errors, ["audio-capture"]);
+  assert.equal(s.listening(), false); await delay(280); assert.equal(s.captures.length, 2);
+});
+test("background or stop cancels a scheduled foreground retry", async () => {
+  for (const cancel of ["reset", "stop"] as const) {
+    const s = setup(async () => {}, (capture) => capture.onerror?.({ error: "aborted" }));
+    s.controller.foreground(); await s.controller.start(); s.controller[cancel]();
+    await delay(280); assert.equal(s.captures.length, 1); assert.equal(s.listening(), false);
+    assert.deepEqual(s.errors, []);
+  }
 });

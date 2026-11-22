@@ -514,11 +514,16 @@ function InstaQuote() {
     dictationRef.current = controller;
     let active = true;
     let removeAppListener: (() => void) | undefined;
-    const background = () => { if (document.visibilityState === "hidden") controller.reset(); };
+    const foreground = () => { controller.foreground(); setMicDenied(false); };
+    const background = () => {
+      if (document.visibilityState === "visible") foreground();
+      else controller.reset();
+    };
     document.addEventListener("visibilitychange", background);
     if (Capacitor.isNativePlatform()) {
       void import("@capacitor/app").then(({ App }) => App.addListener("appStateChange", ({ isActive }) => {
-        if (!isActive) controller.reset();
+        if (isActive) foreground();
+        else controller.reset();
       })).then((handle) => {
         if (active) removeAppListener = () => { void handle.remove(); };
         else void handle.remove();
