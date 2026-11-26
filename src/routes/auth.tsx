@@ -223,8 +223,7 @@ function AuthPage() {
           </div>
         ) : (
           <>
-            <p className="label-mono mt-6">Sign in with</p>
-            <div className="mt-2 grid gap-3 rounded-2xl bg-sand/60 p-3 ring-1 ring-line">
+            <div className="mt-6 grid gap-3 rounded-2xl bg-sand/60 p-3 ring-1 ring-line">
               <Button variant="outline"
                 disabled={busy || oauthProvider !== null} aria-busy={oauthProvider === "google"}
                 onClick={() => void social("google")}
