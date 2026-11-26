@@ -243,9 +243,9 @@ function AuthPage() {
             </div>
 
             {mode === "signin" && savedEmail && (
-              <Button type="button" variant="secondary" onClick={useSavedPassword}
-                className="mb-4 min-h-12 w-full rounded-xl border border-dashed border-ink/30 px-4 text-sm font-semibold active:translate-y-0.5">
-                <KeyRound className="size-4" /> Use saved password
+              <Button type="button" variant="ghost" onClick={useSavedPassword}
+                className="mb-4 min-h-12 w-full rounded-xl border border-dashed border-clay/50 bg-clay/10 px-4 text-sm font-semibold text-ink hover:bg-clay/20 hover:text-ink active:translate-y-0.5">
+                <KeyRound className="size-4 text-claydeep" /> Use saved password
               </Button>
             )}
 
