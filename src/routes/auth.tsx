@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { OnboardingFlow } from "@/components/OnboardingFlow";
 import { readDeviceText, writeDeviceText } from "@/lib/device-storage";
-import { Loader2, Mic } from "lucide-react";
+import { KeyRound, Loader2, Mic } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { SavePassword } from "@capgo/capacitor-autofill-save-password";
 
@@ -49,8 +49,10 @@ function AuthPage() {
   const [checkEmail, setCheckEmail] = useState(false);
   const [forgot, setForgot] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [savedEmail, setSavedEmail] = useState("");
   const [oauthProvider, setOAuthProvider] = useState<"google" | "apple" | null>(null);
   const oauthCleanup = useRef<(() => void) | null>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   useEffect(() => () => { oauthCleanup.current?.(); }, []);
   useEffect(() => {
     if (!oauthProvider || !Capacitor.isNativePlatform()) return;
@@ -75,7 +77,9 @@ function AuthPage() {
 
   useEffect(() => {
     setIntroSeen(readDeviceText("has_seen_onboarding") === "true");
-    setEmail(readDeviceText("instaquote:lastSignInEmail") ?? "");
+    const remembered = readDeviceText("instaquote:lastSignInEmail") ?? "";
+    setSavedEmail(remembered);
+    setEmail(remembered);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setReady(true);
       if (session) navigate({ to: "/", replace: true });
@@ -102,6 +106,13 @@ function AuthPage() {
     } catch {
       // User dismissed the prompt or saving failed — sign-in continues regardless.
     }
+  };
+
+  // Quick-fill for email sign-in: restores the remembered email and opens the
+  // password field so the device/Keychain can suggest the saved password.
+  const useSavedPassword = () => {
+    if (savedEmail) setEmail(savedEmail.trim());
+    passwordRef.current?.focus();
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -212,22 +223,37 @@ function AuthPage() {
           </div>
         ) : (
           <>
-            <Button variant="outline"
-              disabled={busy || oauthProvider !== null} aria-busy={oauthProvider === "google"}
-              onClick={() => void social("google")}
-              className="clay-shadow mt-6 min-h-14 w-full rounded-xl bg-card px-4 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
-            >
-              {oauthProvider === "google" && <Loader2 className="size-4 animate-spin" />} Continue with Google
-            </Button>
-            <Button variant="outline" disabled={busy || oauthProvider !== null} aria-busy={oauthProvider === "apple"} onClick={() => void social("apple")} className="mt-3 min-h-14 w-full bg-foreground text-background">
-              {oauthProvider === "apple" && <Loader2 className="size-4 animate-spin" />} Continue with Apple
-            </Button>
+            <p className="label-mono mt-6">Sign in with</p>
+            <div className="mt-2 grid gap-3 rounded-2xl bg-sand/60 p-3 ring-1 ring-line">
+              <Button variant="outline"
+                disabled={busy || oauthProvider !== null} aria-busy={oauthProvider === "google"}
+                onClick={() => void social("google")}
+                className="clay-shadow min-h-14 w-full rounded-xl bg-card px-4 text-sm font-semibold ring-1 ring-line active:translate-y-0.5"
+              >
+                {oauthProvider === "google" && <Loader2 className="size-4 animate-spin" />} Continue with Google
+              </Button>
+              <Button variant="outline" disabled={busy || oauthProvider !== null} aria-busy={oauthProvider === "apple"} onClick={() => void social("apple")} className="min-h-14 w-full bg-foreground text-background">
+                {oauthProvider === "apple" && <Loader2 className="size-4 animate-spin" />} Continue with Apple
+              </Button>
+            </div>
 
-            <div className="my-5 flex items-center gap-3">
+            <div className="my-7 flex items-center gap-3">
               <span className="h-px flex-1 bg-line" />
               <span className="label-mono">or email</span>
               <span className="h-px flex-1 bg-line" />
             </div>
+
+            {mode === "signin" && savedEmail && (
+              <div className="mb-4">
+                <Button type="button" variant="secondary" onClick={useSavedPassword}
+                  className="min-h-12 w-full rounded-xl border border-dashed border-ink/30 px-4 text-sm font-semibold active:translate-y-0.5">
+                  <KeyRound className="size-4" /> Use saved password
+                </Button>
+                <p className="mt-1 px-1 text-xs text-inksoft">
+                  Fills {savedEmail} and opens the password field for your saved password.
+                </p>
+              </div>
+            )}
 
             <form onSubmit={submit} className="grid gap-3">
               <label className="block">
@@ -253,6 +279,7 @@ function AuthPage() {
                   required
                   id="password"
                   name="password"
+                  ref={passwordRef}
                   minLength={6}
                   autoComplete={mode === "signin" ? "current-password" : "new-password"}
                   value={password}
