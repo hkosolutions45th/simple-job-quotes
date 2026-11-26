@@ -243,15 +243,10 @@ function AuthPage() {
             </div>
 
             {mode === "signin" && savedEmail && (
-              <div className="mb-4">
-                <Button type="button" variant="secondary" onClick={useSavedPassword}
-                  className="min-h-12 w-full rounded-xl border border-dashed border-ink/30 px-4 text-sm font-semibold active:translate-y-0.5">
-                  <KeyRound className="size-4" /> Use saved password
-                </Button>
-                <p className="mt-1 px-1 text-xs text-inksoft">
-                  Fills {savedEmail} and opens the password field for your saved password.
-                </p>
-              </div>
+              <Button type="button" variant="secondary" onClick={useSavedPassword}
+                className="mb-4 min-h-12 w-full rounded-xl border border-dashed border-ink/30 px-4 text-sm font-semibold active:translate-y-0.5">
+                <KeyRound className="size-4" /> Use saved password
+              </Button>
             )}
 
             <form onSubmit={submit} className="grid gap-3">
