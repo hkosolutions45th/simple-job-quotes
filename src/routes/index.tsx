@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AccountProfileSection } from "@/components/AccountProfileSection";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccountAccess } from "@/hooks/useAccountAccess";
-import { DictationController, type SpeechCapture } from "@/lib/dictation";
+import { DictationController, NativeDictationController, type DictationSession, type SpeechCapture } from "@/lib/dictation";
 import { Capacitor } from "@capacitor/core";
 import { deleteAccountRequest } from "@/lib/delete-account-request";
 import { useServerFn } from "@tanstack/react-start";
@@ -487,7 +487,7 @@ function InstaQuote() {
   const navigate = useNavigate();
 
 
-  const dictationRef = useRef<DictationController | null>(null);
+  const dictationRef = useRef<DictationSession | null>(null);
   const notesRef = useRef(notes);
   notesRef.current = notes;
 
@@ -500,21 +500,11 @@ function InstaQuote() {
   const [micDenied, setMicDenied] = useState(false);
 
   useEffect(() => {
-    const controller = new DictationController({
-      create: () => {
-        const speechWindow = window as typeof window & { SpeechRecognition?: new () => SpeechCapture; webkitSpeechRecognition?: new () => SpeechCapture };
-        const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
-        return Recognition ? new Recognition() : null;
-      },
-      permission: async () => {
-        if (!navigator.mediaDevices?.getUserMedia) return;
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((track) => track.stop());
-      },
+    const callbacks = {
       getNotes: () => notesRef.current,
-      onNotes: (value) => { notesRef.current = value; setNotes(value); },
+      onNotes: (value: string) => { notesRef.current = value; setNotes(value); },
       onListening: setListening,
-      onError: (error) => {
+      onError: (error: string) => {
         if (["not-allowed", "service-not-allowed", "NotAllowedError", "NotFoundError"].includes(error)) { setMicDenied(true); return; }
         if (error === "unsupported") {
           toast.error("Dictation isn't supported in this browser", { description: "Type your notes below instead — everything else works the same." });
@@ -522,7 +512,25 @@ function InstaQuote() {
         }
         toast.error("Couldn't hear you", { description: "Tap the mic to try again. Check microphone access if this continues." });
       },
-    });
+    };
+    const controller: DictationSession = Capacitor.isNativePlatform()
+      ? new NativeDictationController({
+          ...callbacks,
+          load: () => import("@capacitor-community/speech-recognition"),
+        })
+      : new DictationController({
+          ...callbacks,
+          create: () => {
+            const speechWindow = window as typeof window & { SpeechRecognition?: new () => SpeechCapture; webkitSpeechRecognition?: new () => SpeechCapture };
+            const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+            return Recognition ? new Recognition() : null;
+          },
+          permission: async () => {
+            if (!navigator.mediaDevices?.getUserMedia) return;
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach((track) => track.stop());
+          },
+        });
     dictationRef.current = controller;
     let active = true;
     let removeAppListener: (() => void) | undefined;
