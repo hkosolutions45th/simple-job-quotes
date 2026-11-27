@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
-import { Copy, FileText, FolderOpen, Loader2, LogOut, Mail, MessageSquare, Mic, Plus, Save, Settings, Trash2, Undo2, Upload } from "lucide-react";
+import { Copy, FileText, FolderOpen, Loader2, LogOut, Mail, MessageSquare, Mic, Plus, Save, Settings, Trash2, Undo2, Upload, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -262,6 +262,34 @@ function InstaQuote() {
     }));
     toast.info("Changes discarded", { description: `${saved.name}'s saved details are back.` });
   };
+  const insertClient = async () => {
+    if (!customer.name.trim()) return;
+    let entry: SavedClient = {
+      id: newId(),
+      name: customer.name.trim(),
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      city: customer.city,
+      province: customer.province ?? "",
+      postalCode: customer.postalCode,
+    };
+    if (user) {
+      const { data, error } = await supabase
+        .from("saved_clients")
+        .insert({ user_id: user.id, name: entry.name, email: entry.email, phone: entry.phone, address: entry.address, city: entry.city, province: entry.province ?? "", postal_code: entry.postalCode })
+        .select("id")
+        .single();
+      if (data) entry = { ...entry, id: data.id };
+      else if (error) toast.warning("Saved on this device only", { description: "We'll sync it to your account next time you're online." });
+    }
+    storeClients([...savedClients, entry].sort((a, b) => a.name.localeCompare(b.name)));
+    setSelectedClientId(entry.id);
+    toast.success(`${entry.name} saved to your clients`);
+  };
+  const saveAsNewClient = async () => {
+    await insertClient();
+  };
   const toggleSaveClient = async (on: boolean) => {
     if (on) {
       if (!customer.name.trim()) return;
@@ -280,28 +308,7 @@ function InstaQuote() {
         await updateClient(existing);
         return;
       }
-      let entry: SavedClient = {
-        id: newId(),
-        name: customer.name.trim(),
-        email: customer.email,
-        phone: customer.phone,
-        address: customer.address,
-        city: customer.city,
-      province: customer.province ?? "",
-        postalCode: customer.postalCode,
-      };
-      if (user) {
-        const { data, error } = await supabase
-          .from("saved_clients")
-          .insert({ user_id: user.id, name: entry.name, email: entry.email, phone: entry.phone, address: entry.address, city: entry.city, province: entry.province ?? "", postal_code: entry.postalCode })
-          .select("id")
-          .single();
-        if (data) entry = { ...entry, id: data.id };
-        else if (error) toast.warning("Saved on this device only", { description: "We'll sync it to your account next time you're online." });
-      }
-      storeClients([...savedClients, entry].sort((a, b) => a.name.localeCompare(b.name)));
-      setSelectedClientId(entry.id);
-      toast.success(`${entry.name} saved to your clients`);
+      await insertClient();
     } else if (clientMatch) {
       storeClients(savedClients.filter((c) => c.id !== clientMatch.id));
       setSelectedClientId(null);
@@ -1595,18 +1602,28 @@ function InstaQuote() {
               </label>
             </div>
             {customer.name.trim() && clientModified && clientMatch ? (
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  onClick={() => void saveAsNewClient()}
+                  className="clay-shadow flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-clay px-3 text-sm font-semibold text-cream active:translate-y-0.5"
+                >
+                  <UserPlus className="size-4 shrink-0" aria-hidden="true" />
+                  Save as new client
+                </Button>
                 <Button
                   type="button"
                   onClick={() => void updateClient()}
-                  className="clay-shadow flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-clay px-3 text-sm font-semibold text-cream active:translate-y-0.5"
+                  variant="ghost"
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-cream px-3 text-sm font-semibold text-ink ring-1 ring-ink/15 hover:bg-sand hover:text-ink active:translate-y-0.5"
                 >
                   <Save className="size-4 shrink-0" aria-hidden="true" />
-                  Update client information
+                  Update existing client
                 </Button>
                 <Button
                   type="button"
                   onClick={revertClient}
+                  variant="ghost"
                   className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-ink/70 underline underline-offset-4 ring-1 ring-transparent active:text-ink"
                 >
                   <Undo2 className="size-4 shrink-0" aria-hidden="true" />

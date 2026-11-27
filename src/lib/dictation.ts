@@ -64,6 +64,7 @@ export class DictationController {
     this.options.onListening(true);
     let retried = false;
     let startedAt = 0;
+    let receivedResult = false;
     const fail = (error: string, thrown = false) => {
       if (generation !== this.generation) return;
       const capture = this.capture;
@@ -93,6 +94,7 @@ export class DictationController {
         capture.continuous = true; capture.interimResults = true; capture.lang = "en-US";
         capture.onresult = (event) => {
           if (generation !== this.generation || this.capture !== capture) return;
+          receivedResult = true;
           const text = Array.from(event.results, (result) => result[0]?.transcript ?? "").join(" ");
           this.options.onNotes(appendTranscript(base, text));
         };
@@ -101,7 +103,12 @@ export class DictationController {
           fail(event.error ?? "unknown");
         };
         capture.onend = () => {
-          if (generation === this.generation && this.capture === capture) this.reset();
+          if (generation !== this.generation || this.capture !== capture) return;
+          if (recover && !retried && !receivedResult && Date.now() - startedAt < 1000) {
+            fail("aborted");
+            return;
+          }
+          this.reset();
         };
         startedAt = Date.now();
         try { capture.start(); } catch (error) { fail(error instanceof Error ? error.name : "unknown", true); }
