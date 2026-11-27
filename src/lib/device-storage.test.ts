@@ -46,6 +46,10 @@ test("duplicates receive new identity, draft status, and blank client fields", (
   assert.equal(copy.client_email, null);
   assert.equal(copy.line_items.notes, "");
 });
+test("duplicates clear the saved-directory link along with client details", () => {
+  const linked = { ...source, line_items: { ...source.line_items, directoryClientId: "sarah-home-id" } };
+  assert.equal(duplicateQuoteRecord(linked, "IQ-1004", "user").line_items.directoryClientId, null);
+});
 test("duplicates preserve item quantities, base prices and display prices", () => {
   const copy = duplicateQuoteRecord(source, "IQ-1004", "user");
   assert.deepEqual(copy.line_items.items, source.line_items.items);

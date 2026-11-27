@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { duplicateQuoteRecord } from "@/lib/duplicate-quote";
-import { findDirectoryClient } from "@/lib/client-directory";
+import { directoryClientChanges, findDirectoryClient } from "@/lib/client-directory";
 import { clearAllDeviceStorage, clearDeviceText, nextQuoteNumber, readDeviceJSON, readDeviceText, writeDeviceText } from "@/lib/device-storage";
 import { Switch } from "@/components/ui/switch";
 import { QuoteSheet } from "@/components/QuoteSheet";
@@ -180,6 +180,7 @@ function InstaQuote() {
   type SavedClient = { id: string; name: string; email: string; phone: string; address: string; city: string; province?: string; postalCode: string };
   const [savedClients, setSavedClients] = useState<SavedClient[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [quoteOnlyClientEdits, setQuoteOnlyClientEdits] = useState(false);
   useEffect(() => {
     try {
       setSavedClients(readDeviceJSON<SavedClient[]>("instaquote:clients", [], (v): v is SavedClient[] =>
@@ -213,16 +214,10 @@ function InstaQuote() {
   });
   const clientMatch = findDirectoryClient(savedClients, selectedClientId, customer);
   const clientSaved = Boolean(clientMatch);
-  const clientModified = Boolean(
-    clientMatch &&
-      (clientMatch.email !== customer.email ||
-        clientMatch.phone !== customer.phone ||
-        clientMatch.address !== customer.address ||
-        clientMatch.city !== customer.city ||
-        (clientMatch.province ?? "") !== (customer.province ?? "") ||
-        clientMatch.postalCode !== customer.postalCode ||
-        clientMatch.name !== customer.name.trim()),
-  );
+  const clientChanges = clientMatch
+    ? directoryClientChanges(clientMatch, customer)
+    : { contact: false, address: false };
+  const clientModified = clientChanges.contact || clientChanges.address;
   const updateClient = async (target = clientMatch) => {
     if (!target || !customer.name.trim()) return;
     const updated: SavedClient = {
@@ -237,6 +232,7 @@ function InstaQuote() {
     };
     storeClients([...savedClients.filter((c) => c.id !== target.id), updated].sort((a, b) => a.name.localeCompare(b.name)));
     setSelectedClientId(target.id);
+    setQuoteOnlyClientEdits(false);
     if (user) {
       const { error } = await supabase
         .from("saved_clients")
@@ -250,6 +246,7 @@ function InstaQuote() {
   const revertClient = () => {
     if (!clientMatch) return;
     const saved = clientMatch;
+    setQuoteOnlyClientEdits(false);
     setCustomer((prev) => ({
       ...prev,
       name: saved.name,
@@ -262,7 +259,7 @@ function InstaQuote() {
     }));
     toast.info("Changes discarded", { description: `${saved.name}'s saved details are back.` });
   };
-  const insertClient = async () => {
+  const insertClient = async (separateContact = false) => {
     if (!customer.name.trim()) return;
     let entry: SavedClient = {
       id: newId(),
@@ -285,10 +282,18 @@ function InstaQuote() {
     }
     storeClients([...savedClients, entry].sort((a, b) => a.name.localeCompare(b.name)));
     setSelectedClientId(entry.id);
-    toast.success(`${entry.name} saved to your clients`);
+    setQuoteOnlyClientEdits(false);
+    toast.success(separateContact ? `${entry.name} saved as a separate contact` : `${entry.name} saved to your clients`);
   };
   const saveAsNewClient = async () => {
-    await insertClient();
+    await insertClient(true);
+  };
+  const keepClientChangesOnQuote = () => {
+    if (!clientMatch) return;
+    setQuoteOnlyClientEdits(true);
+    toast.success("Changes stay on this quote only", {
+      description: `${clientMatch.name}'s saved directory contact was not changed.`,
+    });
   };
   const toggleSaveClient = async (on: boolean) => {
     if (on) {
@@ -815,6 +820,7 @@ function InstaQuote() {
   const newQuote = () => {
     dictationRef.current?.reset();
     setSelectedClientId(null);
+    setQuoteOnlyClientEdits(false);
     setItems([]);
     setNotes("");
     setQuoteId(null);
@@ -987,7 +993,7 @@ function InstaQuote() {
       client_email: customer.email || null,
       total_amount: Number(total.toFixed(2)),
       currency,
-      line_items: { quoteNo, notes, items: baseItems.map((b) => ({ ...b, description: cleanLineItemDescription(b.description), rate: items.find((i) => i.id === b.id)?.rate ?? b.basePriceUSD })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
+      line_items: { quoteNo, notes, directoryClientId: selectedClientId, items: baseItems.map((b) => ({ ...b, description: cleanLineItemDescription(b.description), rate: items.find((i) => i.id === b.id)?.rate ?? b.basePriceUSD })), customer, taxRate, taxEnabled, currency, rateFactor } as any,
     };
     let error;
     if (quoteId) {
@@ -1085,8 +1091,9 @@ function InstaQuote() {
 
   const loadQuote = (row: any, loadedMessage = "Quote loaded — saving will update it") => {
     dictationRef.current?.reset();
-    setSelectedClientId(null);
     const payload = (row.line_items ?? {}) as any;
+    setSelectedClientId(typeof payload.directoryClientId === "string" ? payload.directoryClientId : null);
+    setQuoteOnlyClientEdits(false);
     setQuoteId(row.id);
     setCurrency(row.currency ?? "USD");
     const factor = typeof payload.rateFactor === "number" && payload.rateFactor > 0 ? payload.rateFactor : 1;
@@ -1137,6 +1144,7 @@ function InstaQuote() {
     setBusinessProfile(EMPTY_PROFILE);
     setSavedClients([]);
     setSelectedClientId(null);
+    setQuoteOnlyClientEdits(false);
     setSaved([]);
     setQuoteId(null);
     setLogo(null);
@@ -1187,6 +1195,8 @@ function InstaQuote() {
       clearAllDeviceStorage();
       setBusinessProfile(EMPTY_PROFILE);
       setSavedClients([]);
+      setSelectedClientId(null);
+      setQuoteOnlyClientEdits(false);
       setSaved([]);
       setItems([]);
       setNotes("");
@@ -1521,6 +1531,7 @@ function InstaQuote() {
                     const c = savedClients.find((s) => s.id === e.target.value);
                     if (!c) return;
                     setSelectedClientId(c.id);
+                    setQuoteOnlyClientEdits(false);
                     setCustomer((prev) => ({ ...prev, name: c.name, email: c.email, phone: c.phone, address: c.address, city: c.city, province: c.province ?? "", postalCode: formatPostalCode(c.postalCode) }));
                     toast.success(`${c.name} added to this quote`);
                   }}
@@ -1530,7 +1541,9 @@ function InstaQuote() {
                     {savedClients.length ? `Saved clients (${savedClients.length})` : "No saved clients"}
                   </option>
                   {savedClients.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                    <option key={c.id} value={c.id}>
+                      {c.name}{c.city.trim() ? ` — ${c.city}` : c.address.trim() ? ` — ${c.address}` : ""}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1602,34 +1615,70 @@ function InstaQuote() {
               </label>
             </div>
             {customer.name.trim() && clientModified && clientMatch ? (
-              <div className="flex flex-col gap-2">
-                <Button
-                  type="button"
-                  onClick={() => void saveAsNewClient()}
-                  className="clay-shadow flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-clay px-3 text-sm font-semibold text-cream active:translate-y-0.5"
-                >
-                  <UserPlus className="size-4 shrink-0" aria-hidden="true" />
-                  Save as new client
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => void updateClient()}
-                  variant="ghost"
-                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-cream px-3 text-sm font-semibold text-ink ring-1 ring-ink/15 hover:bg-sand hover:text-ink active:translate-y-0.5"
-                >
-                  <Save className="size-4 shrink-0" aria-hidden="true" />
-                  Update existing client
-                </Button>
-                <Button
-                  type="button"
-                  onClick={revertClient}
-                  variant="ghost"
-                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-ink/70 underline underline-offset-4 ring-1 ring-transparent active:text-ink"
-                >
-                  <Undo2 className="size-4 shrink-0" aria-hidden="true" />
-                  Revert to saved
-                </Button>
-              </div>
+              quoteOnlyClientEdits ? (
+                <div role="status" className="rounded-xl bg-cream p-3 ring-1 ring-line">
+                  <p className="text-sm font-semibold">Changes stay on this quote only</p>
+                  <p className="mt-1 text-xs leading-relaxed text-inksoft">
+                    {clientMatch.name}'s saved directory contact was not changed. You can save or send this quote with the edited job details.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setQuoteOnlyClientEdits(false)}
+                    className="mt-2 min-h-10 text-sm font-semibold text-ink underline underline-offset-4"
+                  >
+                    Choose a directory action
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 rounded-xl bg-cream p-3 ring-1 ring-line">
+                  <div>
+                    <p className="text-sm font-semibold">Choose what happens in your directory</p>
+                    <p className="mt-1 text-xs leading-relaxed text-inksoft">
+                      {clientChanges.address && clientChanges.contact
+                        ? "Your contact and job-address edits"
+                        : clientChanges.address
+                          ? "This job-address edit"
+                          : "These contact edits"} will stay on this quote when you save or send it. Nothing in the directory changes unless you choose an action.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={keepClientChangesOnQuote}
+                    className="clay-shadow-leaf flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-leaf px-3 text-sm font-semibold text-cream active:translate-y-0.5"
+                  >
+                    <Save className="size-4 shrink-0" aria-hidden="true" />
+                    Keep on this quote only
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => void updateClient()}
+                    variant="ghost"
+                    title={`Replace ${clientMatch.name}'s saved contact and address with these edited details`}
+                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-card px-3 text-sm font-semibold text-ink ring-1 ring-ink/15 hover:bg-sand hover:text-ink active:translate-y-0.5"
+                  >
+                    <Save className="size-4 shrink-0" aria-hidden="true" />
+                    Update saved contact
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => void saveAsNewClient()}
+                    title="Add a separate directory entry and leave the original contact unchanged"
+                    className="clay-shadow flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-clay px-3 text-sm font-semibold text-cream active:translate-y-0.5"
+                  >
+                    <UserPlus className="size-4 shrink-0" aria-hidden="true" />
+                    Save as separate contact
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={revertClient}
+                    variant="ghost"
+                    className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-ink/70 underline underline-offset-4 ring-1 ring-transparent active:text-ink"
+                  >
+                    <Undo2 className="size-4 shrink-0" aria-hidden="true" />
+                    Revert to saved
+                  </Button>
+                </div>
+              )
             ) : customer.name.trim() ? (
               <label className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-cream px-3 ring-1 ring-black/5">
                 <span className="text-sm font-semibold">Save client to directory</span>
